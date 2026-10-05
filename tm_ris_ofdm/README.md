@@ -235,6 +235,24 @@ prior as ours, so this is a strong version of it. It does not improve with pilot
 harmonic tail is outside any truncated harmonic set. It also gets *worse* at 30 dB than at 20 dB,
 because an MMSE filter that trusts a wrong model hurts more as noise falls.
 
+### (b) Per-element sequences at full band: FIXED via the shift structure (`week4_fullband_s2_shift.m`)
+Exact identity: for a cyclic shift k of the base sequence,
+t_{q,s}[h] = t_{base,s}[h] e^{-j2 pi h k/K} = diag(D_k) T_s diag(D_k^*), with D_k = e^{-j2 pi m k/K}.
+So H = sum_s sum_k (D_k F U) Lam_k (D_k^* ... F V_s) o T_s: U is shared (output side), V_1 and V_2
+are per state (input side, absorbing dispersion), and Lam_k (r x r) is per shift value, so there
+are at most K = 8 small matrices instead of 16 per-element pairs. Timing-only, no element model.
+Given (U, V) the Lam step is a convex linear solve.
+Same pre-registered bar as week3_fullband_s2. M = 3276, Np = 2, r = 6, 5 trials:
+
+| | op NMSE | SER one-tap | SER true H | SER estimated | ratio |
+|---|---|---|---|---|---|
+| 20 dB, 16-QAM | -30.1 dB | 0.863 | 0.0543 | 0.0598 | **1.10** |
+| 28 dB, 64-QAM | **-34.4 dB** (trials -32..-36) | 0.965 | 0.0397 | 0.0443 | 1.12 |
+
+**PASSED** (bar: <= -30 dB at 28 dB, ratio <= 1.5 at 20 dB). The earlier limitation (4-block ALS
+stalling at -24..-27 dB) is resolved. A bug was caught before the run (the output-side modulation
+was applied twice) and fixed.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
