@@ -214,6 +214,27 @@ Estimation regressors and equalisation use only the exact FFT operator (no M x M
   variance and the control timing (state in the paper). Lemma 1 is a regrouping of
   Iudice et al. eq. (5) and is credited as such in `paper/letter.tex`.
 
+## Week 4: strengthening for submission
+
+### (a) Comparison with the literature's estimators (`week4_bem_compare.m`)
+Same pilots and seeds, physical channel, S1, M = 256, 20 trials, 95% CIs. Rate (bit/s/Hz) of the
+MMSE equaliser built from each estimate and scored on the true H:
+
+| estimator | 20 dB, Np = 2 | 20 dB, Np = 8 | 30 dB, Np = 2 | 30 dB, Np = 8 |
+|---|---|---|---|---|
+| one-tap (conventional) | 0.42 | 0.42 | 0.43 | 0.43 |
+| Toeplitz mixing (ideal model, as in Tao et al.) | 2.27 +/- 0.08 | 2.46 +/- 0.10 | 1.42 +/- 0.10 | 1.52 +/- 0.03 |
+| CE-BEM, Q = 4 | 1.29 +/- 0.04 | 1.33 +/- 0.03 | 0.57 +/- 0.05 | 0.58 +/- 0.02 |
+| CE-BEM, Q = 8 | 1.82 +/- 0.06 | 1.88 +/- 0.04 | 0.81 +/- 0.07 | 0.99 +/- 0.04 |
+| CE-BEM, Q = 12 | 2.20 +/- 0.08 | 2.32 +/- 0.04 | 1.08 +/- 0.10 | 1.38 +/- 0.06 |
+| **ours (timing-only)** | **6.52 +/- 0.02** | **6.58 +/- 0.02** | **9.68 +/- 0.08** | **9.87 +/- 0.02** |
+| perfect H | 6.61 | 6.61 | 9.92 | 9.92 |
+
+CE-BEM (the standard estimator for intra-symbol time variation) was given the same LMMSE/DPSS
+prior as ours, so this is a strong version of it. It does not improve with pilots: the 1/h^2
+harmonic tail is outside any truncated harmonic set. It also gets *worse* at 30 dB than at 20 dB,
+because an MMSE filter that trusts a wrong model hurts more as noise falls.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
