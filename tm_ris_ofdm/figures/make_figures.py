@@ -204,9 +204,144 @@ def fig_delay():
     save(fig, "fig5_delay_spread")
 
 
+# ---------------------------------------------------------------------------
+# Fig. 0 - system model block diagram
+# ---------------------------------------------------------------------------
+def fig_system():
+    from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+    fig, ax = plt.subplots(figsize=(7.0, 2.7))
+    ax.set_xlim(0, 100); ax.set_ylim(0, 40); ax.axis("off")
+    soft = "#e8f0fb"
+
+    def box(x, y, w, h, text, fc="white", ec=MUTED):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.3,rounding_size=1.2",
+                                    fc=fc, ec=ec, lw=1.0))
+        ax.text(x + w/2, y + h/2, text, ha="center", va="center", fontsize=7.3, color=INK,
+                linespacing=1.25)
+
+    def arrow(p0, p1, col=INK, ls="-", rad=0.0):
+        ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-|>", mutation_scale=9, lw=1.0, color=col,
+                                     ls=ls, shrinkA=0, shrinkB=0, connectionstyle=f"arc3,rad={rad}"))
+
+    box(1, 21, 12, 9, "OFDM Tx\nIFFT + CP")
+    box(25, 19, 17, 13, "TM-RIS\n$Q$ elements\n$K$ slots / symbol", fc=soft, ec=OURS)
+    box(25, 2, 17, 8, "Controller\n(switching timing)", fc=soft, ec=OURS)
+    box(53, 21, 11, 9, "Remove CP\nFFT")
+    box(68, 25, 17, 9, "Matrix-free\nCG-MMSE", fc=soft, ec=OURS)
+    box(68, 11, 17, 9, "Timing-only\nestimator", fc=soft, ec=OURS)
+    box(89, 25, 10, 9, "Detector")
+    arrow((13.3, 25.5), (24.7, 25.5)); ax.text(19, 27.2, r"$\mathbf{A}^{\rm s}_q(f)$", ha="center", fontsize=8)
+    arrow((42.3, 25.5), (52.7, 25.5)); ax.text(47.5, 27.2, r"$\mathbf{A}^{\rm d}_q(f)$", ha="center", fontsize=8)
+    arrow((33.5, 10.3), (33.5, 18.7), col=OURS)
+    arrow((64.3, 27.5), (67.7, 29.5)); ax.text(65.8, 31.2, "data", fontsize=6.5, color=MUTED, ha="center")
+    arrow((64.3, 23.5), (67.7, 16.5)); ax.text(64.2, 18.0, "pilots", fontsize=6.5, color=MUTED, ha="right")
+    arrow((76.5, 20.3), (76.5, 24.7)); ax.text(77.5, 22.2, r"$\hat{\mathbf{U}},\hat{\mathbf{V}}_s$", fontsize=7, color=INK)
+    arrow((85.3, 29.5), (88.7, 29.5))
+    ax.plot([42.3, 76.5], [4.5, 4.5], color=MUTED, lw=0.9, ls=(0, (3, 2)))
+    arrow((76.5, 4.5), (76.5, 10.7), col=MUTED, ls=(0, (3, 2)))
+    ax.text(61, 5.6, "timing $\\mathbf{T}_s$ known to receiver", fontsize=7, color=MUTED, ha="center")
+    ax.plot([14, 52], [16.5, 16.5], color=MUTED, lw=0.8, ls=(0, (4, 3)))
+    ax.text(18, 14.6, "direct path blocked", fontsize=6.8, color=MUTED, ha="left")
+    ax.text(50, 37.5, r"$\mathbf{y} = \mathbf{H}\mathbf{x} + \mathbf{w}$,     "
+            r"$\mathbf{H} = \sum_s \mathbf{T}_s \circ (\mathbf{F}\mathbf{U})(\mathbf{F}\mathbf{V}_s)^{\top}$",
+            fontsize=8, color=INK, ha="center")
+    save(fig, "fig0_system_model")
+
+
+# ---------------------------------------------------------------------------
+# Fig. 6 - NMSE vs SNR, and Fig. 7 - BER vs SNR (week4_curves.m)
+# ---------------------------------------------------------------------------
+def fig_curves():
+    path = RES / "week4_curves.json"
+    if not path.exists():
+        print("skip curves: run matlab/week4_curves.m first"); return
+    d = load("week4_curves")
+    snr = np.array(d["snr_db"])
+    nm = np.array(d["nmse_db_mean"]); ci = np.array(d["nmse_db_ci95"])
+    sty = {"ours": ("Ours (timing only)", OURS, "o"), "bem": ("CE-BEM, 25 harmonics", BEM, "s"),
+           "toeplitz": ("Toeplitz mixing model", TOEP, "^")}
+    fig, ax = plt.subplots(figsize=(3.6, 2.9))
+    for key in ["ours", "bem", "toeplitz"]:
+        i = d["est_names"].index(key); lab, col, mk = sty[key]
+        ax.errorbar(snr, nm[i], yerr=ci[i], color=col, marker=mk, markevery=2, capsize=2,
+                    label=lab, mec="white", mew=0.8)
+    ax.set_xlabel("SNR (dB)"); ax.set_ylabel("NMSE of channel estimate (dB)")
+    ax.set_title(f"Channel estimation, $N_p$ = {d['Np']} pilots", loc="left", color=INK)
+    ax.legend(frameon=False, loc="lower left")
+    fig.tight_layout(); save(fig, "fig6_nmse_vs_snr")
+
+    ber = np.array(d["ber"]); floor = 0.5 / d["bits_per_point"]
+    rsty = {"onetap": ("One-tap (conventional)", ONETAP, "D", "-"),
+            "toeplitz": ("MMSE, Toeplitz estimate", TOEP, "^", "-"),
+            "bem": ("MMSE, CE-BEM estimate", BEM, "s", "-"),
+            "ours": ("MMSE, ours (2 pilots)", OURS, "o", "-"),
+            "ours_dd": ("MMSE, ours + 1 DD pass", "#1a4f94", "v", "-"),
+            "perfect": ("MMSE, perfect channel", INK, None, "--")}
+    fig, ax = plt.subplots(figsize=(3.6, 3.1))
+    for key in ["onetap", "toeplitz", "bem", "ours", "ours_dd", "perfect"]:
+        i = d["rx_names"].index(key); lab, col, mk, ls = rsty[key]
+        y = np.where(ber[i] > 0, ber[i], np.nan)
+        ax.semilogy(snr, y, color=col, marker=mk, markevery=2, ls=ls, label=lab, mec="white", mew=0.8,
+                    lw=1.6 if key == "perfect" else 2.0)
+    ax.set_ylim(max(floor, 5e-5), 1)
+    ax.set_xlabel("SNR (dB)"); ax.set_ylabel("Bit error rate (16-QAM, uncoded)")
+    ax.set_title("Detection", loc="left", color=INK)
+    ax.legend(frameon=False, loc="lower left", fontsize=7)
+    fig.tight_layout(); save(fig, "fig7_ber_vs_snr")
+
+    c = d["constellation_20dB"]
+    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.4), sharex=True, sharey=True)
+    for ax, key, title, col in [(axes[0], "onetap", "One-tap", ONETAP), (axes[1], "ours", "Ours (2 pilots)", OURS),
+                                (axes[2], "perfect", "Perfect channel", INK)]:
+        ax.scatter(c[key]["re"], c[key]["im"], s=3, color=col, alpha=0.55, lw=0)
+        lv = np.array([-3, -1, 1, 3]) / np.sqrt(10)
+        gx, gy = np.meshgrid(lv, lv)
+        ax.scatter(gx, gy, s=14, facecolors="none", edgecolors=INK, lw=0.6)
+        ax.set_xlim(-1.6, 1.6); ax.set_ylim(-1.6, 1.6); ax.set_aspect("equal")
+        ax.set_title(title, loc="left", color=INK); ax.set_xlabel("In-phase")
+    axes[0].set_ylabel("Quadrature")
+    fig.suptitle("Equalised 16-QAM symbols at 20 dB (circles: ideal points)", x=0.01, ha="left",
+                 fontsize=10, color=INK)
+    fig.tight_layout(); save(fig, "fig8_constellation")
+
+
+# ---------------------------------------------------------------------------
+# Fig. 9 - equaliser complexity and memory vs bandwidth (operation counts)
+# ---------------------------------------------------------------------------
+def fig_complexity():
+    Ms = np.array([256, 512, 1024, 2048, 3276, 4096, 8192])
+    Q, iters = 16, 25
+    dense = (4 / 3) * Ms.astype(float) ** 3                        # form H^H H + Cholesky, complex MACs
+    nf = 2 ** np.ceil(np.log2(4 * Ms))
+    cg = iters * 2 * (Q * 2) * (nf * np.log2(nf) + 2 * nf)       # 2 operator applies per CG iteration
+    mem_dense = 16 * Ms.astype(float) ** 2 / 1e6                    # MB, complex double
+    mem_free = 16 * (Q * 2 * nf + 4 * Ms) / 1e6
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.6))
+    ax = axes[0]
+    ax.loglog(Ms, dense, color=ONETAP, marker="D", label="Dense MMSE solve", mec="white")
+    ax.loglog(Ms, cg, color=OURS, marker="o", label="Matrix-free CG (25 it.)", mec="white")
+    ax.axvline(3276, color=MUTED, lw=0.8, ls=":"); ax.text(3276, 3e7, " n78\n 100 MHz", fontsize=7, color=MUTED)
+    ax.set_xlabel("Active subcarriers $M$"); ax.set_ylabel("Complex multiply-adds per symbol")
+    ax.set_title("Computation", loc="left", color=INK); ax.legend(frameon=False, loc="upper left")
+    ax = axes[1]
+    ax.loglog(Ms, mem_dense, color=ONETAP, marker="D", label="Dense $\\mathbf{H}$", mec="white")
+    ax.loglog(Ms, mem_free, color=OURS, marker="o", label="Matrix-free operator", mec="white")
+    ax.axvline(3276, color=MUTED, lw=0.8, ls=":")
+    ax.set_xlabel("Active subcarriers $M$"); ax.set_ylabel("Memory (MB)")
+    ax.set_title("Memory", loc="left", color=INK); ax.legend(frameon=False, loc="upper left")
+    for a in axes:
+        a.set_xticks([256, 512, 1024, 2048, 4096, 8192], ["256", "512", "1024", "2048", "4096", "8192"])
+        a.minorticks_off()
+    fig.suptitle("Operation counts (not MATLAB wall-clock time)", x=0.01, ha="left", fontsize=10, color=INK)
+    fig.tight_layout(); save(fig, "fig9_complexity")
+
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
     fig_fullband()
     fig_fair()
     fig_delay()
+    fig_system()
+    fig_curves()
+    fig_complexity()
