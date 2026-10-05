@@ -1,0 +1,118 @@
+% =====================================================================
+% Draft letter (IEEE Wireless Communications Letters format, 4-5 pages)
+% Every number is read from tm_ris_ofdm/results/*.json; the script that
+% produced it is named in a comment next to it. \TODO marks values that are
+% still being finalised.
+% =====================================================================
+\documentclass[journal]{IEEEtran}
+\usepackage{amsmath,amssymb,bm,graphicx,booktabs,cite}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
+\usepackage{xcolor}
+\DeclareMathOperator{\diag}{diag}
+
+\begin{document}
+\title{Timing-Only Estimation and Equalization of\\ Harmonic-Coupled OFDM Channels through\\ Dispersive Time-Modulated RIS}
+\author{Anonymous Author(s)}
+\maketitle
+
+\begin{abstract}
+A time-modulated reconfigurable intelligent surface (TM-RIS) that switches its
+elements within each OFDM symbol couples every subcarrier to its neighbours
+through harmonics of the control sequence. Existing TM-RIS designs treat this
+coupling as interference at the receiver, and a recent physically consistent
+model shows it is further shaped by the frequency-dispersive response of the
+elements. We show that the coupling matrix of each element decomposes exactly
+into a sum of Toeplitz matrices, one per switching state, that depend only on
+the control timing, multiplied by an input-side response that absorbs the
+element dispersion. This yields (i) a pilot-based estimator that needs no
+element model, only the control timing, and exploits the low rank of the
+two-hop propagation; (ii) an exact matrix-free operator with
+$\mathcal{O}(QM\log M)$ cost per product; and (iii) a conjugate-gradient MMSE
+equalizer. With two pilot symbols the estimated-channel receiver is within
+\TODO{x}\,dB of perfect channel knowledge, whereas the conventional one-tap
+receiver saturates at the signal-to-harmonic-interference ratio, and
+receivers built on the frequency-flat element model lose up to 6.5\,dB.
+\end{abstract}
+
+\section{Introduction}
+% - TM-RIS / space-time-coding metasurfaces: harmonic generation; OFDM-aligned
+%   time modulation for security, ISAC, multi-user [Xu-Petropulu 2310.13210;
+%   Tao-Petropulu 2506.14992; Tao-Petropulu-Poor 2509.05565; STC Zhang-Cui 2018].
+% - Iudice et al. 2609.18360: physically consistent LPTV model with dispersive
+%   elements; generalized CP; harmonic coupling non-diagonal and non-Toeplitz;
+%   equalization explicitly left open.
+% - Prior receivers: treat coupling as interference; the only "undo the mixing"
+%   work is a blind eavesdropper attack assuming an ideal Toeplitz mixing
+%   matrix [Tao-Xu-Petropulu 2310.08551].
+% - Related but distinct: BEM estimation of doubly selective OFDM (unknown time
+%   variation), PLC LPTV channels (period >> symbol).
+% Contributions:
+%  1) exact timing/dispersion separation of the coupling (Lemma 1);
+%  2) timing-only, low-rank LMMSE estimator (no element model);
+%  3) exact matrix-free operator + CG-MMSE;
+%  4) evaluation: fair (TIN-favourable) configurations, model mismatch, full n78 band.
+
+\section{System Model}
+OFDM with $M$ active subcarriers, spacing $\Delta f$, useful duration
+$T_u = 1/\Delta f$. Element $q\in\{1,\dots,Q\}$ follows a $K$-slot periodic
+control sequence $\{s_q[k]\}_{k=0}^{K-1}$, $s_q[k]\in\{1,2\}$, with period
+$T_u$. In state $s$ the element has the single-pole response~\cite{iudice2026}
+\begin{equation}
+\Gamma_s(f) = -1 + \frac{2\xi_{r,s}}{j2\pi(f-f_{0,s})+\xi_{r,s}+\xi_{i,s}} .
+\end{equation}
+Under the generalized CP condition~\cite{iudice2026}, the received vector is
+$\bm y = \bm H \bm x + \bm w$ with
+\begin{equation}
+H_{\bar m,m} = \sum_{q=1}^{Q} A^{\rm d}_{q}(\bar m)\, b_q^{[\bar m-m]}(f_c+m\Delta f)\, A^{\rm s}_{q}(m),
+\label{eq:H}
+\end{equation}
+where $A^{\rm s}_q, A^{\rm d}_q$ are the source--element and element--destination
+frequency responses and $b_q^{[h]}(f)$ is the $h$-th harmonic of the switched
+element response.
+
+\section{Exact Timing--Dispersion Separation}
+\textbf{Lemma 1.} For a piecewise-constant $K$-slot sequence,
+\begin{equation}
+b_q^{[h]}(f) = \sum_{s=1}^{2} t_{q,s}[h]\,\Gamma_s(f),\quad
+t_{q,s}[h] = \frac{e^{-j\pi h/K}}{K}\,\mathrm{sinc}\!\left(\frac{h}{K}\right)\!\!\sum_{k: s_q[k]=s}\!\! e^{-j2\pi hk/K}.
+\end{equation}
+Hence $\bm H = \sum_q\sum_s \bm T_{q,s}\circ\big(\bm a^{\rm d}_q (\bm\Gamma_s\odot\bm a^{\rm s}_q)^{\!\top}\big)$,
+where $\bm T_{q,s}$ is Toeplitz and depends \emph{only on the control timing}.
+\emph{Proof:} Fourier series of a piecewise-constant periodic function,
+grouping slots by state. \hfill$\square$
+
+Consequences: (a) the element dispersion multiplies the input side only and
+can be absorbed into a per-state input response, so estimation needs no element
+model; (b) each $\bm T_{q,s}\bm x$ is a linear convolution, so $\bm H\bm x$ and
+$\bm H^{\mathsf H}\bm y$ cost $\mathcal{O}(QM\log M)$; (c) the harmonic envelope
+decays as $1/h$ ($1/h^2$ in energy), so any truncated-band model leaves a
+residual that limits estimation and banded equalization.
+
+\section{Timing-Only Low-Rank Estimation}
+% Per-hop responses are delay limited (generalized CP) -> DPSS basis F (M x L).
+% Physical channels share propagation paths -> two-hop delay matrix is low rank.
+% Identical sequences: H = sum_s T_s o (F C_s F^T), C_s = U_s V_s^T (rank r).
+% Per-element sequences: a_q = U alpha_q, s_q = V beta_q (shared path subspace).
+% LMMSE with DPSS-eigenvalue prior; block ALS; optional decision-directed pass.
+\TODO{equations + identifiability count: unknowns 2Lr(+2Qr) vs Np M equations}
+
+\section{Matrix-Free Equalization}
+% CG on (H^H H + sigma^2 I) x = H^H y using Lemma 1 operator; 20-25 iterations
+% match direct MMSE (week3_fast_eq). Banded sliding-window MMSE floors (1/h tail).
+
+\section{Numerical Results}
+% Setup: OpenRIS n78 cell (Table I of [iudice2026]), fc = 3.594 GHz, 30 kHz,
+% Q = 16, K = 8, duty 0.75; physical channel K = 10 dB, 30 ns RMS per hop.
+% Fig. 1: rate vs SNR: TIN / joint MMSE perfect / estimated (Np = 1,2), incl.
+%         TM-designed user (week3_designed_user).
+% Fig. 2: model mismatch: exact / df0 / flat model / timing-only (week3_modelfree).
+% Fig. 3: full band M = 3276 SER (week3_fullband_lr, week3_fullband_s2).
+% Table: complexity (dense vs matrix-free) and CG iterations (week3_fast_eq).
+
+\section{Conclusion}
+
+\begin{thebibliography}{9}
+\bibitem{iudice2026} I. Iudice, D. Darsena, G. Gelli, V. Galdi, ``Physically consistent modeling of dispersive time-modulated reconfigurable intelligent surfaces for wideband OFDM,'' arXiv:2609.18360, Sep. 2026.
+\end{thebibliography}
+\end{document}

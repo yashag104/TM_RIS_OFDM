@@ -188,9 +188,19 @@ Estimation regressors and equalisation use only the exact FFT operator (no M x M
 | 20 dB / 16-QAM | 0.84 | 0.0327 | 0.034 | 0.034 |
 | 28 dB / 64-QAM | 0.96 | 0.0182 | 0.042 | 0.026 |
 
-* Open: S2 (per-element sequences) at full band is still far from true H
-  (28 dB: 0.16–0.18 vs 0.074–0.081). Planned fix: per-element factors on a SHARED low-rank
-  path subspace (a_q = U alpha_q, s_q = V beta_q) instead of independent rank-1 per element.
+* S2 (per-element sequences) at full band, shared path-subspace estimator
+  (`week3_fullband_s2.m`, a_q = U alpha_q, s_q = V beta_q, block ALS). Pre-registered bar:
+  operator NMSE <= -30 dB at 28 dB AND SER(est) <= 1.5 x SER(true) at 20 dB.
+  **FAILED.** SER at 20 dB is 0.059–0.062 vs 0.044 (1.3–1.4x, OK), but operator NMSE is -24 dB at
+  both 20 and 28 dB (a floor, not noise), and SER at 28 dB is 0.17–0.18 vs 0.054.
+  Diagnostic (`week3_fullband_s2_diag.m`, mean-B init + 3 random restarts, best by pilot
+  residual): operator NMSE -26.9 dB at 28 dB and -26.5 dB at 60 dB. The range across restarts is
+  -23 to -30 dB. SER at 28 dB: 0.044 vs 0.015 true; at 60 dB: 0.0125 vs 0.0028.
+  Conclusion: not noise (no change 28 -> 60 dB), and not the model (some restarts reach -29/-30 dB).
+  The cause is the non-convex 4-block ALS settling in local minima, and the pilot residual does not
+  reliably pick the best restart. **Recorded as a limitation**: per-element sequences
+  work at M = 256 but not yet at full band. Possible future fixes (not done): convex/lifted
+  formulation, better-conditioned initialisation, more pilots.
 
 ## Run
 ```

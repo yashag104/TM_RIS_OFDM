@@ -1,0 +1,530 @@
+<title>Time-Modulated RIS Receiver Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:opsz,wght@7..72,500;7..72,650&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: lab-notebook column (~70ch) with a sticky contents rail on wide screens; figures break out to full column width. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --fg: #1d2430;
+  --muted: #5a6474;
+  --rule: #d9dee6;
+  --accent: #2557a7;      /* signal blue: the "wanted" signal */
+  --accent-soft: #e4ecf8;
+  --warn: #b5541c;        /* harmonic leakage / interference */
+  --warn-soft: #f8e9df;
+  --ok: #217a4d;
+  --ok-soft: #e1f2e8;
+  --bad: #a3253a;
+  --bad-soft: #f6e1e5;
+  --code-bg: #eef1f5;
+  --display: "Literata", Georgia, "Times New Roman", serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1a2029; --fg: #e3e7ee; --muted: #9aa4b3; --rule: #2d3542;
+    --accent: #7aa7ec; --accent-soft: #1f2d45; --warn: #e79060; --warn-soft: #3a2619;
+    --ok: #6cc799; --ok-soft: #173326; --bad: #ec8396; --bad-soft: #3b1d24; --code-bg: #212833;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --fg: #e3e7ee; --muted: #9aa4b3; --rule: #2d3542;
+  --accent: #7aa7ec; --accent-soft: #1f2d45; --warn: #e79060; --warn-soft: #3a2619;
+  --ok: #6cc799; --ok-soft: #173326; --bad: #ec8396; --bad-soft: #3b1d24; --code-bg: #212833;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 17px; line-height: 1.62; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; padding-top: 40px; font-size: 14px; }
+nav.toc p { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 2px 0 2px 10px; border-left: 2px solid transparent; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-left-color: var(--accent); outline: none; }
+main { min-width: 0; max-width: 760px; }
+header.hero { padding-block: 48px 24px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin: 0 0 10px; }
+h1 { font-family: var(--display); font-weight: 650; font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 0 0 16px; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 650; font-size: 28px; line-height: 1.25; margin: 56px 0 12px; text-wrap: balance; scroll-margin-top: 24px; }
+h3 { font-family: var(--display); font-weight: 500; font-size: 21px; margin: 32px 0 8px; text-wrap: balance; }
+p { margin: 0 0 14px; }
+.lede { font-size: 19px; color: var(--muted); max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--muted); margin-top: 18px; }
+.meta b { color: var(--fg); font-weight: 700; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre.code { font-family: var(--mono); font-size: 13.5px; background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+.eq { font-family: var(--mono); font-size: 15px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 18px; margin: 14px 0 18px; overflow-x: auto; white-space: pre; line-height: 1.6; }
+.callout { border: 1px solid var(--rule); background: var(--surface); border-radius: 10px; padding: 16px 18px; margin: 18px 0; }
+.callout.key { border-color: var(--accent); background: var(--accent-soft); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout h4 { margin: 0 0 6px; font-size: 15px; letter-spacing: .02em; }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+figure { margin: 22px 0 26px; }
+.figbox { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; overflow-x: auto; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.table-wrap { overflow-x: auto; margin: 14px 0 20px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 700; background: var(--code-bg); }
+tr:last-child td { border-bottom: 0; }
+td.num { text-align: right; white-space: nowrap; }
+.pill { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 1px 9px; border-radius: 999px; letter-spacing: .02em; white-space: nowrap; }
+.pill.pass { background: var(--ok-soft); color: var(--ok); }
+.pill.fail { background: var(--bad-soft); color: var(--bad); }
+.pill.part { background: var(--warn-soft); color: var(--warn); }
+.pill.open { background: var(--accent-soft); color: var(--accent); }
+ul, ol.steps { padding-left: 22px; margin: 0 0 14px; }
+li { margin-bottom: 6px; }
+dl.gloss { display: grid; grid-template-columns: minmax(130px, 200px) minmax(0, 1fr); gap: 10px 18px; margin: 12px 0; }
+dl.gloss dt { font-weight: 700; }
+dl.gloss dd { margin: 0; color: var(--fg); }
+.timeline { display: grid; gap: 0; margin: 16px 0 22px; border-left: 2px solid var(--rule); padding-left: 18px; }
+.timeline .ev { position: relative; padding: 0 0 16px; }
+.timeline .ev::before { content: ""; position: absolute; left: -24px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
+.timeline .ev.dead::before { border-color: var(--bad); }
+.timeline .ev.live::before { border-color: var(--ok); background: var(--ok); }
+.timeline .date { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.timeline .what { font-weight: 700; }
+.mermaid { background: transparent; text-align: center; margin: 0; }
+svg text { font-family: var(--body); }
+.s-fg { fill: var(--fg); } .s-muted { fill: var(--muted); }
+.s-acc { fill: var(--accent); } .s-warn { fill: var(--warn); }
+.s-surface { fill: var(--surface); } .s-soft { fill: var(--accent-soft); } .s-warnsoft { fill: var(--warn-soft); }
+.st-fg { stroke: var(--fg); } .st-muted { stroke: var(--muted); } .st-acc { stroke: var(--accent); } .st-warn { stroke: var(--warn); } .st-rule { stroke: var(--rule); }
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  nav.toc { display: none; }
+  body { font-size: 16px; }
+}
+@media (max-width: 520px) { dl.gloss { grid-template-columns: minmax(0, 1fr); } dl.gloss dd { margin-bottom: 8px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#big-picture">The big picture</a></li>
+    <li><a href="#how-we-got-here">How we got here</a></li>
+    <li><a href="#background">Background, from zero</a></li>
+    <li><a href="#system">The system</a></li>
+    <li><a href="#core-idea">The core idea</a></li>
+    <li><a href="#receiver">The receiver we built</a></li>
+    <li><a href="#method">How we worked</a></li>
+    <li><a href="#results">What has been done</a></li>
+    <li><a href="#failures">What failed, and why</a></li>
+    <li><a href="#code">Code map</a></li>
+    <li><a href="#next">What is left</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+    <li><a href="#reading">Reading list</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <p class="eyebrow">Project guide · for someone new to it</p>
+  <h1>Receiving through a switching RIS: what we built and why</h1>
+  <p class="lede">A time-modulated RIS flips its elements on and off inside every OFDM symbol. That smears each subcarrier's data onto its neighbours. Today's receivers treat the smear as noise. This project shows the smear is exactly predictable from the switching timing alone, and builds a receiver that undoes it.</p>
+  <div class="meta">
+    <span><b>Folder</b> <code>tm_ris_ofdm/</code></span>
+    <span><b>Language</b> MATLAB R2026a (base only)</span>
+    <span><b>Status</b> 4 kill gates passed, letter draft started</span>
+    <span><b>Last updated</b> 5 Oct 2026</span>
+  </div>
+</header>
+
+<h2 id="big-picture">The big picture</h2>
+<p>If you remember one paragraph, make it this one.</p>
+<div class="callout key">
+  <h4>The project in four sentences</h4>
+  <p>A reconfigurable intelligent surface (RIS) is a wall panel of tiny reflectors whose reflection can be changed electronically. When the panel is switched periodically <em>during</em> an OFDM symbol, each subcarrier's data leaks onto nearby subcarriers (the leaked copies are called harmonics). We proved that this leakage splits exactly into a part set only by the switching timing, which the receiver knows, and a part set by the propagation channel and the element's frequency behaviour, which the receiver can learn from two pilot symbols. With that split we built a receiver that estimates and undoes the leakage, gets within a fraction of a dB of perfect channel knowledge, and never forms the full channel matrix.</p>
+</div>
+<p>The work is aimed at a short IEEE letter (4 to 5 pages). It builds directly on one recent paper, Iudice et al., September 2026, which modelled this leakage accurately but left the receiver side open.</p>
+
+<h2 id="how-we-got-here">How we got here</h2>
+<p>This project did not start here. It is the fourth idea in about two weeks, and each earlier one was dropped for a stated, tested reason. Knowing why helps you defend the current one.</p>
+<div class="timeline">
+  <div class="ev dead"><div class="date">About two months, ending 26 Sep 2026</div><div class="what">Federated learning for RIS phase control</div><div>Neural networks on each RIS tile, trained by federated averaging. Dropped: once tested fairly, simple closed-form and classical estimators beat the learned ones, and single-user phase design turned out to have an exact formula.</div></div>
+  <div class="ev dead"><div class="date">28 Sep</div><div class="what">FPGA control-plane architecture</div><div>Measure RIS reconfiguration latency in hardware. Dropped as too slow (12+ weeks) and partly covered by a 2026 hardware paper.</div></div>
+  <div class="ev dead"><div class="date">29 Sep</div><div class="what">Which elements to refresh under a bit budget</div><div>Novel on paper. Killed by its own pilot simulation: smart selection beat simple round-robin by at most ~1.3 dB, below the 1.5 dB bar we set in advance.</div></div>
+  <div class="ev dead"><div class="date">29 Sep</div><div class="what">Revising the benchmark paper</div><div>Killed on day one: a covariance bug understated LMMSE, and a simple beam-sweep codebook beat every scheme in it. The corrected message (beam training wins) is already published.</div></div>
+  <div class="ev live"><div class="date">1 Oct to now</div><div class="what">Receiver for time-modulated RIS (this project)</div><div>Picked from the open problems named by the anchor paper's own authors, so the novelty risk was low from the start. Every step was gated by a pass/fail test written before running it.</div></div>
+</div>
+
+<h2 id="background">Background, from zero</h2>
+
+<h3>OFDM in one minute</h3>
+<p>Modern Wi-Fi and 5G split a wide channel into many narrow sub-channels called <strong>subcarriers</strong>. In our setup there are 3276 of them, spaced 30 kHz apart, covering about 98 MHz around 3.594 GHz (5G band n78). Each subcarrier carries one symbol (for example a 16-QAM point) per OFDM symbol period of about 33 µs.</p>
+<p>The trick that makes OFDM simple: as long as the channel does not change during a symbol, every subcarrier stays separate. The receiver then needs just <strong>one complex number per subcarrier</strong> (a "one-tap equaliser") to undo the channel. A short copy of the symbol's end, the <strong>cyclic prefix</strong> (CP), is added at the front to absorb echoes.</p>
+
+<h3>RIS in one minute</h3>
+<p>A RIS is a flat panel of many small elements, each able to reflect an incoming wave with a controllable phase. In our model each element has two electrical states (two bias voltages on a varactor diode). It works like a mirror whose tilt you can set electronically, used to steer signal around blockages.</p>
+
+<h3>What "time-modulated" adds</h3>
+<p>A normal RIS holds its setting for many symbols. A <strong>time-modulated RIS</strong> switches each element between its two states several times <em>within every OFDM symbol</em>, following a short repeating pattern. We use <strong>K = 8 slots</strong> per symbol. A "duty 0.75" pattern means 6 slots in state 1 and 2 slots in state 2. People do this deliberately for physical-layer security (scrambling the signal for anyone not at the intended spot), for sensing, and for serving several users.</p>
+
+<h3>Why switching smears subcarriers</h3>
+<p>Switching a reflection on and off is multiplication by a square wave. Multiplying by any periodic waveform creates copies of the signal shifted in frequency by multiples of the waveform's repetition rate. Here the pattern repeats once per OFDM symbol, so the copies land exactly on neighbouring subcarriers. Each copy is a <strong>harmonic</strong>, indexed by h: h = 0 is the unshifted signal, h = +1 lands one subcarrier up, and so on.</p>
+
+<figure>
+  <div class="figbox">
+  <svg viewBox="0 0 640 250" width="100%" role="img" aria-labelledby="harmT harmD">
+    <title id="harmT">Harmonic magnitudes for a duty-0.75, K=8 binary pattern</title>
+    <desc id="harmD">Bar chart of harmonic magnitude against harmonic index from -7 to 7. The h=0 bar is 0.50, h=±1 are 0.45, h=±2 are 0.32, h=±3 are 0.15, h=±4 are 0, h=±5 are 0.09, h=±6 are 0.11, h=±7 are 0.06.</desc>
+    <line x1="60" y1="200" x2="620" y2="200" class="st-muted" stroke-width="1"/>
+    <line x1="60" y1="50" x2="60" y2="200" class="st-muted" stroke-width="1"/>
+    <g font-size="11" class="s-muted">
+      <text x="52" y="204" text-anchor="end">0</text>
+      <text x="52" y="129" text-anchor="end">0.25</text>
+      <text x="52" y="54" text-anchor="end">0.50</text>
+    </g>
+    <line x1="60" y1="125" x2="620" y2="125" class="st-rule" stroke-dasharray="3 4"/>
+    <line x1="60" y1="50" x2="620" y2="50" class="st-rule" stroke-dasharray="3 4"/>
+    <!-- x positions: h from -7..7, step 36, center h=0 at x=340; scale 300 px per unit (0.5 -> 150) -->
+    <g>
+      <rect x="76"  y="180.7" width="24" height="19.3" class="s-warn"/>
+      <rect x="112" y="168.2" width="24" height="31.8" class="s-warn"/>
+      <rect x="148" y="173.0" width="24" height="27.0" class="s-warn"/>
+      <rect x="184" y="200"   width="24" height="0"    class="s-warn"/>
+      <rect x="220" y="155.0" width="24" height="45.0" class="s-warn"/>
+      <rect x="256" y="104.5" width="24" height="95.5" class="s-warn"/>
+      <rect x="292" y="64.9"  width="24" height="135.1" class="s-warn"/>
+      <rect x="328" y="50.0"  width="24" height="150.0" class="s-acc"/>
+      <rect x="364" y="64.9"  width="24" height="135.1" class="s-warn"/>
+      <rect x="400" y="104.5" width="24" height="95.5" class="s-warn"/>
+      <rect x="436" y="155.0" width="24" height="45.0" class="s-warn"/>
+      <rect x="472" y="200"   width="24" height="0"    class="s-warn"/>
+      <rect x="508" y="173.0" width="24" height="27.0" class="s-warn"/>
+      <rect x="544" y="168.2" width="24" height="31.8" class="s-warn"/>
+      <rect x="580" y="180.7" width="24" height="19.3" class="s-warn"/>
+    </g>
+    <g font-size="11" class="s-muted" text-anchor="middle">
+      <text x="88" y="216">−7</text><text x="124" y="216">−6</text><text x="160" y="216">−5</text><text x="196" y="216">−4</text>
+      <text x="232" y="216">−3</text><text x="268" y="216">−2</text><text x="304" y="216">−1</text><text x="340" y="216">0</text>
+      <text x="376" y="216">+1</text><text x="412" y="216">+2</text><text x="448" y="216">+3</text><text x="484" y="216">+4</text>
+      <text x="520" y="216">+5</text><text x="556" y="216">+6</text><text x="592" y="216">+7</text>
+    </g>
+    <text x="340" y="240" text-anchor="middle" font-size="12" class="s-fg">harmonic index h (subcarriers of shift)</text>
+    <text x="340" y="40" text-anchor="middle" font-size="12" class="s-acc">h = 0: stays on its own subcarrier (0.50)</text>
+  </svg>
+  </div>
+  <figcaption>Exact harmonic magnitudes for the duty-0.75, 8-slot pattern with ideal ±1 states. Only 25% of the energy (0.50²) stays on the right subcarrier; the other 75% spreads onto neighbours, and the tail falls off slowly (as 1/h²). Orange is what today's receivers count as interference.</figcaption>
+</figure>
+
+<h3>The element is not a perfect switch (dispersion)</h3>
+<p>Each element is a small resonant circuit, so its reflection depends on frequency. Across our 98 MHz band its phase drifts by about 47° and its strength by about 0.6 dB. Iudice et al. measured and modelled this. The consequence: the leakage pattern is slightly different at each subcarrier, so the neat "same pattern everywhere" (Toeplitz) shape that older papers assume is broken.</p>
+
+<h2 id="system">The system</h2>
+<p>Three parties: a transmitter (base station) sending OFDM, the time-modulated RIS with a controller that runs the switching pattern, and the receiver we designed. The direct path is blocked, so everything arrives via the RIS.</p>
+
+<figure>
+  <div class="figbox">
+  <svg viewBox="0 0 760 330" width="100%" role="img" aria-labelledby="sysT sysD">
+    <title id="sysT">System diagram</title>
+    <desc id="sysD">A base station sends pilots and data over a source-to-RIS channel A-s. The RIS has 16 elements on a 4 by 4 grid driven by a controller that applies an 8-slot switching sequence per OFDM symbol. The reflected signal reaches the user over channel A-d. The user receiver contains an FFT, a timing-only channel estimator, and a conjugate-gradient MMSE equaliser. The switching timing is known to the receiver. A blocked direct path is shown crossed out.</desc>
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="s-acc"/></marker>
+      <marker id="arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="s-muted"/></marker>
+    </defs>
+    <!-- Base station -->
+    <rect x="20" y="150" width="120" height="70" rx="8" class="s-surface st-fg" stroke-width="1.5"/>
+    <text x="80" y="178" text-anchor="middle" font-size="14" font-weight="700" class="s-fg">Base station</text>
+    <text x="80" y="198" text-anchor="middle" font-size="12" class="s-muted">OFDM, 3276 subcarriers</text>
+    <line x1="80" y1="150" x2="80" y2="120" class="st-fg" stroke-width="2"/>
+    <path d="M68,112 L80,124 L92,112" fill="none" class="st-fg" stroke-width="2"/>
+    <!-- RIS panel -->
+    <rect x="320" y="40" width="130" height="130" rx="6" class="s-surface st-fg" stroke-width="1.5"/>
+    <g>
+      <rect x="332" y="52" width="22" height="22" rx="3" class="s-acc"/><rect x="360" y="52" width="22" height="22" rx="3" class="s-warn"/><rect x="388" y="52" width="22" height="22" rx="3" class="s-acc"/><rect x="416" y="52" width="22" height="22" rx="3" class="s-acc"/>
+      <rect x="332" y="80" width="22" height="22" rx="3" class="s-warn"/><rect x="360" y="80" width="22" height="22" rx="3" class="s-acc"/><rect x="388" y="80" width="22" height="22" rx="3" class="s-acc"/><rect x="416" y="80" width="22" height="22" rx="3" class="s-warn"/>
+      <rect x="332" y="108" width="22" height="22" rx="3" class="s-acc"/><rect x="360" y="108" width="22" height="22" rx="3" class="s-acc"/><rect x="388" y="108" width="22" height="22" rx="3" class="s-warn"/><rect x="416" y="108" width="22" height="22" rx="3" class="s-acc"/>
+      <rect x="332" y="136" width="22" height="22" rx="3" class="s-acc"/><rect x="360" y="136" width="22" height="22" rx="3" class="s-warn"/><rect x="388" y="136" width="22" height="22" rx="3" class="s-acc"/><rect x="416" y="136" width="22" height="22" rx="3" class="s-acc"/>
+    </g>
+    <text x="385" y="30" text-anchor="middle" font-size="14" font-weight="700" class="s-fg">Time-modulated RIS (Q = 16)</text>
+    <!-- Controller -->
+    <rect x="300" y="215" width="170" height="92" rx="8" class="s-soft st-acc" stroke-width="1.2"/>
+    <text x="385" y="236" text-anchor="middle" font-size="13" font-weight="700" class="s-fg">Controller</text>
+    <text x="385" y="253" text-anchor="middle" font-size="11.5" class="s-muted">8 slots per OFDM symbol</text>
+    <polyline points="318,292 318,272 393,272 393,292 418,292 418,272 443,272" fill="none" class="st-acc" stroke-width="2"/>
+    <text x="355" y="268" text-anchor="middle" font-size="10.5" class="s-acc">state 1 (6 slots)</text>
+    <text x="406" y="302" text-anchor="middle" font-size="10.5" class="s-acc">2</text>
+    <line x1="385" y1="215" x2="385" y2="174" class="st-acc" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+    <!-- User receiver -->
+    <rect x="590" y="120" width="155" height="170" rx="8" class="s-surface st-fg" stroke-width="1.5"/>
+    <text x="667" y="142" text-anchor="middle" font-size="14" font-weight="700" class="s-fg">Receiver (ours)</text>
+    <rect x="604" y="154" width="127" height="28" rx="5" class="s-soft"/>
+    <text x="667" y="173" text-anchor="middle" font-size="12" class="s-fg">FFT + remove CP</text>
+    <rect x="604" y="190" width="127" height="40" rx="5" class="s-soft"/>
+    <text x="667" y="207" text-anchor="middle" font-size="12" class="s-fg">Timing-only</text>
+    <text x="667" y="222" text-anchor="middle" font-size="12" class="s-fg">channel estimator</text>
+    <rect x="604" y="238" width="127" height="40" rx="5" class="s-soft"/>
+    <text x="667" y="255" text-anchor="middle" font-size="12" class="s-fg">Matrix-free</text>
+    <text x="667" y="270" text-anchor="middle" font-size="12" class="s-fg">CG-MMSE equaliser</text>
+    <!-- Links -->
+    <line x1="142" y1="170" x2="318" y2="110" class="st-acc" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="215" y="125" font-size="12.5" class="s-acc" font-weight="700">A_s (source → element)</text>
+    <line x1="452" y1="110" x2="588" y2="170" class="st-acc" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="470" y="125" font-size="12.5" class="s-acc" font-weight="700">A_d (element → user)</text>
+    <!-- blocked direct -->
+    <line x1="142" y1="205" x2="588" y2="205" class="st-muted" stroke-width="1.2" stroke-dasharray="5 5"/>
+    <text x="230" y="222" font-size="11.5" class="s-muted">direct path blocked (−30 dB)</text>
+    <!-- timing known -->
+    <path d="M470,262 C530,262 545,250 600,250" fill="none" class="st-muted" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrm)"/>
+    <text x="478" y="282" font-size="11" class="s-muted">switching timing</text>
+    <text x="478" y="296" font-size="11" class="s-muted">known to receiver</text>
+  </svg>
+  </div>
+  <figcaption>The physical setup we simulate. Blue and orange tiles show the two element states at one instant. The controller's switching timing is shared with the receiver; the channels A_s and A_d and the element's exact frequency behaviour are not.</figcaption>
+</figure>
+
+<h3>The numbers behind the simulation</h3>
+<div class="table-wrap"><table>
+  <tr><th>Quantity</th><th>Value</th><th>Where it comes from</th></tr>
+  <tr><td>Carrier, band</td><td>3.594 GHz, 98.3 MHz</td><td>5G band n78, as in Iudice et al.</td></tr>
+  <tr><td>Subcarriers</td><td>256 for most tests; 3276 for the full band</td><td>30 kHz spacing</td></tr>
+  <tr><td>RIS elements</td><td>16 (4 × 4 grid, half-wavelength spacing)</td><td>our choice, kept small for speed</td></tr>
+  <tr><td>Switching</td><td>8 slots per symbol, duty 0.5 to 0.875</td><td>our choice</td></tr>
+  <tr><td>Element model</td><td>two resonances, 3.471 and 3.710 GHz</td><td>Iudice et al., Table I (OpenRIS cell)</td></tr>
+  <tr><td>Channel</td><td>Rician K = 10 dB, 5 scattered paths, 30 ns delay spread per hop</td><td>physically consistent: all elements share paths</td></tr>
+  <tr><td>Pilots</td><td>2 OFDM symbols (sometimes 1 or 4)</td><td>the budget our estimator must work with</td></tr>
+</table></div>
+
+<h2 id="core-idea">The core idea</h2>
+<p>Everything the receiver sees is captured by one equation. After the FFT, the received subcarriers <code>y</code> relate to the sent symbols <code>x</code> through a matrix <code>H</code>:</p>
+<div class="eq">y = H x + noise
+
+H[m̄, m] = Σ over elements q of  A_d,q(m̄) · b_q[m̄ − m](f_m) · A_s,q(m)
+          (how strongly sent subcarrier m lands on received subcarrier m̄)</div>
+<p>With a normal RIS, <code>H</code> is diagonal and one tap per subcarrier is enough. With a time-modulated RIS, <code>H</code> has many off-diagonals, one per harmonic. For our 3276 subcarriers that is a 3276 × 3276 complex matrix, about 170 MB, and it changes with every channel.</p>
+
+<div class="callout key">
+  <h4>The key fact (Lemma 1 in the draft)</h4>
+  <p>The harmonic term splits exactly into two factors:</p>
+  <div class="eq" style="margin:8px 0">b_q[h](f) = Σ over states s of  T_q,s[h] · Γ_s(f)</div>
+  <ul>
+    <li><strong>T_q,s[h]</strong> depends only on <em>when</em> element q is in state s. The receiver knows this exactly. It depends on h alone, so it forms a Toeplitz matrix, which can be applied with an FFT.</li>
+    <li><strong>Γ_s(f)</strong> is the element's frequency response in state s. It multiplies only the incoming side, so it merges with the unknown channel A_s and can be learned from pilots like any other channel.</li>
+  </ul>
+  <p>The proof is one line: a pattern that is constant inside each slot has a Fourier series that you can group by state.</p>
+</div>
+
+<p>Three useful consequences follow, and each became part of the receiver:</p>
+<ol class="steps">
+  <li><strong>No element model is needed.</strong> The receiver only needs the switching timing; the element's dispersion is learned. This turned out to matter a lot (see the mismatch results).</li>
+  <li><strong>Fast products.</strong> Multiplying <code>H</code> by a vector becomes 2 FFT convolutions per element: cost grows as Q·M·log M instead of M².</li>
+  <li><strong>The tail is real.</strong> Harmonic energy falls off only as 1/h². Any method that keeps a handful of neighbours misses several percent of the energy and hits an error floor.</li>
+</ol>
+
+<h2 id="receiver">The receiver we built</h2>
+<p>Read the flowchart top to bottom. The left branch is channel estimation (once per channel coherence time), the right branch is detecting data.</p>
+
+<figure>
+  <div class="figbox">
+<pre class="mermaid">
+flowchart TD
+  A["Received OFDM symbols<br/>(after FFT)"] --> B{"Pilot or data?"}
+  B -->|"2 pilot symbols"| C["Build regressors from the<br/>known switching timing T_s<br/>(FFT convolutions)"]
+  C --> D["Delay-limited basis per hop<br/>(DPSS / Slepian functions)"]
+  D --> E["LMMSE estimate with low-rank<br/>two-hop structure<br/>C = U Vᵀ  or  a_q = U α_q, s_q = V β_q"]
+  E --> F["Estimated channel factors<br/>(never the full matrix)"]
+  B -->|"data symbols"| G["Conjugate-gradient MMSE<br/>using the fast operator<br/>(about 20 to 25 iterations)"]
+  F --> G
+  G --> H["Symbol decisions<br/>(QPSK / 16-QAM / 64-QAM)"]
+  H -.->|"optional: decided symbols<br/>as extra pilots (1 pass)"| E
+</pre>
+  </div>
+  <figcaption>The receiver pipeline. The dashed arrow is decision-directed refinement: it helps at moderate SNR, but more than one pass can make things worse at 64-QAM because wrong decisions feed back.</figcaption>
+</figure>
+
+<h3>The estimator, step by step</h3>
+<ol class="steps">
+  <li><strong>Delay-limited basis.</strong> Each hop's frequency response comes from echoes that arrive within a fraction of a microsecond. Such responses are smooth across subcarriers and can be written with a few <em>DPSS</em> (Slepian) basis vectors instead of 3276 numbers.</li>
+  <li><strong>Low-rank two-hop structure.</strong> All 16 elements see the same few propagation paths. So the combined two-hop channel is low-rank: it can be written as U Vᵀ with rank about 6. That cut the full-band estimation error from −26 dB to −39 dB.</li>
+  <li><strong>LMMSE with a prior.</strong> Instead of plain least squares, the estimate is weighted by how much energy each basis vector is expected to carry. This stops noise from being amplified when the basis is larger than needed.</li>
+  <li><strong>Per-element patterns.</strong> When each element has its own shifted pattern (common in security designs), each element's two hop responses are estimated as factors on a shared path subspace, by alternating least squares.</li>
+</ol>
+
+<h3>The equaliser</h3>
+<p>The best linear receiver (MMSE) solves <code>(Hᴴ H + σ² I) x̂ = Hᴴ y</code>. Solving it directly needs the whole matrix and M³ operations. Conjugate gradient (CG) solves it iteratively, using only "multiply by H" and "multiply by Hᴴ", which Lemma 1 makes cheap. After 20 iterations its error rate matches the direct solve.</p>
+
+<h2 id="method">How we worked</h2>
+<p>After two dead ends that were only found late, every step of this project followed one rule: write the pass/fail test <em>before</em> running the experiment, and stop if it fails.</p>
+<figure>
+  <div class="figbox">
+<pre class="mermaid">
+flowchart LR
+  N["Novelty check<br/>(read papers, search)"] --> P["Write prediction and<br/>kill criterion"]
+  P --> S["Run smallest test<br/>that can fail"]
+  S --> J{"Passed?"}
+  J -->|"yes"| R["Record in README<br/>with numbers"]
+  R --> X["Next gate"]
+  J -->|"no"| D{"Diagnose:<br/>bug, wrong model,<br/>or real limit?"}
+  D -->|"fixable, same bar"| S
+  D -->|"real limit"| K["Stop or narrow the claim,<br/>and record why"]
+</pre>
+  </div>
+  <figcaption>The gate loop. The bar never moves after seeing results; when a fix is tried, it is judged against the same criterion.</figcaption>
+</figure>
+
+<h2 id="results">What has been done</h2>
+
+<div class="table-wrap"><table>
+  <tr><th>Gate</th><th>Question</th><th>Result</th><th>Status</th></tr>
+  <tr><td>0</td><td>Has anyone estimated or equalised this channel at the receiver?</td><td>No. Closest work treats the leakage as noise, or is a blind eavesdropper attack that assumes the ideal Toeplitz shape.</td><td><span class="pill pass">passed</span></td></tr>
+  <tr><td>1</td><td>Does our model reproduce Iudice et al.?</td><td>Their dispersion numbers match (172 to 184° vs 180 ± 6.5°; ±0.57 dB vs &lt;0.75 dB). An independent time-domain simulation agrees to 0.3 to 0.5%.</td><td><span class="pill pass">passed</span></td></tr>
+  <tr><td>2</td><td>Does joint equalisation gain what theory predicts?</td><td>Energy-collection gain matches 1/(2D−1)² within 0.1 to 0.4 dB (e.g. 5.9 vs 6.0 dB at duty 0.75).</td><td><span class="pill pass">passed</span></td></tr>
+  <tr><td>3</td><td>Can 2 pilot symbols get within ~1 dB of perfect knowledge?</td><td>Yes for physical channels at 10, 20 and 30 dB. One marginal miss (1.2 dB) in a non-physical channel model.</td><td><span class="pill pass">passed</span></td></tr>
+  <tr><td>Full band</td><td>Does it scale to 3276 subcarriers without the full matrix?</td><td>Yes for identical patterns. Per-element patterns failed the pre-set bar: the search gets stuck in local minima. Stated as a limitation.</td><td><span class="pill part">partly</span></td></tr>
+</table></div>
+
+<h3>Today's receiver against ours</h3>
+<p>Rates in bit/s/Hz per subcarrier. The "designed" rows are the fairest test: the RIS pattern is chosen to favour the conventional receiver.</p>
+<div class="table-wrap"><table>
+  <tr><th>Setting</th><th>Conventional one-tap</th><th>Ours, 2 pilots</th><th>Ours, perfect channel</th></tr>
+  <tr><td>Duty 0.875, designed for user, 10 dB</td><td class="num">2.51</td><td class="num">3.13</td><td class="num">3.23</td></tr>
+  <tr><td>Duty 0.875, designed for user, 20 dB</td><td class="num">3.34</td><td class="num">6.18</td><td class="num">6.37</td></tr>
+  <tr><td>Duty 0.875, designed for user, 30 dB</td><td class="num">3.47</td><td class="num">9.37</td><td class="num">9.67</td></tr>
+  <tr><td>Duty 0.75, generic user, 20 dB</td><td class="num">0.19</td><td class="num">4.77</td><td class="num">4.93</td></tr>
+</table></div>
+<p>The conventional receiver stops improving once noise is small, because the leakage it ignores becomes the limit. Ours keeps improving. At 10 dB the advantage is modest (about 2 dB); at 20 to 30 dB it is large.</p>
+
+<h3>Knowing the element model, or not</h3>
+<p>Loss in dB against perfect channel knowledge, identical patterns, at 20 dB / 30 dB SNR.</p>
+<div class="table-wrap"><table>
+  <tr><th>What the receiver assumes about the element</th><th>Loss</th></tr>
+  <tr><td>Exact model</td><td class="num">0.05 / 0.12</td></tr>
+  <tr><td>Model with resonance off by 10 MHz</td><td class="num">0.66 / 3.36</td></tr>
+  <tr><td>Ideal ±1 switch (what earlier papers assume)</td><td class="num">1.41 / 6.57</td></tr>
+  <tr><td><strong>No model, timing only (Lemma 1)</strong></td><td class="num"><strong>0.08 / 0.11</strong></td></tr>
+</table></div>
+<p>This is the most important practical result: the receiver needs only the switching timing.</p>
+
+<h3>Error rates at the full band (3276 subcarriers, identical patterns)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Setting</th><th>One-tap</th><th>Perfect channel</th><th>Ours, 2 pilots</th><th>Ours + 1 refinement</th></tr>
+  <tr><td>20 dB, 16-QAM (symbol error rate)</td><td class="num">0.84</td><td class="num">0.033</td><td class="num">0.034</td><td class="num">0.034</td></tr>
+  <tr><td>28 dB, 64-QAM (symbol error rate)</td><td class="num">0.96</td><td class="num">0.018</td><td class="num">0.042</td><td class="num">0.026</td></tr>
+</table></div>
+
+<h3>Supporting results</h3>
+<ul>
+  <li><strong>Exact fast operator.</strong> Matches the full matrix to 7 × 10⁻¹⁶. 20 CG iterations give the same symbol error rate as the direct solve. In MATLAB it is not yet faster in seconds at these sizes; the advantage is in operation count and memory, and the paper will claim only that.</li>
+  <li><strong>Choosing per-element shifts for the user</strong> raised the user's rate from 5.6 to 8.9 bit/s/Hz while an eavesdropper still saw scrambling. Only 8 trials, and the idea of steering harmonics with timing shifts is known (space-time-coding metasurfaces), so this is a side result.</li>
+</ul>
+
+<h2 id="failures">What failed, and why</h2>
+<p>Failures are part of the result. Each one explains a design choice above.</p>
+<div class="table-wrap"><table>
+  <tr><th>Attempt</th><th>What happened</th><th>What it taught us</th></tr>
+  <tr><td>Estimating each harmonic separately (no physics)</td><td>Error stuck at −14 to −16 dB with any number of pilots</td><td>The 1/h² tail leaves 3 to 5% of energy outside any small harmonic set. Use the known timing to tie all harmonics together.</td></tr>
+  <tr><td>Fixed ridge regulariser</td><td>Missed the 30 dB target by about 2 dB</td><td>Use an LMMSE prior so a large basis does not amplify noise.</td></tr>
+  <tr><td>Banded sliding-window equaliser</td><td>Error floor at 2.5 × 10⁻³ (identical patterns) to 3 × 10⁻²</td><td>Same 1/h² tail. Low complexity must come from structure (FFT), not truncation.</td></tr>
+  <tr><td>Several refinement passes at 64-QAM</td><td>Full-band error rate rose from 0.057 to 0.24</td><td>Wrong decisions used as pilots bias the estimate. One pass at most.</td></tr>
+  <tr><td>Per-element patterns at the full band</td><td>Estimate stalls at −24 to −27 dB, even at 60 dB SNR</td><td>Not noise and not the model: the non-convex alternating search lands in different local minima. Left as a limitation.</td></tr>
+  <tr><td>Full two-hop matrix at the full band</td><td>Error stuck near −23 to −29 dB at 28 dB</td><td>Its unknowns grow with bandwidth squared. Physical channels are low-rank; exploit it.</td></tr>
+</table></div>
+
+<h2 id="code">Code map</h2>
+<p>All code is in <code>tm_ris_ofdm/matlab/</code>; numeric results are saved as JSON in <code>tm_ris_ofdm/results/</code>; the running log of decisions is <code>tm_ris_ofdm/README.md</code>.</p>
+<figure>
+  <div class="figbox">
+<pre class="mermaid">
+flowchart TB
+  subgraph Model["Physics model"]
+    P1["params_openris.m<br/>element constants"] --> P2["element_response.m<br/>Γ_s(f)"]
+    P2 --> P3["harmonic_coeffs.m<br/>b[h](f)"]
+    P3 --> P4["coupling_matrix.m<br/>full H (small M)"]
+    P2 --> P5["fast_coupling.m<br/>H·x by FFT (any M)"]
+  end
+  subgraph Chan["Channels"]
+    C1["phys_channel.m<br/>shared paths"]
+  end
+  subgraph Est["Estimation"]
+    E1["dpss_basis.m"] --> E2["est_lmmse.m<br/>linear / rank-1"]
+  end
+  Model --> Exp["Gate and week-3 scripts<br/>gate1..gate3e, week3_*.m"]
+  Chan --> Exp
+  Est --> Exp
+  Exp --> J["results/*.json"]
+  J --> RD["README.md and paper/letter.tex"]
+</pre>
+  </div>
+</figure>
+
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>What it does</th></tr>
+  <tr><td><code>params_openris.m</code></td><td>The fitted element constants from Iudice et al. (resonances, decay rates).</td></tr>
+  <tr><td><code>element_response.m</code></td><td>Reflection Γ_s(f) of a state at a frequency; also the ideal ±1 and the timing-only indicator variants.</td></tr>
+  <tr><td><code>harmonic_coeffs.m</code></td><td>Harmonic coefficients b[h](f) of a switching pattern (their equation 5).</td></tr>
+  <tr><td><code>coupling_matrix.m</code></td><td>Builds the full matrix H explicitly. Used up to a few hundred subcarriers.</td></tr>
+  <tr><td><code>td_simulate.m</code></td><td>Independent time-domain check: filter, switch, FFT, with no harmonic algebra.</td></tr>
+  <tr><td><code>fast_coupling.m</code></td><td>Lemma 1 in code: H·x and Hᴴ·y by FFT convolutions, exact.</td></tr>
+  <tr><td><code>phys_channel.m</code></td><td>Channels where all elements share propagation paths.</td></tr>
+  <tr><td><code>dpss_basis.m</code></td><td>Slepian basis for delay-limited responses.</td></tr>
+  <tr><td><code>est_lmmse.m</code>, <code>est_rank1.m</code>, <code>est_linear.m</code></td><td>The estimators (prior-weighted, rank-1 per element, plain ridge).</td></tr>
+  <tr><td><code>gate1_reproduce.m</code> … <code>gate3e_dd.m</code></td><td>The gate experiments, in order.</td></tr>
+  <tr><td><code>week3_*.m</code></td><td>Fair-user test, BER, fast equaliser, sequence design, mismatch, full band.</td></tr>
+</table></div>
+
+<p>To run any script from Windows or WSL:</p>
+<pre class="code">matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"</pre>
+<p>Start with <code>gate1_reproduce.m</code>: it is short, reproduces the published numbers, and draws the dispersion and coupling figures in <code>results/</code>.</p>
+
+<h2 id="next">What is left</h2>
+<ul>
+  <li><span class="pill fail">failed bar</span> Per-element patterns at the full band, with a shared path-subspace estimator. Bar set in advance: operator error at most −30 dB at 28 dB, and error rate at most 1.5× the perfect-channel rate at 20 dB. The error-rate part passed (1.3 to 1.4×), but the estimate stalls near −24 to −27 dB. A follow-up test showed it is not noise (no change from 28 to 60 dB) and not the model (some starting points reach −30 dB): the alternating search gets stuck in local minima. It is now a stated limitation: per-element patterns work at 256 subcarriers, not yet at the full band.</li>
+  <li><span class="pill open">to do</span> Timing-only estimator for per-element patterns (the identical-pattern version is done).</li>
+  <li><span class="pill open">to do</span> Write the letter: figures from the JSON results, related work (time-modulated arrays, basis-expansion estimation, power-line channels), and the operation-count table.</li>
+  <li><span class="pill open">yours</span> Read the anchor paper's sections II to III, show the README to your supervisor, choose the venue, commit the work to git.</li>
+</ul>
+<div class="callout warn">
+  <h4>Limits to state openly in the paper</h4>
+  <ul>
+    <li>Simulation only; the element model is one published cell, and mutual coupling between elements is ignored (as in the anchor paper).</li>
+    <li>16 elements is a small surface; larger surfaces mostly add parameters to the low-rank estimator.</li>
+    <li>At 10 dB SNR the gain over the conventional receiver is modest (about 2 dB).</li>
+    <li>The fast equaliser's advantage is asymptotic, not measured wall-clock time in MATLAB.</li>
+  </ul>
+</div>
+
+<h2 id="glossary">Glossary</h2>
+<dl class="gloss">
+  <dt>OFDM</dt><dd>Splitting a wide channel into many narrow subcarriers sent in parallel.</dd>
+  <dt>Subcarrier</dt><dd>One narrow sub-channel; ours are 30 kHz apart.</dd>
+  <dt>Cyclic prefix (CP)</dt><dd>A copy of a symbol's end placed before it to absorb echoes. Iudice et al. showed it must also cover the element's memory.</dd>
+  <dt>RIS</dt><dd>Reconfigurable intelligent surface: a panel of electronically adjustable reflectors.</dd>
+  <dt>Time-modulated RIS</dt><dd>A RIS whose elements switch state periodically within each OFDM symbol.</dd>
+  <dt>Harmonic</dt><dd>A frequency-shifted copy of the signal created by periodic switching; harmonic h shifts by h subcarriers.</dd>
+  <dt>ICI</dt><dd>Inter-carrier interference: energy from one subcarrier landing on another.</dd>
+  <dt>Dispersion</dt><dd>The element's reflection changing with frequency, because it is a resonant circuit.</dd>
+  <dt>Toeplitz matrix</dt><dd>A matrix whose entries depend only on the distance from the diagonal; multiplying by one is a convolution, doable with an FFT.</dd>
+  <dt>One-tap equaliser (TIN)</dt><dd>Today's receiver: one complex number per subcarrier, treating leakage as noise ("treat interference as noise").</dd>
+  <dt>MMSE equaliser</dt><dd>The best linear receiver; it uses the whole coupling matrix.</dd>
+  <dt>Matched-filter bound</dt><dd>The rate you would get if all of a symbol's spread energy were collected with no interference; an upper limit.</dd>
+  <dt>Pilot symbol</dt><dd>A known OFDM symbol sent so the receiver can learn the channel.</dd>
+  <dt>LMMSE estimate</dt><dd>A channel estimate that weighs the data against prior knowledge of what channels look like.</dd>
+  <dt>DPSS (Slepian) basis</dt><dd>The best small set of smooth vectors for describing responses whose echoes all arrive within a known time.</dd>
+  <dt>Low rank</dt><dd>A matrix that can be written as a product of two thin matrices, because only a few paths exist.</dd>
+  <dt>Conjugate gradient (CG)</dt><dd>An iterative solver that only needs matrix-vector products.</dd>
+  <dt>Decision-directed refinement</dt><dd>Re-estimating the channel using detected data symbols as if they were pilots.</dd>
+  <dt>NMSE</dt><dd>Normalised mean-square error of an estimate, in dB; −30 dB means the error energy is 1/1000 of the signal energy.</dd>
+  <dt>SER / BER</dt><dd>Symbol and bit error rates.</dd>
+  <dt>Kill criterion</dt><dd>A pass/fail threshold fixed before an experiment; failing it stops or narrows the work.</dd>
+</dl>
+
+<h2 id="reading">Reading list</h2>
+<ol class="steps">
+  <li><a href="https://arxiv.org/abs/2609.18360">Iudice, Darsena, Gelli, Galdi, <em>Physically consistent modeling of dispersive time-modulated RIS for wideband OFDM</em> (arXiv, Sep 2026)</a>. The anchor paper. Read sections II and III and the conclusion first.</li>
+  <li><a href="https://arxiv.org/abs/2310.13210">Xu, Petropulu, <em>Time-modulated intelligent reflecting surface for waveform security</em></a>. Why people time-modulate a RIS at all.</li>
+  <li><a href="https://arxiv.org/abs/2506.14992">Tao, Petropulu, <em>Secure time-modulated IRS via generative flow networks</em></a>. A recent design that treats the leakage as interference.</li>
+  <li><a href="https://arxiv.org/abs/2310.08551">Tao, Xu, Petropulu, <em>How secure is the time-modulated array-enabled OFDM directional modulation?</em></a>. The blind attack that assumes the ideal Toeplitz shape.</li>
+  <li><a href="https://www.nature.com/articles/s41467-018-06802-0">Zhang et al., <em>Space-time-coding digital metasurfaces</em> (Nature Communications, 2018)</a>. The physics of steering harmonics with timing.</li>
+</ol>
+
+</main>
+</div>
