@@ -336,6 +336,82 @@ def fig_complexity():
     fig.tight_layout(); save(fig, "fig9_complexity")
 
 
+# ---------------------------------------------------------------------------
+# Background figures (redrawn from the published model and gate1/gate2 data)
+# ---------------------------------------------------------------------------
+def gamma(f, f0, xr, xi):
+    """Single-pole element response of Iudice et al. (Table I rates in Hz)."""
+    xr, xi = 2 * np.pi * xr, 2 * np.pi * xi
+    return -1 + 2 * xr / (1j * 2 * np.pi * (f - f0) + xr + xi)
+
+
+def fig_bg_dispersion():
+    fc = 3.594e9
+    f = fc + np.linspace(-49.14e6, 49.14e6, 801)
+    g0 = gamma(f, 3.471e9, 97.5e6, 8.9e6); g1 = gamma(f, 3.710e9, 128.4e6, 9.0e6)
+    x = (f - fc) / 1e6
+    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.4))
+    ax = axes[0]
+    ax.plot(x, 20 * np.log10(abs(g0)), color=OURS, label="State 1 ($c_0$, 4 V)")
+    ax.plot(x, 20 * np.log10(abs(g1)), color=BEM, label="State 2 ($c_1$, 19.25 V)")
+    ax.set_title("Reflection strength", loc="left", color=INK); ax.set_ylabel("$|\\Gamma|$ (dB)")
+    ax.legend(frameon=False, fontsize=7, loc="lower center")
+    ax = axes[1]
+    ax.plot(x, np.degrees(np.unwrap(np.angle(g0))), color=OURS)
+    ax.plot(x, np.degrees(np.unwrap(np.angle(g1))), color=BEM)
+    ax.set_title("Reflection phase", loc="left", color=INK); ax.set_ylabel("Phase (deg)")
+    ax = axes[2]
+    ax.plot(x, np.mod(np.degrees(np.angle(g0 / g1)), 360), color=INK)
+    ax.axhline(180, color=MUTED, lw=0.8, ls=":")
+    ax.set_title("Phase difference of the states", loc="left", color=INK); ax.set_ylabel("Degrees")
+    for a in axes: a.set_xlabel("Offset from 3.594 GHz (MHz)")
+    fig.tight_layout(); save(fig, "figA_element_dispersion")
+
+
+def fig_bg_harmonics():
+    d = load("gate1")["coupling"]
+    h = np.array(d["h"]); dis = np.array(d["disp_db"]); idl = np.array(d["ideal_db"])
+    fig, ax = plt.subplots(figsize=(4.6, 2.7))
+    w = 0.38
+    ax.bar(h - w/2, np.maximum(idl, -60) + 60, w, bottom=-60, color="#b9b8b2", label="Ideal ±1 switch")
+    ax.bar(h + w/2, np.maximum(dis, -60) + 60, w, bottom=-60, color=OURS, label="Real element (dispersive)")
+    ax.set_ylim(-60, 0); ax.set_xticks(h[::2])
+    ax.set_xlabel("Harmonic index $h$ (shift in subcarriers)")
+    ax.set_ylabel("Harmonic strength (dB)")
+    ax.text(0.19, dis[h == 0][0] + 1.5, f"{dis[h == 0][0]:.0f}", ha="center", fontsize=6.5, color=INK)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=7)
+    ax.set_title("Where one subcarrier's energy lands (2-slot pattern)", loc="left", color=INK)
+    fig.tight_layout(); save(fig, "figB_harmonic_leakage")
+
+
+def fig_bg_energy():
+    g = load("gate2"); snr = g["snr_db"]
+    cols = {"500": TOEP, "625": BEM, "750": OURS, "875": "#7a7975"}
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8), gridspec_kw={"width_ratios": [1.25, 1]})
+    ax = axes[0]
+    for dkey, col in cols.items():
+        r = g[f"S1_D{dkey}"]; lab = f"duty {int(dkey)/1000:g}"
+        ax.plot(snr, r["rate_mmse"], color=col, marker="o", ms=4, mec="white", label=f"Joint MMSE, {lab}")
+        ax.plot(snr, r["rate_tin"], color=col, ls=(0, (4, 2)), lw=1.5)
+    ax.plot(snr, g["S1_D750"]["rate_mf_bound"], color=INK, ls=":", lw=1.3, label="Upper bound (all energy)")
+    ax.set_xlabel("SNR (dB)"); ax.set_ylabel("Rate (bit/s/Hz)")
+    ax.set_title("Solid: joint equaliser.  Dashed: one-tap", loc="left", color=INK)
+    ax.legend(frameon=False, fontsize=6.8, loc="upper left")
+    ax = axes[1]
+    duties = [0.625, 0.75, 0.875]
+    meas = [g[f"S1_D{int(d*1000)}"]["energy_gain_db"] for d in duties]
+    pred = [-10 * np.log10((2 * d - 1) ** 2) for d in duties]
+    x = np.arange(len(duties))
+    ax.bar(x - 0.18, pred, 0.34, color="#b9b8b2", label="Predicted $1/(2D-1)^2$")
+    ax.bar(x + 0.18, meas, 0.34, color=OURS, label="Measured")
+    for xi, m in zip(x, meas): ax.text(xi + 0.18, m + 0.3, f"{m:.1f}", ha="center", fontsize=7, color=INK)
+    ax.set_xticks(x, [f"{d:g}" for d in duties]); ax.set_xlabel("Duty cycle $D$")
+    ax.set_ylabel("Energy-collection gain (dB)")
+    ax.set_title("Theory vs simulation", loc="left", color=INK)
+    ax.legend(frameon=False, fontsize=7)
+    fig.tight_layout(); save(fig, "figC_energy_collection")
+
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
@@ -345,3 +421,6 @@ if __name__ == "__main__":
     fig_system()
     fig_curves()
     fig_complexity()
+    fig_bg_dispersion()
+    fig_bg_harmonics()
+    fig_bg_energy()

@@ -103,6 +103,16 @@ svg text { font-family: var(--body); }
 }
 @media (max-width: 520px) { dl.gloss { grid-template-columns: minmax(0, 1fr); } dl.gloss dd { margin-bottom: 8px; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+.imgbox { background: #ffffff; border: 1px solid var(--rule); border-radius: 10px; padding: 10px; overflow-x: auto; }
+.imgbox img { display: block; width: 100%; max-width: 100%; height: auto; min-width: 520px; }
+.figread { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 10px 0 34px; }
+.figread div { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; }
+.figread h4 { margin: 0 0 4px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.figread p, .figread ul { margin: 0; }
+.figread ul { padding-left: 18px; }
+.fignum { font-family: var(--mono); font-size: 13px; color: var(--accent); margin-right: 6px; }
+@media (min-width: 900px) { .figread { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 </style>
 
 <div class="wrap">
@@ -117,6 +127,7 @@ svg text { font-family: var(--body); }
     <li><a href="#receiver">The receiver we built</a></li>
     <li><a href="#method">How we worked</a></li>
     <li><a href="#results">What has been done</a></li>
+    <li><a href="#figures">Figures, and how to read them</a></li>
     <li><a href="#failures">What failed, and why</a></li>
     <li><a href="#code">Code map</a></li>
     <li><a href="#next">What is left</a></li>
@@ -430,6 +441,140 @@ flowchart LR
   <li><strong>Choosing per-element shifts for the user</strong> raised the user's rate from 5.6 to 8.9 bit/s/Hz while an eavesdropper still saw scrambling. Only 8 trials, and the idea of steering harmonics with timing shifts is known (space-time-coding metasurfaces), so this is a side result.</li>
 </ul>
 
+
+<h2 id="figures">Figures, and how to read them</h2>
+<p>All thirteen figures of the project, in reading order: first the physics, then the system, then the results. Each one comes with what it shows, how to read it, and what to conclude. Every figure is drawn by <code>tm_ris_ofdm/figures/make_figures.py</code> from saved results, so the numbers here are the same as in the README.</p>
+<div class="callout"><h4>Colours are the same in every figure</h4><p>Blue is always our receiver. Orange is the basis-expansion estimator (CE-BEM) from earlier papers. Green is the Toeplitz model from earlier security papers. Grey is the conventional one-tap receiver. Black dashed is perfect channel knowledge, the best possible.</p></div>
+
+<h3 id="fig-A"><span class="fignum">Fig. A</span>The element is not a perfect switch</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/figA_element_dispersion.png" alt="Three panels: reflection strength, reflection phase, and phase difference of the two element states across 98 MHz around 3.594 GHz." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>How one RIS element reflects in each of its two states across our 98 MHz band, computed from the element model published by Iudice et al. (their Table I).</p></div>
+  <div><h4>How to read it</h4><ul><li>Left: strength in dB. 0 dB would be a perfect mirror; the element loses 0.4 to 1.0 dB and the loss changes with frequency.</li><li>Middle: the phase of each state drifts by about 47° and 49° across the band.</li><li>Right: the difference between the two states. An ideal on/off switch would sit flat on the dotted 180° line.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>The difference wanders between about 172° and 184°, so the element behaves slightly differently on every subcarrier.</li><li>That is why the old 'same leakage everywhere' (Toeplitz) assumption is wrong, and why our receiver must not rely on it.</li><li>These curves match the paper's published numbers; this was our first check (Gate 1).</li></ul></div>
+</div>
+
+<h3 id="fig-B"><span class="fignum">Fig. B</span>Where one subcarrier's energy lands</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/figB_harmonic_leakage.png" alt="Bar chart of harmonic strength in dB against harmonic index from -10 to 10, for an ideal switch and the real dispersive element." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Send energy on one subcarrier through an element switching with a 2-slot pattern, and measure how much arrives on each nearby subcarrier. Harmonic h means h subcarriers away.</p></div>
+  <div><h4>How to read it</h4><ul><li>Grey bars: an ideal ±1 switch. Blue bars: the real element.</li><li>Taller bars mean more energy. 0 dB is all of it; −20 dB is 1%.</li><li>Look at h = 0, the subcarrier the data was actually sent on.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Almost nothing stays home: the biggest copies land one subcarrier away on each side (about −4 dB each).</li><li>The ideal switch puts exactly zero energy at h = 0; the real element leaks −24 dB there purely because of dispersion.</li><li>The copies fade slowly with distance (as 1/h²), so a receiver that only looks at near neighbours misses part of the energy.</li></ul></div>
+</div>
+
+<h3 id="fig-C"><span class="fignum">Fig. C</span>Joint equalisation collects the energy that one-tap throws away</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/figC_energy_collection.png" alt="Left: rate against SNR for joint MMSE (solid) and one-tap (dashed) at four duty cycles, plus an upper bound. Right: predicted against measured energy-collection gain." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>The second check (Gate 2), assuming the receiver knows the channel perfectly: how much better a joint equaliser does than today's one-tap receiver, and whether that matches a formula we wrote down before running it.</p></div>
+  <div><h4>How to read it</h4><ul><li>Left: solid lines rise with SNR; dashed lines stay flat near the bottom.</li><li>The dotted line is the best possible (all leaked energy collected).</li><li>Right: grey bars are the prediction 1/(2D−1)², blue bars the simulation.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>One-tap stays below about 1.2 bit/s/Hz at any SNR, because the leakage it ignores never goes away.</li><li>Joint equalisation nearly reaches the upper bound at every duty cycle.</li><li>Measured gains (11.6, 5.9, 2.4 dB) match the prediction (12.0, 6.0, 2.5 dB) within 0.4 dB, so the simulation behaves as theory says.</li></ul></div>
+</div>
+
+<h3 id="fig-0"><span class="fignum">Fig. 0</span>System model</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig0_system_model.png" alt="Block diagram: OFDM transmitter, time-modulated RIS with controller, receiver with FFT, timing-only estimator, matrix-free CG-MMSE equaliser and detector." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>The whole system as one block diagram, and the single equation the receiver works with. Blue boxes are the parts this project contributes or depends on.</p></div>
+  <div><h4>How to read it</h4><ul><li>Follow the solid arrows left to right: signal from the transmitter, through the switching RIS, into the receiver.</li><li>Pilots go to the estimator; data goes to the equaliser, which uses the estimate.</li><li>The dashed grey line is information, not signal: the switching timing is shared with the receiver.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>The receiver needs the switching timing, but not a model of the element.</li><li>It never builds the full channel matrix H: it keeps small factors U and V and applies H through FFTs.</li><li>This is the figure to put first in the paper.</li></ul></div>
+</div>
+
+<h3 id="fig-6"><span class="fignum">Fig. 6</span>How accurately each method estimates the channel</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig6_nmse_vs_snr.png" alt="NMSE of the channel estimate in dB against SNR from 0 to 30 dB, for our estimator, CE-BEM and the Toeplitz model, with error bars." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Channel-estimation error (NMSE) against SNR, all methods using the same 2 pilot symbols. Lower is better; −30 dB means the error energy is one-thousandth of the channel energy.</p></div>
+  <div><h4>How to read it</h4><ul><li>Each step down by 10 dB means the error is 10× smaller.</li><li>A line that keeps falling is limited only by noise. A line that flattens has hit a modelling error that more signal cannot fix.</li><li>Error bars are 95% confidence intervals over 30 random channels.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Ours keeps improving, from −9.5 dB at 0 dB SNR to −34.6 dB at 30 dB.</li><li>The literature's estimator (CE-BEM) flattens at about −14 dB and the Toeplitz model at about −8 dB: their models of the channel are wrong, so more pilots or power do not help.</li><li>This is the clearest single picture of why the structure matters.</li></ul></div>
+</div>
+
+<h3 id="fig-7"><span class="fignum">Fig. 7</span>Bit error rate of each receiver</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig7_ber_vs_snr.png" alt="Bit error rate on a log scale against SNR for six receivers." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Bit error rate (BER) against SNR for 16-QAM without channel coding, for six receivers, about 600,000 bits per point. Lower is better.</p></div>
+  <div><h4>How to read it</h4><ul><li>The vertical axis is logarithmic: each grid line is 10× fewer errors.</li><li>The black dashed line uses the true channel, the best any linear receiver could do.</li><li>Compare each curve to that line.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Ours (blue) sits almost on the perfect-channel line: 3.0×10⁻³ against 2.0×10⁻³ at 20 dB, and the refinement pass brings it closer.</li><li>Receivers built on the old estimators get worse above about 13 dB (0.16 to 0.28): an equaliser that trusts a wrong model amplifies its mistakes.</li><li>The one-tap receiver stays near 0.43, close to guessing.</li><li>Even the perfect channel only reaches about 10⁻⁴ at 30 dB: that is normal for uncoded 16-QAM over a fading channel, not a weakness of our receiver.</li></ul></div>
+</div>
+
+<h3 id="fig-8"><span class="fignum">Fig. 8</span>What the received symbols look like</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig8_constellation.png" alt="Three scatter plots of equalised 16-QAM symbols at 20 dB: one-tap, ours, and perfect channel." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>The received 16-QAM symbols after equalisation at 20 dB, plotted on the complex plane. Black circles mark the 16 points the transmitter actually sends.</p></div>
+  <div><h4>How to read it</h4><ul><li>Each dot is one received symbol.</li><li>A tight cloud around each circle means the symbol will be detected correctly.</li><li>Dots spread between circles mean errors.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>One-tap: the dots form a shapeless cloud, because the leaked neighbours land on top of every symbol.</li><li>Ours: 16 tight clusters, visually the same as the perfect-channel panel.</li><li>This is the intuitive picture behind Fig. 7.</li></ul></div>
+</div>
+
+<h3 id="fig-1"><span class="fignum">Fig. 1</span>Rate against pilot budget</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig1_estimators_vs_pilots.png" alt="Two panels of rate against number of pilot symbols (1, 2, 4, 8) at 20 and 30 dB for five receivers." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Achievable rate after equalisation as the number of pilot symbols grows from 1 to 8, at 20 and 30 dB SNR.</p></div>
+  <div><h4>How to read it</h4><ul><li>Higher is better. The black dashed line is perfect channel knowledge.</li><li>A method that needs many pilots would start low on the left and climb.</li><li>Error bars: 95% confidence over 20 channels (most are smaller than the markers).</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Ours is essentially at the perfect line from 2 pilots: 6.52 against 6.61 bit/s/Hz at 20 dB, 9.68 against 9.92 at 30 dB.</li><li>The literature's estimators stay at 1 to 2.5 bit/s/Hz even with 8 pilots, so the gap is not a pilot shortage.</li><li>Two pilot symbols are a small overhead in a real frame.</li></ul></div>
+</div>
+
+<h3 id="fig-2"><span class="fignum">Fig. 2</span>Does the receiver need to know the element?</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig2_element_model_knowledge.png" alt="Grouped bars of loss in dB at 10, 20 and 30 dB SNR for four assumptions about the element." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Loss compared with perfect channel knowledge, for receivers that assume four different things about the element: the exact model, a model 10 MHz off, the ideal switch used in earlier papers, and nothing (ours, timing only).</p></div>
+  <div><h4>How to read it</h4><ul><li>Shorter bars are better; 0 dB means no loss.</li><li>Read each group (one SNR) from left to right.</li><li>Error bars are 95% confidence over 30 channels, on a fresh random seed.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Ours needs no element model and loses only 0.04, 0.10 and 0.21 dB, as good as knowing the exact model.</li><li>Assuming the ideal switch, as earlier papers do, costs up to 6.6 dB at 30 dB.</li><li>Even a small modelling error (10 MHz) costs 2.4 dB at 30 dB, so not needing the model is a real practical advantage.</li></ul></div>
+</div>
+
+<h3 id="fig-4"><span class="fignum">Fig. 4</span>The fair test</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig4_fair_comparison.png" alt="Two panels of rate against SNR: a user the RIS pattern was designed for, and a generic user. Lines for perfect channel, ours and one-tap." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Rate against SNR in two situations. Left: the RIS pattern is deliberately chosen to favour the conventional one-tap receiver. Right: a user at a generic position. The SIR in each title is how much stronger the wanted signal is than the leakage, as seen by one-tap.</p></div>
+  <div><h4>How to read it</h4><ul><li>Compare the grey one-tap line with the blue line (ours) in each panel.</li><li>The left panel is the case most favourable to one-tap.</li><li>Both panels share the vertical axis.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Even when everything favours it (SIR +10 dB), one-tap levels off near 3.5 bit/s/Hz; ours keeps rising to 9.4.</li><li>At 10 dB the advantage is modest (3.13 against 2.51 bit/s/Hz, about 2 dB); it grows with SNR.</li><li>At a generic position one-tap gets almost nothing (0.2 bit/s/Hz).</li></ul></div>
+</div>
+
+<h3 id="fig-3"><span class="fignum">Fig. 3</span>The full 100 MHz band</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig3_full_band.png" alt="Grouped bars of symbol error rate on a log scale at two SNRs, for identical and per-element switching patterns." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Symbol error rate over all 3276 subcarriers of the 5G n78 band, computed without ever building the full channel matrix. Left: all elements share one pattern (10 channels). Right: each element has its own shifted pattern (5 channels).</p></div>
+  <div><h4>How to read it</h4><ul><li>Log scale: shorter bars mean fewer errors.</li><li>Compare the blue bar (ours) with the black bar (perfect channel) in each group.</li><li>Error bars are wide because channels differ a lot from trial to trial; within each trial ours tracks the true channel closely.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Ours stays within 1.05 to 1.14× of the perfect-channel error rate.</li><li>The literature's estimator (orange) misses 55 to 87% of symbols at this bandwidth.</li><li>The per-element case works too (−34 dB estimation error) after using the cyclic-shift structure; the first attempt failed.</li></ul></div>
+</div>
+
+<h3 id="fig-9"><span class="fignum">Fig. 9</span>Cost of the equaliser</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig9_complexity.png" alt="Two log-log panels: complex multiply-adds per symbol and memory against number of subcarriers, for the dense solve and the matrix-free operator." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>How the work and memory of equalisation grow with the number of subcarriers, for the standard dense solve and for our matrix-free method. These are operation counts, not measured times.</p></div>
+  <div><h4>How to read it</h4><ul><li>Both axes are logarithmic.</li><li>A steeper line grows faster; the dense method grows as M³ for work and M² for memory.</li><li>The dotted line marks the real 100 MHz n78 band (3276 subcarriers).</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>At the full band, matrix-free needs about 110× fewer operations (4.2×10⁸ against 4.7×10¹⁰) and about 20× less memory (8.6 MB against 172 MB).</li><li>The gap widens as bandwidth grows.</li><li>In MATLAB at small sizes the dense solve is still faster in seconds, so the paper claims operations and memory, not speed.</li></ul></div>
+</div>
+
+<h3 id="fig-5"><span class="fignum">Fig. 5</span>Longer echoes than the estimator assumes</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig5_delay_spread.png" alt="Bar chart of loss in dB for three delay spreads (30, 100, 200 ns) at 20 and 30 dB, with a 1 dB reference line." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Loss compared with perfect channel knowledge when the real echoes are longer than the estimator was set up for. The estimator settings are not changed.</p></div>
+  <div><h4>How to read it</h4><ul><li>Shorter bars are better; the dotted line marks 1 dB.</li><li>Light blue is 20 dB SNR, dark blue 30 dB.</li><li>Error bars are 95% confidence over 20 channels.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Up to 100 ns delay spread the loss stays at or below 0.3 dB.</li><li>At 200 ns and 30 dB it passes 1 dB (1.3 ± 0.8 dB): very long echoes need a wider delay window in the estimator.</li><li>This is a known, adjustable setting, and the paper will say so.</li></ul></div>
+</div>
 <h2 id="failures">What failed, and why</h2>
 <p>Failures are part of the result. Each one explains a design choice above.</p>
 <div class="table-wrap"><table>
