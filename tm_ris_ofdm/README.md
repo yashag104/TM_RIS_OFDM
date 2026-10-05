@@ -202,6 +202,18 @@ Estimation regressors and equalisation use only the exact FFT operator (no M x M
   work at M = 256 but not yet at full band. Possible future fixes (not done): convex/lifted
   formulation, better-conditioned initialisation, more pilots.
 
+### (g) Verification for publication (`week3_modelfree_confirm.m`, `week3_delayspread.m`)
+* Headline re-run on a fresh seed (1801), 30 trials, 95% CIs. Loss vs perfect H, dB, at 10/20/30 dB:
+  exact model 0.02/0.06/0.16; df0 = 10 MHz 0.06/0.47/2.44; ideal +/-1 0.18/1.42/6.60;
+  **timing-only 0.04/0.10/0.21** (CI on rate loss <= +/-0.05 bit/s/Hz). Reproduces (e).
+* Delay spread beyond the assumed support (estimator unchanged, tau_max = 0.3 us), timing-only,
+  20 trials. Loss dB at 20/30 dB: 30 ns 0.10/0.16; 100 ns 0.12/0.31 (bar <= 1 dB at 20 dB: pass);
+  200 ns 0.30/1.29 +/- 0.77.
+* Code review: no estimator uses the true channel; calibration was on a separate seed;
+  mismatched filters are scored on the true H. The receiver is assumed to know the noise
+  variance and the control timing (state in the paper). Lemma 1 is a regrouping of
+  Iudice et al. eq. (5) and is credited as such in `paper/letter.tex`.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"

@@ -22,10 +22,10 @@ elements within each OFDM symbol couples every subcarrier to its neighbours
 through harmonics of the control sequence. Existing TM-RIS designs treat this
 coupling as interference at the receiver, and a recent physically consistent
 model shows it is further shaped by the frequency-dispersive response of the
-elements. We show that the coupling matrix of each element decomposes exactly
-into a sum of Toeplitz matrices, one per switching state, that depend only on
-the control timing, multiplied by an input-side response that absorbs the
-element dispersion. This yields (i) a pilot-based estimator that needs no
+elements. Regrouping the harmonic expansion of~\cite{iudice2026} by switching state,
+the coupling matrix of each element is a sum of Toeplitz matrices that depend
+only on the control timing, each multiplied by an input-side response that
+absorbs the element dispersion. We exploit this structure to obtain (i) a pilot-based estimator that needs no
 element model, only the control timing, and exploits the low rank of the
 two-hop propagation; (ii) an exact matrix-free operator with
 $\mathcal{O}(QM\log M)$ cost per product; and (iii) a conjugate-gradient MMSE
@@ -48,7 +48,7 @@ receivers built on the frequency-flat element model lose up to 6.5\,dB.
 % - Related but distinct: BEM estimation of doubly selective OFDM (unknown time
 %   variation), PLC LPTV channels (period >> symbol).
 % Contributions:
-%  1) exact timing/dispersion separation of the coupling (Lemma 1);
+%  1) use of the timing/dispersion separation (Lemma 1, credited to [iudice2026] eq. 5);
 %  2) timing-only, low-rank LMMSE estimator (no element model);
 %  3) exact matrix-free operator + CG-MMSE;
 %  4) evaluation: fair (TIN-favourable) configurations, model mismatch, full n78 band.
@@ -72,15 +72,17 @@ frequency responses and $b_q^{[h]}(f)$ is the $h$-th harmonic of the switched
 element response.
 
 \section{Exact Timing--Dispersion Separation}
-\textbf{Lemma 1.} For a piecewise-constant $K$-slot sequence,
+\textbf{Lemma 1} (a regrouping of~\cite[eq.~(5)]{iudice2026}). For a piecewise-constant $K$-slot sequence,
 \begin{equation}
 b_q^{[h]}(f) = \sum_{s=1}^{2} t_{q,s}[h]\,\Gamma_s(f),\quad
 t_{q,s}[h] = \frac{e^{-j\pi h/K}}{K}\,\mathrm{sinc}\!\left(\frac{h}{K}\right)\!\!\sum_{k: s_q[k]=s}\!\! e^{-j2\pi hk/K}.
 \end{equation}
 Hence $\bm H = \sum_q\sum_s \bm T_{q,s}\circ\big(\bm a^{\rm d}_q (\bm\Gamma_s\odot\bm a^{\rm s}_q)^{\!\top}\big)$,
 where $\bm T_{q,s}$ is Toeplitz and depends \emph{only on the control timing}.
-\emph{Proof:} Fourier series of a piecewise-constant periodic function,
-grouping slots by state. \hfill$\square$
+\emph{Proof:} group the slot sum in~\cite[eq.~(5)]{iudice2026} by state.
+\hfill$\square$ The identity itself is immediate; what is new here is its use:
+the dispersion enters only on the input side and can be absorbed into the
+unknown channel, and the timing factor is Toeplitz.
 
 Consequences: (a) the element dispersion multiplies the input side only and
 can be absorbed into a per-state input response, so estimation needs no element
