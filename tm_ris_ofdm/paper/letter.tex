@@ -27,9 +27,9 @@ the coupling matrix of each element is a sum of Toeplitz matrices that depend
 only on the control timing, each multiplied by an input-side response that
 absorbs the element dispersion. We exploit this structure to obtain (i) a pilot-based estimator that needs no
 element model, only the control timing, and exploits the low rank of the
-two-hop propagation; (ii) an exact matrix-free operator with
-$\mathcal{O}(QM\log M)$ cost per product; and (iii) a conjugate-gradient MMSE
-equalizer. With two pilot symbols the estimated-channel receiver is within
+two-hop propagation; (ii) an exact product-convolution representation of the coupling, so the
+matrix-free iterative equalization of~\cite{hrycak2010} applies without
+approximation at $\mathcal{O}(QM\log M)$ cost per product. With two pilot symbols the estimated-channel receiver is within
 \TODO{x}\,dB of perfect channel knowledge, whereas the conventional one-tap
 receiver saturates at the signal-to-harmonic-interference ratio, and
 receivers built on the frequency-flat element model lose up to 6.5\,dB.
@@ -48,10 +48,18 @@ receivers built on the frequency-flat element model lose up to 6.5\,dB.
 % - Related but distinct: BEM estimation of doubly selective OFDM (unknown time
 %   variation), PLC LPTV channels (period >> symbol).
 % Contributions:
-%  1) use of the timing/dispersion separation (Lemma 1, credited to [iudice2026] eq. 5);
-%  2) timing-only, low-rank LMMSE estimator (no element model);
-%  3) exact matrix-free operator + CG-MMSE;
-%  4) evaluation: fair (TIN-favourable) configurations, model mismatch, full n78 band.
+% Contributions (claim only C1, C2 and the USE of known identities):
+%  C1) first receiver-side pilot estimation + joint equalization for TM-RIS OFDM
+%      (open per [iudice2026]; prior TM-IRS work treats coupling as interference);
+%  C2) timing-only estimation: element dispersion absorbed into the input-side
+%      channel via Lemma 1 (regrouping of [iudice2026] eq. 5); no element model;
+%  C3) per-element cyclic shifts handled exactly as known diagonal modulations
+%      (time-delay -> harmonic phase is known from STC metasurfaces [zhang2018];
+%      its use to reduce estimation to K small matrices is ours);
+%  Adopted, NOT claimed: low-rank cascaded-channel modelling (RIS CE literature);
+%      matrix-free CG/LSQR equalization via product-convolution operators
+%      [hrycak2010] -- here the representation is exact, not a BEM approximation;
+%      BEM estimation of doubly selective OFDM [leus/tang2007] used as baseline.
 
 \section{System Model}
 OFDM with $M$ active subcarriers, spacing $\Delta f$, useful duration
@@ -116,5 +124,8 @@ residual that limits estimation and banded equalization.
 
 \begin{thebibliography}{9}
 \bibitem{iudice2026} I. Iudice, D. Darsena, G. Gelli, V. Galdi, ``Physically consistent modeling of dispersive time-modulated reconfigurable intelligent surfaces for wideband OFDM,'' arXiv:2609.18360, Sep. 2026.
+\bibitem{hrycak2010} T. Hrycak, S. Das, G. Matz, H. G. Feichtinger, ``Low complexity equalization for doubly selective channels modeled by a basis expansion,'' \emph{IEEE Trans. Signal Process.}, vol. 58, no. 11, pp. 5706--5719, Nov. 2010.
+\bibitem{zhang2018} L. Zhang \emph{et al.}, ``Space-time-coding digital metasurfaces,'' \emph{Nat. Commun.}, vol. 9, 4334, 2018.
+\bibitem{tang2007} Z. Tang, R. C. Cannizzaro, G. Leus, P. Banelli, ``Pilot-assisted time-varying channel estimation for OFDM systems,'' \emph{IEEE Trans. Signal Process.}, vol. 55, no. 5, pp. 2226--2238, May 2007.
 \end{thebibliography}
 \end{document}

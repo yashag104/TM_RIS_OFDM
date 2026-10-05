@@ -58,3 +58,13 @@ No paper estimates or equalises the harmonic-coupled OFDM channel of a TM-RIS at
 legitimate receiver with pilots, under either the ideal or the dispersive model.
 Every TM-RIS paper treats the coupling as interference. The only "undo the mixing" work
 is the blind eavesdropper attack above (ideal, Toeplitz, TMA).
+
+## Third novelty sweep, claim by claim (2026-10-05)
+| claim | verdict |
+|---|---|
+| C1 receiver-side estimation + equalisation for TM-RIS OFDM | novel (nothing found; Iudice et al. list it as open) |
+| C2 timing-only estimation (dispersion absorbed on input side) | novel |
+| C3 low-rank two-hop delay structure | known idea (low-rank/tensor RIS cascaded-channel estimation); adopt and cite |
+| C4 cyclic shift = diagonal modulations | identity known (STC: time delay -> -2 pi m tau / T harmonic phase, Zhang/Cui 2018); its use for estimation is new |
+| C5 matrix-free CG equaliser | known technique: Hrycak, Das, Matz, Feichtinger, IEEE TSP 58(11) 2010 (product-convolution operators + LSQR/GMRES, BEM). Our only addition: the TM-RIS coupling is EXACTLY product-convolution |
+Paper claims only C1, C2 and the use in C4; C3/C5 are cited as adopted methods.
