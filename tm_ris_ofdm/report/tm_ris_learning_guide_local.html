@@ -140,7 +140,7 @@ svg text { font-family: var(--body); }
   <div class="meta">
     <span><b>Folder</b> <code>tm_ris_ofdm/</code></span>
     <span><b>Language</b> MATLAB R2026a (base only)</span>
-    <span><b>Status</b> 4 kill gates passed, letter draft started</span>
+    <span><b>Status</b> all kill gates passed, compared against the literature, letter draft started</span>
     <span><b>Last updated</b> 5 Oct 2026</span>
   </div>
 </header>
@@ -386,7 +386,8 @@ flowchart LR
   <tr><td>1</td><td>Does our model reproduce Iudice et al.?</td><td>Their dispersion numbers match (172 to 184° vs 180 ± 6.5°; ±0.57 dB vs &lt;0.75 dB). An independent time-domain simulation agrees to 0.3 to 0.5%.</td><td><span class="pill pass">passed</span></td></tr>
   <tr><td>2</td><td>Does joint equalisation gain what theory predicts?</td><td>Energy-collection gain matches 1/(2D−1)² within 0.1 to 0.4 dB (e.g. 5.9 vs 6.0 dB at duty 0.75).</td><td><span class="pill pass">passed</span></td></tr>
   <tr><td>3</td><td>Can 2 pilot symbols get within ~1 dB of perfect knowledge?</td><td>Yes for physical channels at 10, 20 and 30 dB. One marginal miss (1.2 dB) in a non-physical channel model.</td><td><span class="pill pass">passed</span></td></tr>
-  <tr><td>Full band</td><td>Does it scale to 3276 subcarriers without the full matrix?</td><td>Yes for identical patterns. Per-element patterns failed the pre-set bar: the search gets stuck in local minima. Stated as a limitation.</td><td><span class="pill part">partly</span></td></tr>
+  <tr><td>Full band</td><td>Does it scale to 3276 subcarriers without the full matrix?</td><td>Yes, for identical and for per-element patterns, using only the switching timing. The per-element case first failed, then passed once the cyclic-shift structure was used (−34 dB, error rate within 1.1× of perfect).</td><td><span class="pill pass">passed</span></td></tr>
+  <tr><td>Literature</td><td>Does it beat the standard estimators from earlier papers?</td><td>Yes, by a wide margin (table below). The standard basis-expansion estimator stalls near 2.3 bit/s/Hz while ours reaches 6.5.</td><td><span class="pill pass">passed</span></td></tr>
 </table></div>
 
 <h3>Today's receiver against ours</h3>
@@ -418,6 +419,18 @@ flowchart LR
   <tr><td>28 dB, 64-QAM (symbol error rate)</td><td class="num">0.96</td><td class="num">0.018</td><td class="num">0.042</td><td class="num">0.026</td></tr>
 </table></div>
 
+<h3>Against the estimators used in earlier papers</h3>
+<p>Same pilots and same random channels for everyone, 20 trials, 256 subcarriers. The basis-expansion model (CE-BEM) is the standard way to estimate a channel that changes inside one OFDM symbol; we gave it the same prior as ours so the comparison is fair to it. Rates in bit/s/Hz with 2 pilot symbols.</p>
+<div class="table-wrap"><table>
+  <tr><th>Estimator</th><th>20 dB</th><th>30 dB</th></tr>
+  <tr><td>Conventional one-tap</td><td class="num">0.42</td><td class="num">0.43</td></tr>
+  <tr><td>Toeplitz mixing model (earlier security papers)</td><td class="num">2.27</td><td class="num">1.42</td></tr>
+  <tr><td>Basis-expansion model, 25 harmonics</td><td class="num">2.20</td><td class="num">1.08</td></tr>
+  <tr><td><strong>Ours, timing only</strong></td><td class="num"><strong>6.52</strong></td><td class="num"><strong>9.68</strong></td></tr>
+  <tr><td>Perfect channel knowledge</td><td class="num">6.61</td><td class="num">9.92</td></tr>
+</table></div>
+<p>The basis-expansion estimator does not improve with more pilots (2.32 with 8 pilots), because the slow 1/h² harmonic tail falls outside any fixed set of harmonics. At the full band (10 trials) it misses 55 to 87% of symbols, while ours stays within 1.05 to 1.14× of the perfect-channel error rate.</p>
+
 <h3>Supporting results</h3>
 <ul>
   <li><strong>Exact fast operator.</strong> Matches the full matrix to 7 × 10⁻¹⁶. 20 CG iterations give the same symbol error rate as the direct solve. In MATLAB it is not yet faster in seconds at these sizes; the advantage is in operation count and memory, and the paper will claim only that.</li>
@@ -432,7 +445,7 @@ flowchart LR
   <tr><td>Fixed ridge regulariser</td><td>Missed the 30 dB target by about 2 dB</td><td>Use an LMMSE prior so a large basis does not amplify noise.</td></tr>
   <tr><td>Banded sliding-window equaliser</td><td>Error floor at 2.5 × 10⁻³ (identical patterns) to 3 × 10⁻²</td><td>Same 1/h² tail. Low complexity must come from structure (FFT), not truncation.</td></tr>
   <tr><td>Several refinement passes at 64-QAM</td><td>Full-band error rate rose from 0.057 to 0.24</td><td>Wrong decisions used as pilots bias the estimate. One pass at most.</td></tr>
-  <tr><td>Per-element patterns at the full band</td><td>Estimate stalls at −24 to −27 dB, even at 60 dB SNR</td><td>Not noise and not the model: the non-convex alternating search lands in different local minima. Left as a limitation.</td></tr>
+  <tr><td>Per-element patterns at the full band (first attempt)</td><td>Estimate stalled at −24 to −27 dB, even at 60 dB SNR</td><td>The four-block alternating search landed in local minima. Fixed by noticing that a shifted pattern is just a known modulation on both sides, which leaves 8 small unknowns with a convex step: −34 dB.</td></tr>
   <tr><td>Full two-hop matrix at the full band</td><td>Error stuck near −23 to −29 dB at 28 dB</td><td>Its unknowns grow with bandwidth squared. Physical channels are low-rank; exploit it.</td></tr>
 </table></div>
 
@@ -484,8 +497,8 @@ flowchart TB
 
 <h2 id="next">What is left</h2>
 <ul>
-  <li><span class="pill fail">failed bar</span> Per-element patterns at the full band, with a shared path-subspace estimator. Bar set in advance: operator error at most −30 dB at 28 dB, and error rate at most 1.5× the perfect-channel rate at 20 dB. The error-rate part passed (1.3 to 1.4×), but the estimate stalls near −24 to −27 dB. A follow-up test showed it is not noise (no change from 28 to 60 dB) and not the model (some starting points reach −30 dB): the alternating search gets stuck in local minima. It is now a stated limitation: per-element patterns work at 256 subcarriers, not yet at the full band.</li>
-  <li><span class="pill open">to do</span> Timing-only estimator for per-element patterns (the identical-pattern version is done).</li>
+  <li><span class="pill pass">done</span> Per-element patterns at the full band now pass, using the cyclic-shift structure (operator error −34.4 dB at 28 dB; error rate 1.10× perfect at 20 dB). The first attempt, below, failed. <span class="pill fail">first attempt</span> Bar set in advance: operator error at most −30 dB at 28 dB, and error rate at most 1.5× the perfect-channel rate at 20 dB. The error-rate part passed (1.3 to 1.4×), but the estimate stalls near −24 to −27 dB. A follow-up test showed it is not noise (no change from 28 to 60 dB) and not the model (some starting points reach −30 dB): the alternating search gets stuck in local minima. It is now a stated limitation: per-element patterns work at 256 subcarriers, not yet at the full band.</li>
+  <li><span class="pill pass">done</span> Comparison with the literature's estimators, and 10 full-band trials with confidence intervals.</li>
   <li><span class="pill open">to do</span> Write the letter: figures from the JSON results, related work (time-modulated arrays, basis-expansion estimation, power-line channels), and the operation-count table.</li>
   <li><span class="pill open">yours</span> Read the anchor paper's sections II to III, show the README to your supervisor, choose the venue, commit the work to git.</li>
 </ul>
@@ -494,6 +507,7 @@ flowchart TB
   <ul>
     <li>Simulation only; the element model is one published cell, and mutual coupling between elements is ignored (as in the anchor paper).</li>
     <li>16 elements is a small surface; larger surfaces mostly add parameters to the low-rank estimator.</li>
+    <li>The receiver must be told the switching timing; it does not need the element model.</li>
     <li>At 10 dB SNR the gain over the conventional receiver is modest (about 2 dB).</li>
     <li>The fast equaliser's advantage is asymptotic, not measured wall-clock time in MATLAB.</li>
   </ul>

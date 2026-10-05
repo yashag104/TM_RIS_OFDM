@@ -253,6 +253,22 @@ Same pre-registered bar as week3_fullband_s2. M = 3276, Np = 2, r = 6, 5 trials:
 stalling at -24..-27 dB) is resolved. A bug was caught before the run (the output-side modulation
 was applied twice) and fixed.
 
+### (c) Full band, 10 trials with 95% CIs, timing-only vs CE-BEM (`week4_fullband_trials.m`)
+M = 3276, S1, physical channel, Np = 2, Nd = 6. Timing-only low-rank estimator with a shared output
+factor (H = sum_s T_s o ((F U)(F V_s)^T), r = 8). CE-BEM with Q = 8 and the same prior. SER:
+
+| receiver | 20 dB / 16-QAM | 28 dB / 64-QAM |
+|---|---|---|
+| one-tap | 0.839 +/- 0.003 | 0.955 +/- 0.002 |
+| true H (CG-MMSE) | 0.031 +/- 0.024 | 0.035 +/- 0.021 |
+| timing-only, pilots | 0.034 +/- 0.025 (1.09x true) | 0.054 +/- 0.032 (1.54x) |
+| timing-only, + 1 DD | 0.032 +/- 0.024 (1.05x) | 0.040 +/- 0.022 (1.14x) |
+| CE-BEM, pilots / + 1 DD | 0.549 / 0.563 | 0.865 / 0.865 |
+
+The CIs are dominated by channel-to-channel variation. Per trial, the estimate tracks the true-H SER
+closely. The one pilots-only outlier (28 dB trial 9: 0.158 vs 0.039) drops to 0.073 after the DD
+pass. This makes every full-band result timing-only (no element model).
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
