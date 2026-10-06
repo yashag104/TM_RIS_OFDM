@@ -477,6 +477,274 @@ def fig_sweep():
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, "fig10_parameter_sweep")
 
+
+# ---------------------------------------------------------------------------
+# Week 5-7 robustness figures. Shared helpers.
+# ---------------------------------------------------------------------------
+C2 = "#8fb6ea"            # light step of the OURS hue (second variant of our receiver)
+SNR_LS = {0: "-", 1: "--"}  # 20 dB solid, 30 dB dashed
+
+
+def _snr_legend(ax, loc="upper left"):
+    from matplotlib.lines import Line2D
+    h = [Line2D([], [], color=INK, ls="-", lw=1.6, label="20 dB"),
+         Line2D([], [], color=INK, ls="--", lw=1.6, label="30 dB")]
+    return ax.legend(handles=h, frameon=False, fontsize=7, loc=loc)
+
+
+def _title(ax, t):
+    ax.set_title(t, loc="left", color=INK, fontsize=8.5)
+
+
+# Fig. 11 - mobility: how long one estimate stays good (week5_mobility.m)
+def fig_mobility():
+    d = load("week5_mobility")
+    n = np.array(d["n"])
+    spd = [("v3", "3 km/h", ONETAP), ("v30", "30 km/h", OURS), ("v120", "120 km/h", BEM)]
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.9), sharey=True)
+    for i, ax in enumerate(axes):
+        for key, lab, col in spd:
+            g = np.array(d[key]["gap_bits"])[:, i]
+            ax.plot(n, g, color=col, marker="o", ms=4.5, mec="white", mew=0.6, label=lab)
+        ax.set_xscale("log"); ax.set_xticks(n, [str(x) for x in n]); ax.minorticks_off()
+        ax.set_xlabel("Symbols since the pilots (reuse distance)")
+        _title(ax, f"({'ab'[i]}) {d['snr_db'][i]} dB")
+    axes[0].set_ylabel("Gap to perfect channel (bit/s/Hz)")
+    axes[0].legend(frameon=False, fontsize=7.5, loc="upper left")
+    fig.suptitle("One estimate lasts >300 symbols walking, ~40 (20 dB) at 30 km/h, a handful at 120 km/h",
+                 x=0.01, ha="left", fontsize=9.5, color=INK)
+    fig.tight_layout(); save(fig, "fig11_mobility")
+
+
+# Fig. 12 - timing knowledge (week6_timing.m, week6_timing_offgrid.m, week7_timing_refine.m)
+def fig_timing():
+    a = load("week6_timing"); b = load("week6_timing_offgrid"); c = load("week7_timing_refine")
+    slot_ns = 1e9 / 30e3 / 8
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.9))
+    ax = axes[0]
+    off = np.array(a["a_offset_slots"]) * slot_ns; L = np.array(a["a_loss_db"])
+    for i in (0, 1):
+        ax.plot(off[1:], L[1:, i], color=BEM, ls=SNR_LS[i], marker="o", ms=4, mec="white", mew=0.6)
+    cl = np.array(a["c_loss_db"]); co = np.array(a["c_true_offset"]) * slot_ns
+    for i in (0, 1):
+        ax.plot(co, cl[:, i, 1], color=OURS, ls=SNR_LS[i], marker="s", ms=4, mec="white", mew=0.6)
+    ax.set_xscale("log"); ax.set_xlabel("Unknown timing offset (ns)"); ax.set_ylabel("Loss vs perfect (dB)")
+    ax.text(90, 22, "offset ignored", color=INK, fontsize=7); ax.text(300, 2.2, "offset found blindly", color=INK, fontsize=7)
+    _snr_legend(ax, "lower left").set_bbox_to_anchor((0.5, 0.12)); _title(ax, "(a) Offset on the slot grid")
+    ax = axes[1]
+    j = np.r_[np.array(b["b2_jitter_ns"]), np.array(a["b_jitter_slots_rms"])[1:] * slot_ns]
+    jl = np.r_[np.array(b["b2_loss_db"]), np.array(a["b_loss_db"])[1:]]
+    o = np.argsort(j)
+    for i in (0, 1):
+        ax.plot(j[o], jl[o, i], color=BEM, ls=SNR_LS[i], marker="o", ms=4, mec="white", mew=0.6)
+    ax.axhline(1, color=MUTED, lw=0.8, ls=":")
+    ax.set_xscale("log"); ax.set_xlabel("Per-element edge jitter, rms (ns)")
+    _title(ax, "(b) Random jitter (no fix)")
+    ax.text(250, 1.6, "1 dB", color=MUTED, fontsize=7)
+    ax = axes[2]
+    st = ["Coarse grid", "+ refine", "+ refine, DD", "Offset known"]
+    Lc = np.array(c["loss_db"]); x = np.arange(4); w = 0.38
+    for i, col in ((0, OURS), (1, C2)):
+        bars = ax.bar(x + (i - 0.5) * w, Lc[i], w * 0.92, color=col, label=f"{c['snr_db'][i]} dB")
+        for xi, v in zip(x, Lc[i]):
+            ax.text(xi + (i - 0.5) * w, v + 0.1, f"{v:.1f}", ha="center", fontsize=6.3, color=INK)
+    ax.set_xticks(x, st, rotation=20, ha="right", fontsize=7)
+    ax.set_ylabel("Loss (dB)"); ax.legend(frameon=False, fontsize=7)
+    _title(ax, "(c) Off-grid offset, blind")
+    fig.suptitle("Timing must be known to ~10 ns: blind recovery works at 20 dB, not at 30 dB",
+                 x=0.01, ha="left", fontsize=9.5, color=INK)
+    fig.tight_layout(); save(fig, "fig12_timing")
+
+
+# Fig. 13 - hardware non-idealities (week6_hardware.m, week6_hardware_fix.m, week6_phasenoise.m)
+def fig_hardware():
+    h = load("week6_hardware"); f = load("week6_hardware_fix"); pn = load("week6_phasenoise")
+    fig, axes = plt.subplots(2, 2, figsize=(7.0, 5.0)); axes = axes.ravel()
+    ax = axes[0]
+    sp = np.array(h["a_spread_hz"]) / 1e6; L = np.array(h["a_loss_db"])
+    for i in (0, 1): ax.plot(sp, L[:, i], color=OURS, ls=SNR_LS[i], marker="o", ms=4, mec="white", mew=0.6)
+    ax.set_ylim(0, 3); ax.set_xlabel("Resonance spread (MHz)"); ax.set_ylabel("Loss vs perfect (dB)")
+    _snr_legend(ax); _title(ax, "(a) Element spread")
+    ax = axes[1]
+    r = np.array(f["b2_rise"]) * 100; L = np.array(f["b2_loss_db"])
+    for i in (0, 1):
+        ax.plot(r, L[:, i, 0], color=BEM, ls=SNR_LS[i], marker="o", ms=4, mec="white", mew=0.6)
+        ax.plot(r, L[:, i, 2], color=OURS, ls=SNR_LS[i], marker="s", ms=4, mec="white", mew=0.6)
+    ax.text(12, 8.3, "assume instant", color=INK, fontsize=7); ax.text(12, 1.3, "rise time fitted blindly", color=INK, fontsize=7)
+    ax.set_xlabel("Switching rise time (% of slot)"); ax.set_ylabel("Loss (dB)"); _title(ax, "(b) Transients")
+    ax = axes[2]
+    cf = np.array(h["c_cfo_subcarriers"]) * 100; L = np.array(h["c_loss_db"])
+    for i in (0, 1): ax.plot(cf, L[:, i], color=BEM, ls=SNR_LS[i], marker="o", ms=4, mec="white", mew=0.6)
+    ax.axhline(1, color=MUTED, lw=0.8, ls=":")
+    ax.text(0.1, 1.25, "1 dB", color=MUTED, fontsize=7)
+    ax.set_xlabel("Residual CFO (% of subcarrier spacing)"); ax.set_ylabel("Loss (dB)"); _title(ax, "(c) Frequency offset")
+    ax = axes[3]
+    lw = np.array(pn["linewidth_hz"]); R = np.array(pn["rate_nopn_geniepn_geniech_ours"])
+    for i in (0, 1):
+        ax.plot(lw, R[:, i, 0], color=INK, ls=SNR_LS[i], lw=1.2)
+        ax.plot(lw, R[:, i, 2], color=ONETAP, ls=SNR_LS[i], marker="D", ms=4, mec="white", mew=0.6)
+        ax.plot(lw, R[:, i, 3], color=OURS, ls=SNR_LS[i], marker="o", ms=4, mec="white", mew=0.6)
+    ax.set_xscale("log"); ax.set_xticks(lw, ["10", "100", "1k", "10k"]); ax.minorticks_off()
+    ax.set_xlabel("Oscillator linewidth (Hz)"); ax.set_ylabel("Rate (bit/s/Hz)")
+    from matplotlib.lines import Line2D
+    ax.legend(handles=[Line2D([], [], color=INK, lw=1.2, label="no phase noise"),
+                       Line2D([], [], color=ONETAP, marker="D", label="genie H, CPE removed"),
+                       Line2D([], [], color=OURS, marker="o", label="ours, CPE removed")],
+              frameon=False, fontsize=7, loc="lower left")
+    _title(ax, "(d) Phase noise (solid 20 dB, dashed 30 dB)")
+    fig.suptitle("Spread is harmless; transients are fixed by fitting the rise time;\nCFO must stay below ~1% and oscillator linewidth near 100 Hz",
+                 x=0.01, ha="left", fontsize=9.5, color=INK)
+    fig.tight_layout(); save(fig, "fig13_hardware")
+
+
+# Fig. 14 - 3GPP TDL channels (week6_channels.m, week6_channels_fix.m)
+def fig_channels():
+    a = load("week6_channels"); d = load("week6_channels_fix")
+    nps = d["Np"]; ir = d["ranks"].index(16)
+    prof = [("TDLA", "TDL-A", OURS), ("TDLC", "TDL-C", TOEP), ("TDLD", "TDL-D", BEM)]
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.9), gridspec_kw={"width_ratios": [1, 1, 1.15]})
+    for i in (0, 1):
+        ax = axes[i]
+        for key, lab, col in prof:
+            for ds, ls, mfc in (("100", "-", col), ("300", "--", "white")):
+                g = np.array(d[f"{key}_ds{ds}ns"]["gap_bits"])[ir, :, i]
+                ax.plot(nps, g, color=col, ls=ls, marker="o", ms=4.5, mfc=mfc, mec=col, lw=1.6,
+                        label=f"{lab}, {ds} ns")
+        ax.set_xscale("log", base=2); ax.set_xticks(nps, [str(x) for x in nps]); ax.minorticks_off()
+        ax.set_xlabel("Pilot symbols"); _title(ax, f"({'ab'[i]}) {d['snr_db'][i]} dB, rank 16")
+    axes[0].set_ylabel("Gap to perfect (bit/s/Hz)"); axes[0].set_ylim(0, 1.55); axes[1].set_ylim(0, 5)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, fontsize=7, bbox_to_anchor=(0.36, -0.02))
+    ax = axes[2]
+    keys = [("a_TDLA_ds30ns", "TDL-A 30 ns"), ("a_TDLC_ds30ns", "TDL-C 30 ns"), ("a_TDLD_ds30ns", "TDL-D 30 ns"),
+            ("b_Q64", "Q = 64"), ("b_Q256", "Q = 256"), ("b_Q1024", "Q = 1024"),
+            ("c_nearfield_3m", "near field 3 m"), ("c_nearfield_10m", "near field 10 m"), ("c_nearfield_30m", "near field 30 m")]
+    y = np.arange(len(keys))[::-1]; w = 0.38
+    for i, col in ((0, OURS), (1, C2)):
+        v = [a[k]["gap_bits"][0][i] for k, _ in keys]
+        ax.barh(y + (0.5 - i) * w, v, w * 0.92, color=col, label=f"{(20, 30)[i]} dB")
+    ax.set_yticks(y, [l for _, l in keys], fontsize=7); ax.set_xlabel("Gap, 2 pilots (bit/s/Hz)")
+    ax.legend(frameon=False, fontsize=7, loc="center right"); _title(ax, "(c) Short delay, big & near-field RIS")
+    ax.grid(axis="y", visible=False)
+    fig.suptitle("3GPP channels: 100 ns needs 8 pilots; 300 ns stays open; Q and near field are not a problem",
+                 x=0.01, ha="left", fontsize=9.5, color=INK)
+    fig.tight_layout(rect=(0, 0.11, 1, 1)); save(fig, "fig14_tdl_channels")
+
+
+# Fig. 15 - coded link (week6_coded.m)
+def fig_coded():
+    d = load("week6_coded")
+    snr = np.array(d["snr_db"]); B = np.array(d["bler"]); T = np.array(d["throughput_bits_per_subcarrier"])
+    st = {"ours": ("Ours (timing only)", OURS, "o", "-"), "perfect": ("Perfect channel", INK, None, "--"),
+          "bem": ("CE-BEM", BEM, "s", "-"), "onetap": ("One-tap", ONETAP, "D", "-")}
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.9))
+    floor = 0.5 / d["packets_per_point"]
+    for k in ("onetap", "bem", "ours", "perfect"):
+        lab, col, mk, ls = st[k]; i = d["names"].index(k)
+        axes[0].semilogy(snr, np.maximum(B[i], floor), color=col, marker=mk, ls=ls, ms=4.5, mec="white", mew=0.6, label=lab)
+        axes[1].plot(snr, T[i], color=col, marker=mk, ls=ls, ms=4.5, mec="white", mew=0.6, label=lab)
+    axes[0].axhline(floor, color=MUTED, lw=0.8, ls=":")
+    axes[0].text(snr[-1], floor * 1.25, "no errors in 120 packets", ha="right", fontsize=6.5, color=MUTED)
+    axes[0].set_xlabel("SNR (dB)"); axes[0].set_ylabel("Block error rate"); _title(axes[0], "(a) BLER, 16-QAM, rate 1/2")
+    axes[1].set_xlabel("SNR (dB)"); axes[1].set_ylabel("Goodput (bit per subcarrier)"); _title(axes[1], "(b) Goodput")
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=4, frameon=False, fontsize=7.5, bbox_to_anchor=(0.5, -0.01))
+    fig.suptitle("With a real code: ours is within ~0.5 dB of perfect at 10% BLER; one-tap never decodes; BEM gets worse at high SNR",
+                 x=0.01, ha="left", fontsize=9.3, color=INK)
+    fig.tight_layout(rect=(0, 0.07, 1, 1)); save(fig, "fig15_coded_bler")
+
+
+# Fig. 16 - strong baselines and pilot layouts (week7_strong_baselines.m, week6_baselines_pilots.m)
+def fig_baselines():
+    s = load("week7_strong_baselines"); b = load("week6_baselines_pilots")
+    fig, axes = plt.subplots(1, 3, figsize=(7.6, 3.5))
+    ax = axes[0]; nps = s["bem_Np"]; R = np.array(s["bem_rate"])
+    hcol = [("#f9c9a8", "±12"), ("#f29a62", "±40"), ("#d4561c", "±128"), ("#7a2e0c", "all 511")]
+    for ih, (col, lab) in enumerate(hcol):
+        ax.plot(nps, R[ih, :, 1], color=col, marker="s", ms=4.5, mec="white", mew=0.6, label=f"BEM {lab}")
+    ax.plot([2], [s["ours_Np2"][1]], color=OURS, marker="o", ms=8, ls="none", mec="white", label="Ours, 2 pilots")
+    ax.axhline(s["perfect"][1], color=INK, ls="--", lw=1.2, label="Perfect")
+    ax.set_xscale("log", base=2); ax.set_xticks(nps, [str(x) for x in nps]); ax.minorticks_off()
+    ax.set_xlabel("Pilot symbols"); ax.set_ylabel("Rate at 30 dB (bit/s/Hz)")
+    ax.legend(frameon=False, fontsize=6.8, loc="upper center", bbox_to_anchor=(0.45, -0.2), ncol=2)
+    ax.set_ylim(-0.3, 10.5); _title(ax, "(a) CE-BEM given more pilots")
+    ax = axes[1]
+    nm = ["onetap", "banded4", "banded16", "banded32", "lsqr10", "full_mmse"]
+    lab = ["one-tap", "band ±4", "band ±16", "band ±32", "LSQR 10 it", "full MMSE"]
+    E = np.array(s["eq_rate_ours_oracle"]); y = np.arange(len(nm))[::-1]
+    v = [E[s["eq_names"].index(k), 1, 1] for k in nm]
+    ax.barh(y, v, 0.7, color=[ONETAP] + [TOEP] * 3 + [OURS] * 2)
+    for yi, vi in zip(y, v): ax.text(vi + 0.15, yi, f"{vi:.1f}", va="center", fontsize=6.5, color=INK)
+    ax.set_yticks(y, lab, fontsize=7); ax.set_xlabel("Rate at 30 dB, true H (bit/s/Hz)")
+    ax.set_xlim(0, 11.5); ax.grid(axis="y", visible=False); _title(ax, "(b) Equalisers, oracle channel")
+    ax = axes[2]
+    pn = ["full", "comb2", "comb4", "comb2d", "comb2dd"]
+    pl = ["2 full symbols", "comb 1/2, gaps empty", "comb 1/4, gaps empty", "comb 1/2, data in gaps", "same + 1 DD pass"]
+    P = np.array(b["pilot_rate"]); Ci = np.array(b["pilot_ci95"]); y = np.arange(len(pn))[::-1]
+    ax.barh(y, P[:, 1], 0.7, xerr=Ci[:, 1], color=[OURS, OURS, OURS, BEM, C2], error_kw={"lw": 0.8, "ecolor": MUTED})
+    ax.set_yticks(y, pl, fontsize=7); ax.set_xlabel("Rate at 30 dB (bit/s/Hz)")
+    ax.set_xlim(0, 11.5); ax.grid(axis="y", visible=False); _title(ax, "(c) Our pilot layouts")
+    fig.suptitle("Full CE-BEM needs ~16x the pilots; banded equalisers fail even with the true H; comb pilots are free",
+                 x=0.01, ha="left", fontsize=9.3, color=INK)
+    fig.tight_layout(); save(fig, "fig16_strong_baselines")
+
+
+# Fig. 17 - direct path, two panels, interference (week6_directlink.m)
+def fig_directlink():
+    d = load("week6_directlink")
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.8))
+    ax = axes[0]; rd = d["a_direct_rel_db"]; x = np.arange(len(rd)); R = np.array(d["a_rate"])
+    labs = ["none" if v is None else ("0" if v == 0 else f"{v:+d}") for v in rd]
+    st = [("onetap", "One-tap", ONETAP, "D", "-"), ("ours_nodirect", "Ours", OURS, "o", "-"), ("perfect", "Perfect", INK, None, "--")]
+    for k, l, col, mk, ls in st:
+        ax.plot(x, R[:, d["a_names"].index(k), 1], color=col, marker=mk, ls=ls, ms=4.5, mec="white", mew=0.6, label=l)
+    ax.set_xticks(x, labs); ax.set_xlabel("Direct path vs RIS path (dB)"); ax.set_ylabel("Rate at 30 dB (bit/s/Hz)")
+    ax.legend(frameon=False, fontsize=7, loc="center left"); _title(ax, "(a) Unblocked direct path")
+    ax = axes[1]; B = np.array(d["b_rate"])
+    lab = ["rank 8", "rank 16", "perfect", "ignores\npanel 2"]
+    ax.bar(np.arange(4), B[:, 1], 0.65, color=[OURS, OURS, INK, BEM])
+    for i, v in enumerate(B[:, 1]): ax.text(i, v + 0.15, f"{v:.1f}", ha="center", fontsize=6.5, color=INK)
+    ax.set_xticks(np.arange(4), lab, fontsize=7); ax.set_ylabel("Rate at 30 dB"); ax.grid(axis="x", visible=False)
+    _title(ax, "(b) Two RIS panels")
+    ax = axes[2]; sir = d["c_sir_db"]; x = np.arange(len(sir)); C = np.array(d["c_rate"])
+    for j, (l, col, ls, mk) in enumerate([("Ours", OURS, "-", "o"), ("Perfect", INK, "--", None)]):
+        ax.plot(x, C[:, j, 1], color=col, ls=ls, marker=mk, ms=4.5, mec="white", mew=0.6, label=l)
+    ax.set_xticks(x, ["none" if v is None else str(v) for v in sir]); ax.set_xlabel("Signal-to-interference (dB)")
+    ax.legend(frameon=False, fontsize=7); _title(ax, "(c) Co-channel interferer")
+    fig.suptitle("The direct path is already in the model; each panel's timing must be known; interference hurts both equally",
+                 x=0.01, ha="left", fontsize=9.2, color=INK)
+    fig.tight_layout(); save(fig, "fig17_direct_link")
+
+
+# Fig. 18 - cheaper channel updates for a moving user (week7_complexity_fix.m)
+def fig_complexity_fix():
+    d = load("week7_complexity_fix")
+    keys = ["cold", "cold_r6", "warm2", "uonly", "uonly_1p"]
+    labs = ["Full re-estimate\n(20 it, rank 8)", "Full, rank 6", "Warm start,\n2 iterations",
+            "Update U only,\n1 iteration", "U only,\n1 pilot symbol"]
+    idx = [d["names"].index(k) for k in keys]
+    G = np.array(d["gap_bits"])[idx]; T = np.array(d["time_s"])[idx].mean(1); O = np.array(d["ops_per_update"])[idx]
+    cols = [ONETAP, ONETAP, OURS, C2, C2]
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.1))
+    ax = axes[0]; y = np.arange(len(keys))[::-1]; w = 0.38
+    for i, (col, lab) in enumerate(((OURS, "20 dB"), (C2, "30 dB"))):
+        ax.barh(y + (0.5 - i) * w, G[:, i], w * 0.92, color=col, label=lab)
+        for yi, v in zip(y, G[:, i]): ax.text(v + 0.01, yi + (0.5 - i) * w, f"{v:.2f}", va="center", fontsize=6.5, color=INK)
+    ax.set_yticks(y, labs, fontsize=7); ax.set_xlabel("Gap to perfect (bit/s/Hz)"); ax.set_xlim(0, 0.6)
+    ax.legend(frameon=False, fontsize=7, loc="upper right"); ax.grid(axis="y", visible=False)
+    _title(ax, "(a) Accuracy, 30 km/h, refresh every 20 symbols")
+    ax = axes[1]
+    ax.barh(y, O, 0.65, color=cols)
+    for yi, o, t in zip(y, O, T):
+        ax.text(o * 1.15, yi, f"{O[0]/o:.0f}x fewer, {t*1e3:.0f} ms", va="center", fontsize=6.5, color=INK)
+    ax.set_xscale("log"); ax.set_xlim(2e6, 3e10); ax.set_yticks(y, [""] * len(y))
+    ax.set_xlabel("Operations per update (M = 256)"); ax.grid(axis="y", visible=False)
+    _title(ax, "(b) Cost (text: ratio to full, MATLAB time)")
+    fig.suptitle("Warm start: 12x cheaper for +0.03 bit; updating only U: 100x cheaper, fine at 20 dB, +0.2 bit at 30 dB",
+                 x=0.01, ha="left", fontsize=9.2, color=INK)
+    fig.tight_layout(); save(fig, "fig18_complexity_fix")
+
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
@@ -490,3 +758,11 @@ if __name__ == "__main__":
     fig_bg_harmonics()
     fig_bg_energy()
     fig_sweep()
+    fig_mobility()
+    fig_timing()
+    fig_hardware()
+    fig_channels()
+    fig_coded()
+    fig_baselines()
+    fig_directlink()
+    fig_complexity_fix()

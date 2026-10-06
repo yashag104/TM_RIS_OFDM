@@ -442,7 +442,7 @@ flowchart LR
 
 
 <h2 id="figures">Figures, and how to read them</h2>
-<p>All fourteen figures of the project, in reading order: first the physics, then the system, then the results. Each one comes with what it shows, how to read it, and what to conclude. Every figure is drawn by <code>tm_ris_ofdm/figures/make_figures.py</code> from saved results, so the numbers here are the same as in the README.</p>
+<p>All twenty-two figures of the project, in reading order: first the physics, then the system, then the results. Each one comes with what it shows, how to read it, and what to conclude. Every figure is drawn by <code>tm_ris_ofdm/figures/make_figures.py</code> from saved results, so the numbers here are the same as in the README.</p>
 <div class="callout"><h4>Colours are the same in every figure</h4><p>Blue is always our receiver. Orange is the basis-expansion estimator (CE-BEM) from earlier papers. Green is the Toeplitz model from earlier security papers. Grey is the conventional one-tap receiver. Black dashed is perfect channel knowledge, the best possible.</p></div>
 
 <h3 id="fig-A"><span class="fignum">Fig. A</span>The element is not a perfect switch</h3>
@@ -583,6 +583,87 @@ flowchart LR
   <div><h4>How to read it</h4><ul><li>First three columns: the blue line (ours) should sit on the black dashed line (perfect) whatever the setting.</li><li>Last column is different: it plots the gap to perfect directly, because each point there used its own random patterns. Lower is better.</li><li>Solid: 2 pilot symbols. Dotted: 4 pilot symbols.</li></ul></div>
   <div><h4>What to take away</h4><ul><li>The number of elements, slots and duty cycle make no real difference: ours stays within 0.05 to 0.23 bit/s/Hz of perfect everywhere.</li><li>The literature's estimator and the one-tap receiver stay far below at every setting.</li><li>With many different random patterns the gap grows at 30 dB (up to 1.0 bit/s/Hz with 2 pilots). Using 4 pilots brings it back under 0.4. That becomes a design rule in the paper.</li></ul></div>
 </div>
+<h3 id="robustness-figs">Robustness: what happens when reality is less tidy</h3>
+<p>The figures above use a clean setup: a still user, perfect clocks, ideal hardware and a short-delay channel. The next eight figures break those assumptions one at a time. Most of them plot the <em>gap</em> or <em>loss</em> against the perfect-channel receiver, so lower is better. Solid lines are 20 dB SNR and dashed lines are 30 dB unless the panel says otherwise.</p>
+
+<h3 id="fig-11"><span class="fignum">Fig. 11</span>How long does one channel estimate stay good?</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig11_mobility.png" alt="Two panels at 20 and 30 dB: gap to perfect channel against symbols since the pilots (2 to 300, log scale) for 3, 30 and 120 km/h." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>The user moves, so the RIS-to-user part of the channel changes. We estimate once from the pilots and then keep using that estimate for later symbols. The x-axis is how many symbols later; the y-axis is the rate lost against a receiver that knows the channel at that moment.</p></div>
+  <div><h4>How to read it</h4><ul><li>One line per speed: grey walking, blue 30 km/h, orange 120 km/h.</li><li>Read across until the line rises noticeably: that is how often fresh pilots are needed.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Walking speed: one estimate is good for more than 300 symbols.</li><li>30 km/h: about 40 symbols at 20 dB, about 8 at 30 dB.</li><li>120 km/h: only a handful of symbols, and less than 2 at 30 dB. Re-estimating that often is costly, which is why Fig. 18 tests cheap updates.</li><li>The Doppler spread inside one symbol is tiny (−60 to −34 dB), so the problem is the estimate going stale, not new interference.</li></ul></div>
+</div>
+
+<h3 id="fig-12"><span class="fignum">Fig. 12</span>How well must the receiver know the switching timing?</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig12_timing.png" alt="Three panels: loss against an unknown timing offset with the offset ignored or found blindly; loss against random per-element jitter; bars of loss for blind off-grid offset recovery stages at 20 and 30 dB." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Our estimator's one requirement is the switching timing. (a) The RIS clock is shifted by a fixed amount. (b) Every element's switching edges wobble randomly (jitter). (c) The shift is an arbitrary value, not a whole number of slots, and the receiver must find it from the pilots alone.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) Orange: the receiver ignores the shift. Blue: the receiver searches for it blindly. One slot is about 4.2 μs.</li><li>(b) The dotted line marks 1 dB of loss.</li><li>(c) Each pair of bars is one stage of the blind search; the last pair is the receiver that is told the offset.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Timing errors hurt badly if ignored: just 83 ns costs 4 dB at 20 dB SNR and 11 dB at 30 dB.</li><li>A shift of whole slots is found exactly from the pilots, with no loss.</li><li>Jitter cannot be estimated. It must stay below about 20 ns at 20 dB and about 4 ns at 30 dB.</li><li>An arbitrary shift is recovered blindly at 20 dB (0.2 dB loss), but not at 30 dB (3.8 dB against 0.4 dB when known). At high SNR the RIS and receiver need about 10 ns alignment. This is a stated limitation.</li></ul></div>
+</div>
+
+<h3 id="fig-13"><span class="fignum">Fig. 13</span>Imperfect hardware</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig13_hardware.png" alt="Four panels: loss against element resonance spread; loss against switching rise time with instant-switching assumption and blind fit; loss against residual carrier frequency offset; rate against oscillator linewidth for no phase noise, genie channel and ours." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Four hardware imperfections. (a) Elements are not identical: each one's resonance is shifted at random. (b) The switch takes time to change state (a rise time). (c) Transmitter and receiver oscillators differ slightly in frequency (CFO). (d) The oscillator phase drifts (phase noise), and the common part of the drift is removed in each symbol, as 5G phase-tracking pilots do.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) to (c) plot loss against perfect: orange means nothing was done about the problem, blue means our fix.</li><li>(d) plots rate. Black is no phase noise, grey a receiver told the exact channel, blue ours.</li><li>The fair comparison in (d) is blue against grey: phase noise also hurts a receiver that knows the channel.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Element spread is harmless: the estimator never assumed an element model.</li><li>Transients cost up to 12 dB if ignored. Fitting the rise time from the pilots (no calibration needed) brings this down to 0.2 to 0.6 dB.</li><li>CFO must stay below about 1% of the subcarrier spacing at 30 dB. Standard OFDM synchronisation achieves this.</li><li>Phase noise: ours stays within 0.4 to 1.4 dB of the genie receiver, but everyone suffers above about 100 Hz linewidth. We set a requirement of about 100 Hz, or tracking. The bar set in advance failed at 1 kHz, and we say so.</li></ul></div>
+</div>
+
+<h3 id="fig-14"><span class="fignum">Fig. 14</span>Standard 3GPP channels</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig14_tdl_channels.png" alt="Two panels: gap to perfect against pilot symbols for TDL-A, C and D at 100 and 300 ns delay spread; horizontal bars of gap with 2 pilots for short delay spreads, larger surfaces and near-field users." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>The channel models that 5G standard work uses (3GPP TR 38.901 TDL-A, C and D) instead of our own 6-path model. The delay spread says how long echoes last: 30 ns is a small room, 300 ns a large hall or a street.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a, b) Filled markers are 100 ns, hollow markers are 300 ns. A line falling with more pilots means more pilots fix it.</li><li>(c) Gap with just 2 pilots, for short delay spreads, larger surfaces (up to 1024 elements) and users close enough to the RIS that the wavefront is curved (near field).</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>At 30 ns, as in the anchor paper, 2 pilots are enough.</li><li>At 100 ns, 8 pilot symbols bring the gap to 0.08 to 0.24 bit/s/Hz at 20 dB (bar passed).</li><li>At 300 ns the gap stays large even with 8 pilots, especially at 30 dB. This is open, and the paper will say so.</li><li>Bigger surfaces and near-field users cause no trouble (gap ≤ 0.2 at 20 dB and ≤ 0.6 at 30 dB).</li></ul></div>
+</div>
+
+<h3 id="fig-15"><span class="fignum">Fig. 15</span>With a real error-correcting code</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig15_coded_bler.png" alt="Two panels against SNR from 4 to 24 dB: block error rate on a log scale and goodput, for one-tap, CE-BEM, ours and perfect channel." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Real systems add a code that corrects some bit errors. Here a standard rate-1/2 convolutional code with 16-QAM. A packet (block) fails if any bit is still wrong after decoding. Goodput is the useful data that gets through.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) Lower is better. Points on the dotted line had no errors at all in 120 packets.</li><li>(b) Higher is better; the maximum is about 2 bits per subcarrier.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Ours is within about 0.5 dB of perfect at 10% block errors: 2.5% block errors at 10 dB and none from 12 dB.</li><li>The conventional one-tap receiver never decodes a packet at any SNR: interference between subcarriers is too strong for the code.</li><li>CE-BEM gets <em>worse</em> at high SNR (best 31% block errors), because its truncation error, not noise, dominates there.</li></ul></div>
+</div>
+
+<h3 id="fig-16"><span class="fignum">Fig. 16</span>Giving the competitors every advantage</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig16_strong_baselines.png" alt="Three panels: CE-BEM rate at 30 dB against pilot symbols for four harmonic ranges with our 2-pilot point and perfect; bars of rate with the true channel for banded and iterative equalisers; bars of rate for five pilot layouts." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>A reviewer would ask: did we make the baselines weak? (a) The basis-expansion estimator with more harmonics and many more pilots. (b) Low-complexity equalisers from the literature, given the true channel so only the equaliser is tested. (c) Different ways of placing our own pilots.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) Orange shades go from few harmonics (light) to all of them (dark). The blue dot is ours with just 2 pilots.</li><li>(b) Green: banded equalisers that keep only nearby subcarriers. Blue: the iterative solver we use.</li><li>(c) "Comb" means pilots on every 2nd or 4th subcarrier; "DD" is one decision-directed pass.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>The full basis expansion does get close (9.4 bit/s/Hz), but only with 32 pilot symbols. We need 2: a 16× pilot saving. This replaces the earlier, too-strong claim that the basis expansion never improves.</li><li>Banded equalisers fail even with the exact channel (6.2 against 9.9), because of the slow 1/h² harmonic tail. 10 iterations of LSQR already match the full solve.</li><li>Comb pilots with empty gaps are as good as two full pilot symbols. Putting data in the gaps hurts, and one decision-directed pass recovers most of it.</li></ul></div>
+</div>
+
+<h3 id="fig-17"><span class="fignum">Fig. 17</span>Direct path, two RIS panels, interference</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig17_direct_link.png" alt="Three panels at 30 dB: rate against direct-path strength for one-tap, ours and perfect; bars of rate for two RIS panels; rate against signal-to-interference ratio for ours and perfect." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>(a) The base station also reaches the user directly, not only through the RIS. (b) Two RIS panels with different switching patterns serve the same user. (c) Another cell's signal interferes and is unknown to the receiver.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) x-axis: direct-path power relative to the RIS path. "None" is the blocked case used everywhere else.</li><li>(b) The orange bar is a receiver that only knows about one of the two panels.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>The direct path needs no extra work: the two RIS states always add up to "on", so the direct path is already inside our model. Ours stays close to perfect at every strength.</li><li>Two panels work if the receiver knows both panels' timing (8.7 against 8.9). If it only knows one, the rate collapses to 1.1.</li><li>Interference hurts ours and perfect equally; it is not specific to our method.</li></ul></div>
+</div>
+<h3 id="fig-18"><span class="fignum">Fig. 18</span>Making channel updates cheap</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig18_complexity_fix.png" alt="Two panels of horizontal bars for five update methods: gap to perfect at 20 and 30 dB, and operations per update on a log scale with ratio and MATLAB time." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>The estimator is the expensive part of the receiver, and a moving user needs it often (Fig. 11). Here a user moves at 30 km/h and the channel is refreshed every 20 symbols. A full estimate from scratch is compared with four cheaper updates. <strong>Warm start</strong> begins from the previous estimate and runs 2 iterations instead of 20. <strong>Update U only</strong> keeps the factor that describes the base-station-to-RIS side (which does not move) and re-fits only the user side. The last variant also uses a single pilot symbol.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) Gap to perfect, lower is better. The top bar is the reference.</li><li>(b) Operations per update on a log scale; the text gives the saving and the measured MATLAB time at 256 subcarriers.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>Warm start is the safe choice: 12× fewer operations (10× faster in MATLAB) for only 0.03 bit/s/Hz more gap at both SNRs.</li><li>Updating only the user side is about 100× cheaper. It is as good as warm start at 20 dB, but loses 0.23 bit/s/Hz at 30 dB, so the "static" factor is not perfectly static in our factorisation. A practical receiver can use it between occasional warm-start refreshes.</li><li>Dropping the rank from 8 to 6 saves 1.7× at no cost.</li><li>Measured at 256 subcarriers with 8 trials; the full-band saving is expected to be similar (the iterations, not the start-up, are what is cut) but has not been measured.</li></ul></div>
+</div>
 <h2 id="failures">What failed, and why</h2>
 <p>Failures are part of the result. Each one explains a design choice above.</p>
 <div class="table-wrap"><table>
@@ -659,7 +740,7 @@ flowchart TB
     <li>Timing: a constant clock offset is recovered blindly up to about 20 dB; at 30 dB the RIS and receiver need timing alignment within about 10 ns, and switching jitter must stay below about 4 ns (20 ns at 20 dB).</li>
     <li>Hardware: switching transients are handled by estimating the rise time; residual carrier-frequency offset must stay below about 1% of the subcarrier spacing; oscillator phase noise must be low (linewidth below about 100 Hz) or tracked, as 5G does.</li>
     <li>Fast vehicles (120 km/h) at high SNR outdate the estimate within a few symbols; this needs a tracking receiver (planned).</li>
-    <li>The estimator, not the equaliser, is the expensive part (about 4×10<sup>10</sup> operations per full-band estimate); warm starts and reusing the static half of the channel are planned.</li>
+    <li>The estimator, not the equaliser, is the expensive part (about 4×10<sup>10</sup> operations per full-band estimate from scratch). Starting each update from the previous estimate cuts this 12× for a moving user at almost no accuracy cost (Fig. 18); the saving is measured at 256 subcarriers, not yet at the full band.</li>
     <li>At 10 dB SNR the gain over the conventional receiver is modest (about 2 dB).</li>
     <li>The fast equaliser's advantage is asymptotic, not measured wall-clock time in MATLAB.</li>
   </ul>

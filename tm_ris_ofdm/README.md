@@ -355,9 +355,22 @@ Operations per estimate (20 ALS iterations, r = 8, Np = 2), M = 256 / 1024 / 327
 G = 1: 5.7e8 / 4.1e9 / 3.9e10; G = 16: 1.8e10 / 5.4e10 / 1.8e11. For comparison, one dense MMSE solve
 at M = 3276 is 4.7e10 and the CG equaliser 4.2e8 per symbol. **The estimator dominates the cost.**
 Re-estimating every ~40 symbols (30 km/h) at the full band is ~30 TOPS as written: not realistic.
-Mitigations (not built): warm start from the previous estimate (1-2 iterations instead of 20), reuse
-the static input-side factor V (only U is refreshed; a 4x smaller system), and rank 6 instead of 8.
-Together these give an estimated ~50x reduction.
+Mitigations, now built and measured (`est_general_ws.m`, `week7_complexity_fix.m`,
+`results/week7_complexity_fix.json`, Fig. 18). User at 30 km/h, refresh every 20 symbols, 8 blocks,
+8 trials, S1, M = 256; gap to perfect (bit/s/Hz) at 20/30 dB, ops per update, MATLAB time:
+| update | gap 20/30 dB | ops | vs full | time |
+|---|---|---|---|---|
+| full re-estimate (20 it, r = 8) | 0.07 / 0.17 | 1.2e9 | 1x | 307 ms |
+| full, rank 6 | 0.07 / 0.16 | 7.2e8 | 1.7x | 215 ms |
+| warm start, 2 iterations | 0.10 / 0.20 | 1.0e8 | 12x | 31 ms |
+| V frozen, U + Lam only, 1 iteration | 0.10 / 0.40 | 1.1e7 | 105x | 8 ms |
+| same, 1 pilot symbol | 0.13 / 0.49 | 6.0e6 | 197x | 5 ms |
+**Warm start is the safe default: 12x fewer operations for +0.03 bit at both SNRs.** Freezing V is ~100x
+cheaper and as good at 20 dB, but costs +0.23 bit at 30 dB: the factorisation does not split the
+static and moving hops exactly, so V must be refreshed now and then (e.g. U-only updates between
+occasional warm starts). Rank 6 is free. Applied to the full band, warm start brings the ~30 TOPS above to
+roughly 2.5 TOPS; this is an extrapolation of the iteration count, not a full-band measurement.
+The earlier "~50x" estimate was optimistic for the safe option (12x) and pessimistic for U-only (105x).
 
 ### (8) More baselines (`week6_baselines_pilots.m`), rate bit/s/Hz at 20/30 dB, 10 channels
 ours 6.48/9.65 | CE-BEM 2.17/1.07 | OMP (harmonic x delay dictionary, stops at noise level) 2.32/1.19 |
