@@ -412,6 +412,70 @@ def fig_bg_energy():
     fig.tight_layout(); save(fig, "figC_energy_collection")
 
 
+# ---------------------------------------------------------------------------
+# Fig. 10 - sensitivity to every design choice (week5_param_sweep.m)
+# ---------------------------------------------------------------------------
+def fig_sweep():
+    path = RES / "week5_param_sweep.json"
+    if not path.exists():
+        print("skip sweep: run matlab/week5_param_sweep.m first"); return
+    d = load("week5_param_sweep")
+    order = [("ours", "Ours (timing only)", OURS, "o", "-"), ("perfect", "Perfect channel", INK, None, "--"),
+             ("bem", "CE-BEM", BEM, "s", "-"), ("onetap", "One-tap", ONETAP, "D", "-")]
+
+    def series(keys):
+        pts = [d[k] for k in keys]
+        names = pts[0]["names"]
+        return names, np.array([p["rate_mean"] for p in pts]), np.array([p["rate_ci95"] for p in pts])
+
+    qk = ["A_Q4", "A_Q16", "A_Q64", "A_Q144"]
+    kk = ["B_K2_D500", "B_K4_D500", "B_K8_D500", "B_K16_D500"]
+    dk = [f"C_D{n}_8" for n in range(1, 8)]
+    panels = [("Elements $Q$", [d[k]["Q"] for k in qk], qk, True),
+              ("Slots $K$ (duty 0.5)", [d[k]["K"] for k in kk], kk, True),
+              ("Duty $D$ ($K$ = 8)", [d[k]["n1"] / 8 for k in dk], dk, False)]
+    fig, axes = plt.subplots(2, 4, figsize=(7.2, 4.4))
+    for col, (title, xs, keys, logx) in enumerate(panels):
+        names, m, c = series(keys)
+        for row in (0, 1):
+            ax = axes[row, col]
+            for key, lab, colr, mk, ls in order:
+                i = names.index(key)
+                ax.errorbar(xs, m[:, i, row], yerr=c[:, i, row], color=colr, marker=mk, ls=ls, capsize=2,
+                            ms=4.5, lw=1.6, label=lab, mec="white", mew=0.6)
+            ax.set_ylim(-0.3, 7.3 if row == 0 else 10.8)
+            if col > 0: ax.set_yticklabels([])
+            if logx:
+                ax.set_xscale("log", base=2); ax.set_xticks(xs, [str(x) for x in xs]); ax.minorticks_off()
+            else:
+                ax.set_xticks([1/8, 3/8, 5/8, 7/8], ["1/8", "3/8", "5/8", "7/8"])
+            if row == 0: ax.set_title(title, loc="left", color=INK, fontsize=8.5)
+    axes[0, 0].set_ylabel("Rate at 20 dB (bit/s/Hz)")
+    axes[1, 0].set_ylabel("Rate at 30 dB (bit/s/Hz)")
+    # random patterns: gap to perfect within each run (runs differ in patterns/channels)
+    gs = [1, 2, 4, 8, 16]
+    for row in (0, 1):
+        ax = axes[row, 3]
+        for np_, ls, mfc, lab in [(2, "-", OURS, "Gap, 2 pilots"), (4, ":", "white", "Gap, 4 pilots")]:
+            pts = [d[f"D_G{g}_Np{np_}"] for g in gs]
+            names = pts[0]["names"]; io, ip = names.index("ours"), names.index("perfect")
+            gap = [np.array(p["rate_mean"])[ip, row] - np.array(p["rate_mean"])[io, row] for p in pts]
+            ax.plot(gs, gap, color=OURS, ls=ls, marker="o", ms=4.5, mfc=mfc, lw=1.6, label=lab)
+        ax.set_xscale("log", base=2); ax.set_xticks(gs, [str(g) for g in gs]); ax.minorticks_off()
+        ax.set_ylim(0, 1.15)
+        ax.set_ylabel("Gap to perfect (bit/s/Hz)", fontsize=7.5)
+        ax.yaxis.set_label_position("right"); ax.yaxis.tick_right()
+        if row == 0: ax.set_title("Random patterns $G$", loc="left", color=INK, fontsize=8.5)
+        ax.legend(frameon=False, fontsize=6.8, loc="upper left")
+    for col, lab in enumerate(["Number of RIS elements", "Slots per symbol", "Duty cycle", "Distinct patterns"]):
+        axes[1, col].set_xlabel(lab, fontsize=8)
+    h, l = axes[0, 0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.45, -0.02), fontsize=7.5)
+    fig.suptitle("Gap to perfect stays small for any Q, K, D; many distinct random patterns need 4 pilots",
+                 x=0.01, ha="left", fontsize=10, color=INK)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    save(fig, "fig10_parameter_sweep")
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
@@ -424,3 +488,4 @@ if __name__ == "__main__":
     fig_bg_dispersion()
     fig_bg_harmonics()
     fig_bg_energy()
+    fig_sweep()

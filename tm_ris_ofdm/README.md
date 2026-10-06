@@ -269,6 +269,22 @@ The CIs are dominated by channel-to-channel variation. Per trial, the estimate t
 closely. The one pilots-only outlier (28 dB trial 9: 0.158 vs 0.039) drops to 0.073 after the DD
 pass. This makes every full-band result timing-only (no element model).
 
+### (d) Sensitivity to every design choice (`week5_param_sweep.m`, `est_general.m`, fig10)
+Answers "why these settings?". One setting is varied at a time around the default (Q = 16, K = 8,
+D = 0.75), M = 256, Np = 2, 12 channels per point. Same timing-only estimator everywhere
+(`est_general`, which handles any set of G distinct switching patterns; identical and shifted
+patterns are special cases). Gap of ours to perfect H, bit/s/Hz at 20 / 30 dB:
+* Elements Q = 4, 16, 64, 144: 0.06–0.09 / 0.10–0.20.
+* Slots K = 2, 4, 8, 16 (duty 0.5 and 0.75): 0.06–0.09 / 0.11–0.16.
+* Duty D = 1/8 ... 7/8 (K = 8): 0.05–0.13 / 0.12–0.23.
+* Random patterns, G distinct sequences over 16 elements:
+  2 pilots 0.07, 0.12, 0.22, 0.34, 0.32 / 0.10, 0.19, 0.32, 0.78, 1.03 for G = 1, 2, 4, 8, 16;
+  4 pilots 0.03, 0.05, 0.08, 0.17, 0.19 / 0.04, 0.08, 0.13, 0.32, 0.38.
+CE-BEM stays at about 2.2 / 1.1 and one-tap at 0.01–1.2 bit/s/Hz throughout.
+Conclusion: the results do not depend on Q, K or D. **Design rule:** with many distinct per-element
+patterns (G >= 8), use 4 pilot symbols. (Rows for different G and Np use independent random
+patterns and channels: compare gaps, not absolute rates.)
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
