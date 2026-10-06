@@ -138,7 +138,9 @@ Report it that way.
   M = 1024 (0.15 s vs 0.54 s). The advantage is asymptotic in operations and memory
   (M = 3276 dense H is 170 MB). The paper must state flops/memory, not "faster".
 
-### (d) Channel-aware shift design (`week3_seq_design.m`), INDICATIVE (8 trials, 20 dB)
+### (d) Channel-aware shift design (`week3_seq_design.m`): DROPPED from the paper (2026-10-06)
+Reason: 8 trials only, and the gain is mostly the known space-time-coding harmonic steering. Kept here for the record.
+
 Greedy per-element shift choice that maximises the legit user's MMSE rate:
 5.58 -> 8.85 bit/s/Hz (identical shifts: 5.52). The eavesdropper's one-tap SIR stays scrambled
 (-6.5 -> -8.2 dB). Most of the gain is harmonic *beamforming* (shifts set harmonic phases,
@@ -263,6 +265,10 @@ factor (H = sum_s T_s o ((F U)(F V_s)^T), r = 8). CE-BEM with Q = 8 and the same
 | true H (CG-MMSE) | 0.031 +/- 0.024 | 0.035 +/- 0.021 |
 | timing-only, pilots | 0.034 +/- 0.025 (1.09x true) | 0.054 +/- 0.032 (1.54x) |
 | timing-only, + 1 DD | 0.032 +/- 0.024 (1.05x) | 0.040 +/- 0.022 (1.14x) |
+
+**Reporting rule (point 4):** always quote the pilots-only ratio next to the DD ratio. At 28 dB / 64-QAM
+pilots-only is 1.54x here and was 2.3x in the earlier 3-trial run (`week3_fullband_lr`, DD 1.4x); the
+headline must not quote only 1.05-1.14x. More trials are needed to settle it (point 5).
 | CE-BEM, pilots / + 1 DD | 0.549 / 0.563 | 0.865 / 0.865 |
 
 The CIs are dominated by channel-to-channel variation. Per trial, the estimate tracks the true-H SER
@@ -284,6 +290,150 @@ CE-BEM stays at about 2.2 / 1.1 and one-tap at 0.01–1.2 bit/s/Hz throughout.
 Conclusion: the results do not depend on Q, K or D. **Design rule:** with many distinct per-element
 patterns (G >= 8), use 4 pilot symbols. (Rows for different G and Np use independent random
 patterns and channels: compare gaps, not absolute rates.)
+
+## Week 5-6: supervisor's improvement list
+
+Backup before this work: `D:\RIS_backup_2026-10-06\` (folder copy + verified git bundle of all branches).
+
+### (1) Coherence time and mobility (`week5_mobility.m`)
+Previously assumed: block fading. Both hops are constant over pilots + data (as in Iudice et al.:
+static geometry). Justification: switching period 33 us << coherence time; isolates TM leakage from Doppler.
+Now tested: only the RIS -> user hop moves. Each path gets Doppler nu = fD cos(phi), both
+symbol-to-symbol rotation and intra-symbol ICI. Estimate once (2 pilots), reuse for later symbols.
+Gap to perfect H (bit/s/Hz) vs symbols since estimation n:
+
+| speed | Tc | 20 dB, n = 2/10/40/150 | 30 dB, n = 2/10/40/150 | intra-symbol Doppler |
+|---|---|---|---|---|
+| 3 km/h | 42 ms (1188 sym) | 0.06/0.06/0.06/0.06 | 0.08/0.08/0.08/0.10 | -60 dB, 0 bit |
+| 30 km/h | 4.2 ms (119 sym) | 0.07/0.09/0.26/0.54 | 0.23/0.36/0.82/1.27 | -47 dB, 0.008 bit |
+| 120 km/h | 1.1 ms (30 sym) | 0.12/0.32/0.52/0.75 | 0.51/1.12/1.49/1.90 | -34 dB, 0.19 bit |
+
+1-dB reuse length: >300 symbols (walking), ~40 (30 km/h, 20 dB) / ~8 (30 dB), ~8 (120 km/h, 20 dB),
+under 2 at 120 km/h and 30 dB. Pilot overhead 2/N: <1% walking, ~5% urban at 20 dB (within 5G NR
+DMRS density of 7-28% per slot). **Limitation:** vehicular speed at high SNR needs tracking. Natural
+fix (not built): the input-side factor V (static BS -> RIS hop) can be reused; only U needs refreshing.
+
+### (12) Direct link, two RIS panels, interference (`week6_directlink.m`)
+* Unblocked direct path at -20 ... +10 dB relative to the RIS path. Ours, with NO direct-path term,
+  vs perfect (bit/s/Hz, 20/30 dB): -10 dB 6.14/9.31 vs 6.25/9.53; 0 dB 5.28/8.13 vs 5.39/8.49;
+  +10 dB 5.95/8.85 vs 6.01/9.01. The explicit direct-path estimator (`est_general_direct.m`) gives
+  the same numbers. **Reason:** the state kernels sum to the identity (T_1 + T_2 = I, since the
+  element is in one of the two states at all times), so an unswitched path is already inside the
+  model (equal input response in both states). No change to the estimator is needed.
+  One-tap rises to 2.9-3.1 with a strong direct path but stays far below.
+* Two TM-RIS panels (independent channels, different patterns, G = 2): ours 5.54/8.67 vs perfect
+  5.64/8.86 (rank 8; rank 16 the same). A receiver that models only one panel collapses to 1.15:
+  **the receiver must know every panel's timing.**
+* Co-channel OFDM interferer, unknown and treated as noise, SIR 20/10/0 dB: ours within
+  0.03-0.17 bit/s/Hz of perfect at every SIR. Interference limits both receivers equally.
+
+### (5) Hardware imperfections (`week6_hardware.m`), loss vs perfect, dB at 20/30 dB
+* (a) element-to-element spread (resonance sigma 5-20 MHz, +/-5% losses): 0.20-0.28 / 0.28-0.46. Robust.
+* (b) switching transients (linear ramp, rise time as a fraction of a slot) 0.05/0.1/0.2/0.3:
+  1.06/2.78/3.73/3.88 at 20 dB, 4.76/10.19/11.37/11.73 at 30 dB. **Weakness:** the receiver assumes
+  instant switching. Follow-up running (`week6_hardware_fix.m`): kernels from a calibrated or
+  blindly estimated rise time.
+* (c) receiver CFO 0.005/0.01/0.02/0.05 subcarrier: 0.26/0.32/0.52/1.70 at 20 dB, 0.72/1.00/2.45/7.50 at 30 dB.
+  Requires residual CFO below ~1% of the spacing (standard OFDM synchronisation).
+* (d) phase noise: the first model was WRONG (a fresh random phase per OFDM symbol) and its 8-25 dB
+  losses are discarded. Redone with a continuous phase across symbols, with/without common-phase
+  correction, in `week6_hardware_fix.m`.
+
+### (6) Coded performance (`week6_coded.m`)
+Rate-1/2 convolutional code (K = 7, 133/171 octal), soft Viterbi (checked: 0 errors noiseless;
+0/506 at Eb/N0 1.9 dB vs 62 uncoded errors), random interleaver, 16-QAM Gray, max-log LLRs from each
+receiver's OWN estimate. 506-bit packets, 30 channels x 4 packets per point. BLER vs SNR 4:2:24 dB:
+* one-tap: 1.00 at every SNR (no packet ever correct)
+* CE-BEM: best 0.31 (12-14 dB), then rises back to 0.97 at 24 dB (an overconfident wrong model)
+* ours (2 pilots): 0.93 / 0.28 / 0.025 / 0 at 6 / 8 / 10 / 12 dB, 0 above
+* perfect H: 0.93 / 0.21 / 0.008 / 0
+Ours is within ~0.3 dB of perfect at 10% BLER. Throughput saturates at the code limit
+(1.98 bit/s/Hz per subcarrier) from 12 dB; BEM peaks near 1.4; one-tap delivers 0.
+
+### (10) Estimator complexity (`figures/complexity_estimator.py`, `results/week6_complexity.json`)
+Operations per estimate (20 ALS iterations, r = 8, Np = 2), M = 256 / 1024 / 3276:
+G = 1: 5.7e8 / 4.1e9 / 3.9e10; G = 16: 1.8e10 / 5.4e10 / 1.8e11. For comparison, one dense MMSE solve
+at M = 3276 is 4.7e10 and the CG equaliser 4.2e8 per symbol. **The estimator dominates the cost.**
+Re-estimating every ~40 symbols (30 km/h) at the full band is ~30 TOPS as written: not realistic.
+Mitigations (not built): warm start from the previous estimate (1-2 iterations instead of 20), reuse
+the static input-side factor V (only U is refreshed; a 4x smaller system), and rank 6 instead of 8.
+Together these give an estimated ~50x reduction.
+
+### (8) More baselines (`week6_baselines_pilots.m`), rate bit/s/Hz at 20/30 dB, 10 channels
+ours 6.48/9.65 | CE-BEM 2.17/1.07 | OMP (harmonic x delay dictionary, stops at noise level) 2.32/1.19 |
+unstructured banded LS with **32** orthogonal pilot symbols (16x our overhead) 0.85/0.54 | perfect 6.58/9.89.
+Sparse recovery stalls like BEM (a truncated harmonic set). Brute-force LS is worst even with 16x
+the pilots. Deep-learning estimators were not run: they need training data, and the comparison of
+interest here is model structure. Listed as future work.
+
+### (11) Pilot design, same number of pilot REs (512) and same pilot energy, rate at 20/30 dB
+2 full pilot symbols 6.49/9.71 | comb-2 over 4 symbols, gaps EMPTY (NR DMRS-like) 6.52/9.79 |
+comb-4 over 8 symbols, gaps empty 6.51/9.77 | comb-2 with DATA in the gaps 4.79/5.10 |
+same + 1 decision-directed pass 6.36/8.82.
+**Design rule:** standard comb pilots work as well as full pilot symbols if the neighbouring REs are
+left empty (allowed in NR). Data next to pilots leaks into them through the switching; one DD pass
+recovers most of it at 20 dB but not at 30 dB.
+
+### (2) Timing knowledge (`week6_timing.m`)
+Loss vs perfect (dB at 20/30 dB) with the receiver using the NOMINAL timing:
+* common offset 0.02/0.05/0.1/0.2 slot: 4.26/9.86/13.55/15.07 at 20 dB, 11.3/20.5/24.1/25.3 at 30 dB.
+  **Very sensitive:** 0.02 slot = 83 ns.
+* random edge jitter rms 0.01/0.02/0.05 slot (new every symbol): 2.57/5.44/9.78 at 20 dB, 9.9/14.3/19.7 at 30 dB.
+* **Blind offset recovery** (scan the offset, keep the smallest pilot residual; no truth):
+  true 0.05/0.20/0.40 -> estimated 0.050/0.200/0.400; loss blind vs known 0.18/0.19, 0.24/0.27,
+  0.15/0.16 at 20 dB (0.28/0.27, 0.41/0.39, 0.35/0.36 at 30 dB). Bar (0.2 slot within 0.3 dB of
+  known): PASS. Caveat: these offsets lay ON the scan grid. Off-grid offsets with golden-section
+  refinement, and finer jitter levels (0.1-0.5% of a slot), are running in `week6_timing_offgrid.m`.
+* Conclusion so far: constant clock offsets are recovered blindly; jitter cannot be estimated
+  away and becomes a hardware requirement (well below ~0.5% of a slot, ~20 ns).
+
+### (5b) Hardware follow-up (`week6_hardware_fix.m`)
+* Switching transients **fixed**: kernels from a calibrated or blindly estimated rise time.
+  Loss (20/30 dB), nominal -> calibrated -> blind: rise 0.05: 0.75/4.78 -> 0.30/0.41 -> 0.43/0.42;
+  0.1: 1.96/10.2 -> 0.30/0.61 -> 0.26/0.61; 0.2: 3.13/11.5 -> 0.23/0.50 -> 0.23/0.50;
+  0.3: 3.83/11.7 -> 0.23/0.36 -> 0.21/0.37. Rise time estimated within 0.03 (exact from 0.1).
+* Phase noise with a continuous phase and CPE removal still shows 2.2/8.1 dB at 100 Hz, but that
+  comparison was UNFAIR: its reference knew each symbol's random phase-noise ICI. Rerun with a fair
+  reference (true channel, unknown phase noise) in `week6_phasenoise.m`.
+
+### (5c) Phase noise, fair comparison (`week6_phasenoise.m`)
+Continuous Wiener phase over pilots and data, common phase removed per symbol. Rate (bit/s/Hz) at
+20 / 30 dB, no phase noise 6.63 / 9.94:
+| linewidth | genie channel (knows H0, not the phase noise) | ours | ours vs genie channel |
+|---|---|---|---|
+| 10 Hz | 6.57 / 9.44 | 6.45 / 9.30 | 0.37 / 0.42 dB |
+| 100 Hz | 6.31 / 8.31 | 6.15 / 7.99 | 0.52 / 0.99 dB |
+| 1 kHz | 4.72 / 5.24 | 4.45 / 4.79 | 0.90 / 1.37 dB |
+| 10 kHz | 1.96 / 2.00 | 1.59 / 1.54 | 1.20 / 1.38 dB |
+Most of the loss is the generic OFDM phase-noise ICI that any receiver suffers. Ours adds 0.4-1.4 dB
+because the pilots are corrupted too. Bar (within 0.5 dB of genie channel at <= 1 kHz, 20 dB):
+**FAIL** at 1 kHz (0.90 dB); met at 10 Hz, borderline at 100 Hz. Requirement for the paper: equivalent
+linewidth below ~100 Hz at 30 kHz spacing, or standard phase tracking (NR PT-RS). A receiver
+knowing the phase noise itself loses nothing (phase noise is unitary), but that bound is unreachable.
+
+### (4) 3GPP TDL channels, larger surfaces, near field (`week6_channels.m`, `tdl38901.m`)
+Gap to perfect (bit/s/Hz) at 20/30 dB, rank 8, 2 pilots; first number with the 0.3 us window, second
+with a CP-wide (2.34 us) window:
+* TDL-A: 30 ns 0.08/0.19 (CP 0.72/1.40); **100 ns 0.54/2.49; 300 ns 2.13/5.39** (CP 1.27/4.39)
+* TDL-C: 30 ns 0.07/0.26; **100 ns 0.87/3.30; 300 ns 1.66/4.66** (CP 1.12/3.92)
+* TDL-D: 30 ns 0.14/0.79; **100 ns 1.39/3.83; 300 ns 1.64/4.45** (CP 1.67/3.67)
+* Q = 64/256/1024 (TDL-C, 30 ns): 0.06-0.11 / 0.17-0.25. Near field (Q = 1024, TDL-D LoS from exact
+  distances, user at 3/10/30 m): 0.09-0.18 / 0.38-0.60. Fine.
+**Weakness found:** standard 3GPP channels with realistic delay spread (100-300 ns) break the default
+estimator. They have 14-24 taps from different directions (our own model had 6 paths), so rank 8
+and a 0.3 us window are too small. **Correction:** the earlier "robust to 100 ns" result (week3_delayspread)
+used our 6-path model and was too optimistic for standard channels.
+Fix under test (`week6_channels_fix.m`): window = min(CP, 10 x DS), rank 8/16/32, 2/4/8 pilots.
+
+### (2b) Timing follow-up (`week6_timing_offgrid.m`)
+* Blind offset recovery with OFF-grid offsets (uniform in +/-0.5 slot; coarse scan then golden-section
+  refinement of the pilot residual): offset error rms 0.0033 slot (~14 ns). Loss blind/known:
+  0.20/0.19 dB at 20 dB (**bar met**), but **3.69/0.45 dB at 30 dB**: the residual 14 ns error is
+  too large at high SNR. Open issue: needs a finer timing estimate (final refinement with the full
+  estimator, or averaging over more pilots).
+* Jitter requirement, loss at 20/30 dB: 4 ns rms (0.1% slot) 0.24/0.94; 8 ns 0.40/2.05;
+  21 ns 0.97/5.91. **Requirement: switching jitter below ~20 ns for 20 dB operation and ~4 ns for
+  30 dB.** FPGA controllers typically achieve sub-ns jitter, but it must be stated.
 
 ## Run
 ```

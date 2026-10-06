@@ -433,12 +433,11 @@ flowchart LR
   <tr><td><strong>Ours, timing only</strong></td><td class="num"><strong>6.52</strong></td><td class="num"><strong>9.68</strong></td></tr>
   <tr><td>Perfect channel knowledge</td><td class="num">6.61</td><td class="num">9.92</td></tr>
 </table></div>
-<p>The basis-expansion estimator does not improve with more pilots (2.32 with 8 pilots), because the slow 1/h² harmonic tail falls outside any fixed set of harmonics. At the full band (10 trials) it misses 55 to 87% of symbols, while ours stays within 1.05 to 1.14× of the perfect-channel error rate.</p>
+<p>The basis-expansion estimator does not improve with more pilots (2.32 with 8 pilots), because the slow 1/h² harmonic tail falls outside any fixed set of harmonics. At the full band (10 trials) it misses 55 to 87% of symbols. Ours, with 2 pilots alone, has 1.09× the perfect-channel error rate at 20 dB but 1.54× at 28 dB with 64-QAM (an earlier 3-trial run gave 2.3×); one decision-directed pass brings these to 1.05× and 1.14× (1.4× in the 3-trial run). More trials are planned to settle the 28 dB number.</p>
 
 <h3>Supporting results</h3>
 <ul>
   <li><strong>Exact fast operator.</strong> Matches the full matrix to 7 × 10⁻¹⁶. 20 CG iterations give the same symbol error rate as the direct solve. In MATLAB it is not yet faster in seconds at these sizes; the advantage is in operation count and memory, and the paper will claim only that.</li>
-  <li><strong>Choosing per-element shifts for the user</strong> raised the user's rate from 5.6 to 8.9 bit/s/Hz while an eavesdropper still saw scrambling. Only 8 trials, and the idea of steering harmonics with timing shifts is known (space-time-coding metasurfaces), so this is a side result.</li>
 </ul>
 
 
@@ -553,7 +552,7 @@ flowchart LR
 <div class="figread">
   <div><h4>What it shows</h4><p>Symbol error rate over all 3276 subcarriers of the 5G n78 band, computed without ever building the full channel matrix. Left: all elements share one pattern (10 channels). Right: each element has its own shifted pattern (5 channels).</p></div>
   <div><h4>How to read it</h4><ul><li>Log scale: shorter bars mean fewer errors.</li><li>Compare the blue bar (ours) with the black bar (perfect channel) in each group.</li><li>Error bars are wide because channels differ a lot from trial to trial; within each trial ours tracks the true channel closely.</li></ul></div>
-  <div><h4>What to take away</h4><ul><li>Ours stays within 1.05 to 1.14× of the perfect-channel error rate.</li><li>The literature's estimator (orange) misses 55 to 87% of symbols at this bandwidth.</li><li>The per-element case works too (−34 dB estimation error) after using the cyclic-shift structure; the first attempt failed.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>With 2 pilots alone, ours has 1.09× the perfect-channel error rate at 20 dB (16-QAM) and 1.54× at 28 dB (64-QAM). One decision-directed pass brings these to 1.05× and 1.14×. Report both, not just the refined number.</li><li>The literature's estimator (orange) misses 55 to 87% of symbols at this bandwidth.</li><li>The per-element case works too (−34 dB estimation error) after using the cyclic-shift structure; the first attempt failed.</li></ul></div>
 </div>
 
 <h3 id="fig-9"><span class="fignum">Fig. 9</span>Cost of the equaliser</h3>

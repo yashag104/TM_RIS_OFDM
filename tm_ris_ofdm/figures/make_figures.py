@@ -120,16 +120,17 @@ def fig_fullband():
     names = d["names"]
     cases = [("snr20_qam16", "20 dB, 16-QAM"), ("snr28_qam64", "28 dB, 64-QAM")]
     order = [("onetap", "One-tap", ONETAP), ("bem_dd", "CE-BEM", BEM),
-             ("timing_dd", "Ours (timing only)", OURS), ("true", "Perfect channel", INK)]
+             ("timing_p", "Ours, 2 pilots", "#8fb6ea"), ("timing_dd", "Ours + 1 DD pass", OURS),
+             ("true", "Perfect channel", INK)]
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8), gridspec_kw={"width_ratios": [1.35, 1]})
     ax = axes[0]
-    w = 0.19
+    w = 0.16
     x = np.arange(len(cases))
     for k, (key, lab, col) in enumerate(order):
         i = names.index(key)
         m = [d[c]["ser_mean"][i] for c, _ in cases]
         e = [d[c]["ser_ci95"][i] for c, _ in cases]
-        pos = x + (k - 1.5) * (w + 0.02)
+        pos = x + (k - 2) * (w + 0.015)
         lo = [min(ei, mi * 0.9) for mi, ei in zip(m, e)]            # keep log-axis error bars positive
         ax.bar(pos, m, w, color=col, label=lab, yerr=[lo, e], capsize=2,
                error_kw={"ecolor": MUTED, "lw": 0.8})
@@ -137,7 +138,7 @@ def fig_fullband():
     ax.set_xticks(x, [lab for _, lab in cases])
     ax.set_ylabel("Symbol error rate")
     ax.set_title("Identical patterns, 10 channels", loc="left", color=INK)
-    ax.legend(frameon=False, loc="upper center", ncol=2, bbox_to_anchor=(0.5, -0.14))
+    ax.legend(frameon=False, loc="upper center", ncol=3, bbox_to_anchor=(0.5, -0.14), fontsize=7)
     # right: per-element patterns, shift-structure estimator
     ax = axes[1]
     order2 = [(0, "One-tap", ONETAP), (2, "Ours (timing only)", OURS), (1, "Perfect channel", INK)]

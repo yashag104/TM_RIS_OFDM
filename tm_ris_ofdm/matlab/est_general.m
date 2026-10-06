@@ -13,6 +13,7 @@ function Hh = est_general(Y, S, T, grp, F, lam, s2, r, iters)
 %   Returns the estimated M x M coupling matrix.
 
 [M, Np] = size(S); L = size(F, 2); G = size(T, 1); y = Y(:); %#ok<NASGU>
+r = min(r, L);                                     % rank cannot exceed the delay-basis size
 Gk = cell(G, 2, Np);                               % T{g,s} (S_p .* F), M x L
 for g = 1:G, for s = 1:2, for p = 1:Np
     Gk{g,s,p} = T{g,s} * (S(:,p) .* F);
