@@ -440,12 +440,11 @@ flowchart LR
   <tr><td><strong>Ours, timing only</strong></td><td class="num"><strong>6.52</strong></td><td class="num"><strong>9.68</strong></td></tr>
   <tr><td>Perfect channel knowledge</td><td class="num">6.61</td><td class="num">9.92</td></tr>
 </table></div>
-<p>The basis-expansion estimator does not improve with more pilots (2.32 with 8 pilots), because the slow 1/h² harmonic tail falls outside any fixed set of harmonics. At the full band (10 trials) it misses 55 to 87% of symbols, while ours stays within 1.05 to 1.14× of the perfect-channel error rate.</p>
+<p>With 25 harmonics the basis-expansion estimator barely improves with more pilots (2.32 with 8 pilots), because the slow 1/h² harmonic tail falls outside that set. Keeping all 511 harmonics fixes that only with many more pilots: with 32 pilot symbols it reaches 6.18 and 9.37 bit/s/Hz, close to ours. So the fair claim is a 16× pilot saving: ours with 2 pilots beats full-harmonic BEM with 32, and at 2 pilots full BEM collapses to 0.13. At the full band (10 trials) it misses 55 to 87% of symbols. Ours, with 2 pilots alone, has 1.09× the perfect-channel error rate at 20 dB but 1.54× at 28 dB with 64-QAM (an earlier 3-trial run gave 2.3×); one decision-directed pass brings these to 1.05× and 1.14× (1.4× in the 3-trial run). More trials are planned to settle the 28 dB number.</p>
 
 <h3>Supporting results</h3>
 <ul>
   <li><strong>Exact fast operator.</strong> Matches the full matrix to 7 × 10⁻¹⁶. 20 CG iterations give the same symbol error rate as the direct solve. In MATLAB it is not yet faster in seconds at these sizes; the advantage is in operation count and memory, and the paper will claim only that.</li>
-  <li><strong>Choosing per-element shifts for the user</strong> raised the user's rate from 5.6 to 8.9 bit/s/Hz while an eavesdropper still saw scrambling. Only 8 trials, and the idea of steering harmonics with timing shifts is known (space-time-coding metasurfaces), so this is a side result.</li>
 </ul>
 
 
@@ -560,7 +559,7 @@ flowchart LR
 <div class="figread">
   <div><h4>What it shows</h4><p>Symbol error rate over all 3276 subcarriers of the 5G n78 band, computed without ever building the full channel matrix. Left: all elements share one pattern (10 channels). Right: each element has its own shifted pattern (5 channels).</p></div>
   <div><h4>How to read it</h4><ul><li>Log scale: shorter bars mean fewer errors.</li><li>Compare the blue bar (ours) with the black bar (perfect channel) in each group.</li><li>Error bars are wide because channels differ a lot from trial to trial; within each trial ours tracks the true channel closely.</li></ul></div>
-  <div><h4>What to take away</h4><ul><li>Ours stays within 1.05 to 1.14× of the perfect-channel error rate.</li><li>The literature's estimator (orange) misses 55 to 87% of symbols at this bandwidth.</li><li>The per-element case works too (−34 dB estimation error) after using the cyclic-shift structure; the first attempt failed.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>With 2 pilots alone, ours has 1.09× the perfect-channel error rate at 20 dB (16-QAM) and 1.54× at 28 dB (64-QAM). One decision-directed pass brings these to 1.05× and 1.14×. Report both, not just the refined number.</li><li>The literature's estimator (orange) misses 55 to 87% of symbols at this bandwidth.</li><li>The per-element case works too (−34 dB estimation error) after using the cyclic-shift structure; the first attempt failed.</li></ul></div>
 </div>
 
 <h3 id="fig-9"><span class="fignum">Fig. 9</span>Cost of the equaliser</h3>
@@ -663,6 +662,11 @@ flowchart TB
     <li>16 elements is a small surface; larger surfaces mostly add parameters to the low-rank estimator.</li>
     <li>The receiver must be told the switching timing; it does not need the element model.</li>
     <li>When many elements use different random patterns, 4 pilot symbols are needed instead of 2 (Fig. 10).</li>
+    <li>Standard 3GPP channels with realistic delay spread need more pilots: 8 pilot symbols at 100 ns; 300 ns is not yet solved.</li>
+    <li>Timing: a constant clock offset is recovered blindly up to about 20 dB; at 30 dB the RIS and receiver need timing alignment within about 10 ns, and switching jitter must stay below about 4 ns (20 ns at 20 dB).</li>
+    <li>Hardware: switching transients are handled by estimating the rise time; residual carrier-frequency offset must stay below about 1% of the subcarrier spacing; oscillator phase noise must be low (linewidth below about 100 Hz) or tracked, as 5G does.</li>
+    <li>Fast vehicles (120 km/h) at high SNR outdate the estimate within a few symbols; this needs a tracking receiver (planned).</li>
+    <li>The estimator, not the equaliser, is the expensive part (about 4×10<sup>10</sup> operations per full-band estimate); warm starts and reusing the static half of the channel are planned.</li>
     <li>At 10 dB SNR the gain over the conventional receiver is modest (about 2 dB).</li>
     <li>The fast equaliser's advantage is asymptotic, not measured wall-clock time in MATLAB.</li>
   </ul>

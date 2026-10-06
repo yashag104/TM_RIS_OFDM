@@ -435,6 +435,46 @@ Fix under test (`week6_channels_fix.m`): window = min(CP, 10 x DS), rank 8/16/32
   21 ns 0.97/5.91. **Requirement: switching jitter below ~20 ns for 20 dB operation and ~4 ns for
   30 dB.** FPGA controllers typically achieve sub-ns jitter, but it must be stated.
 
+### (2b, 2c) Strongest honest baselines (`week7_strong_baselines.m`), 20 trials, rate at 20/30 dB
+**2b, BEM with more harmonics and pilots** (same LMMSE/DPSS prior). Np = 2 / 8 / 32:
+* |h| <= 12: 2.13/2.26/2.33 | 1.09/1.26/1.41
+* |h| <= 40: 2.06/4.20/4.44 | 1.82/3.34/3.82
+* |h| <= 128: 0.15/4.25/6.08 | 0.07/6.06/8.15
+* ALL |h| <= 255 (4 trials only, ~8700 unknowns): 0.13/2.97/6.18 | 0.08/4.19/9.37
+* ours, Np = 2: 6.51 | 9.69; perfect 6.59 | 9.89
+**Correction:** the earlier statement "BEM does not improve with more pilots" holds only for the
+truncated BEM. Full-harmonic BEM with 32 pilot symbols reaches 6.18 / 9.37, close to ours.
+**Correct claim:** ours with 2 pilots beats full-harmonic BEM with 32 (a 16x pilot saving); at equal
+overhead (Np = 2) full BEM collapses to 0.13.
+**2c, ICI equalisers from the high-mobility OFDM literature**, on our estimate (oracle H in brackets):
+banded MMSE (Schniter/Rugini-style) window 4 / 16 / 32: 3.23 (3.24) / 4.82 (4.83) / 5.45 (5.47) at 20 dB,
+3.35 / 5.26 / 6.20 at 30 dB: limited by the harmonic tail **even with the true channel**.
+LSQR/CG (Hrycak-style) 10 iterations 6.51 (6.59) | 9.66 (9.83); full MMSE 6.51 (6.59) | 9.69 (9.89).
+The iterative matrix-free equaliser matches full MMSE in 10 iterations.
+
+### (3) Precise blind timing (`week7_timing_refine.m`), 12 trials, off-grid offsets
+Offset error rms (slot) coarse / two-stage / + data-aided, and loss (dB) incl. known timing:
+* 20 dB: 0.0045 / 0.0043 / 0.0029 (~12 ns); loss 0.57 / 0.52 / **0.20** (known 0.25). PASS.
+* 30 dB: 0.021 / 0.018 / 0.019 (~80 ns); loss 4.80 / 4.32 / 3.78 (known 0.41). **Bar (within 0.5 dB
+  of known at 30 dB) FAILED.**
+Diagnosis: the offset error is WORSE at 30 dB than at 20 dB, a near-ambiguity rather than noise. A timing
+shift multiplies the channel by phase ramps that look like extra propagation delay, so the
+delay-domain channel factors partly absorb a wrong offset and the pilot-residual surface is flat
+near the truth. **Limitation:** blind timing recovery is adequate up to ~20 dB; at 30 dB the RIS and
+receiver need timing alignment within ~10 ns (shared clock or calibration).
+
+### (4b) Rich 3GPP channels: window, rank, pilots (`week6_channels_fix.m`), 6 trials
+Window = min(CP, 10 x DS) (1.0 us at 100 ns, 2.34 us at 300 ns). Gap (bit/s/Hz) at 20 dB (30 dB),
+Np = 2 / 4 / 8; rank 8, 16 or 32 makes little difference (ranges over rank shown):
+* TDL-A 100 ns: 0.69-0.76 (2.5-2.8) / 0.21-0.32 (0.8-0.9) / **0.08-0.09 (0.24-0.27)**
+* TDL-C 100 ns: 0.47-0.50 (1.7-1.9) / 0.17-0.24 (0.6-0.8) / **0.09-0.10 (0.18-0.26)**
+* TDL-D 100 ns: 0.65-0.69 (2.1-2.3) / 0.31-0.37 (1.3-1.4) / **0.23-0.24 (0.85-0.95)**
+* 300 ns (A/C/D): 1.1-1.5 (3.4-4.7) / 0.6-1.1 (2.6-3.3) / 0.35-0.92 (1.4-2.3)
+Bar (< 0.3 at 20 dB for every model at 100 ns): **PASS with 8 pilot symbols**. 300 ns: open limitation.
+The pilot count, not the rank, is the lever: a delay window matched to the spread means more unknowns.
+Overhead: 8 pilots per coherence block, e.g. ~3% walking (>300 symbols), ~20% urban (~40 symbols);
+comb pilots with empty gaps (item 11) let these spread over time.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
