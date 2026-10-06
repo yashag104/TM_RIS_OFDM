@@ -25,9 +25,9 @@ Thumbs.db
 # Smoke-run dumps: a single multi-megabyte JSON of every intermediate metric,
 # written by run_experiments_smoke.py to verify the suite executes. It is not a
 # result anyone reads, and it is far too large to version.
-results/experiments_smoke_*.json
+old_ris_project/results/experiments_smoke_*.json
 
 # Output of `run_link_level.py --quick`: a pipeline check, not a result.
-results/link_level_quick/
-results/link_level_corrected_quick/
-results/pilot_limited_quick/
+old_ris_project/results/link_level_quick/
+old_ris_project/results/link_level_corrected_quick/
+old_ris_project/results/pilot_limited_quick/
