@@ -1,0 +1,7 @@
+{
+  "note": "L1b run stopped after TDL-A (6 trials) to free the machine for L1c; the bar (all three models <= 0.3 at 20 dB) had already failed on TDL-A (ts30 0.31). Rerun reproduced trial 1 of the first (interrupted) run exactly. Values transcribed from the log.",
+  "names": ["single", "ts10", "ts30", "genieW"],
+  "Np": 8,
+  "snr_db": [20, 30],
+  "TDLA_ds300ns": {"gap_bits_20dB": [0.40, 0.36, 0.31, 0.15], "gap_bits_30dB": [1.84, 1.08, 0.77, 0.38]}
+}
