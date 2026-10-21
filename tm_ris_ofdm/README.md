@@ -488,6 +488,59 @@ The pilot count, not the rank, is the lever: a delay window matched to the sprea
 Overhead: 8 pilots per coherence block, e.g. ~3% walking (>300 symbols), ~20% urban (~40 symbols);
 comb pilots with empty gaps (item 11) let these spread over time.
 
+## Week 8: attacking the five remaining limitations (pre-registered 2026-10-21)
+
+Bars fixed BEFORE running. A failed bar stays failed and is reported.
+
+| # | Limitation | Idea | Bar (pass if ...) |
+|---|---|---|---|
+| L5 | Fast equaliser only shown by op count | time matrix-free CG vs dense MMSE in MATLAB | CG is faster in wall-clock at M = 3276 with the same SER (within CI) |
+| L4 | Full-band update cost extrapolated | measure cold vs warm-start updates at M = 3276, moving user | warm start >= 5x faster in wall-clock and SER within 1.2x of cold |
+| L2 | Timing must be known to ~10 ns at 30 dB | a clock offset d equals delaying the output hop and advancing the input hop by d slots (D T D* o (FU)(FV)^T = T o (D FU)(D* FV)^T), so a two-sided delay window with a guard absorbs it | unknown off-grid offset up to +-0.02 slot (83 ns), NO timing search: loss within 1 dB of known timing at 30 dB |
+| L2b (added 2026-10-21 after L2 failed, before running) | same | choose the offset by the Bayesian evidence of the linear first-stage model (penalises fits that need improbable spread factors), instead of the pilot residual, which is nearly flat in the offset | off-grid offsets uniform in +-0.5 slot (as week7), 30 dB: evidence-blind within 1 dB of known timing |
+| L1 | 300 ns delay spread unsolved | learn the static input-side factor V (BS -> RIS hop, full inner dimension r = Q) once from several frames; per frame estimate only U (linear, convex) | TDL-A/C/D at 300 ns, 20 dB, 8 pilots: gap <= 0.3 bit/s/Hz for all three; and lower than the single-frame estimator at 30 dB |
+| L3 | 120 km/h outdates the estimate in a few symbols | with V fixed, track U symbol by symbol from decisions (Kalman-style ridge to the previous U) | 120 km/h: gap <= 0.25 bit/s/Hz averaged over symbols 1-40 after the pilots at 20 dB, and <= 0.5 over 1-20 at 30 dB |
+
+
+### L5 result: equaliser wall-clock (`week8_eq_walltime.m`, `week8_eq_walltime2.m`)
+Pre-registered run (fast_coupling as used everywhere, 25 CG iterations, 12 symbols, same channel):
+M = 512 / 1024 / 2048 / 3276: dense 0.09 / 0.33 / 1.49 / 5.56 s, CG 2.25 / 4.57 / 10.95 / 18.68 s;
+SER identical (3276: 0.0652 vs 0.0648). **Bar FAILED: CG is 3.4x slower at M = 3276 in MATLAB.**
+Post-hoc (labelled as such): with identical sequences all elements share one kernel per state, so the
+operator can do one batched FFT per state (states summed in frequency, one inverse FFT). With this
+operator: M = 3276 dense 4.52 s vs CG-10 2.88 s (1.6x faster, SER 0.0088 vs 0.0090) and CG-25 7.41 s;
+M = 6552 (dense not run, 690 MB per matrix): CG-10 6.6 s, CG-25 14.3 s, but here CG-10 is no longer
+converged (SER 0.153 vs 0.125). Honest statement for the paper: the crossover in MATLAB is near the
+full n78 band and needs the batched operator and ~10 iterations; the robust advantage is memory
+(O(QM) vs O(M^2)) and the operation count, not MATLAB seconds. The 6552 point also shows the CG
+iteration count must grow with bandwidth.
+
+### L2 result: guarded delay window (`week8_timing_guard.m`), 12 trials, loss dB at 20/30 dB
+| case | plain | guard | known |
+|---|---|---|---|
+| (a) common offset <= 83 ns, guard 100 ns | 0.56 / 1.76 | 0.92 / 2.32 | 0.21 / 0.39 |
+| (b) common offset <= 208 ns, guard 250 ns | 4.02 / 12.28 | 3.20 / 9.21 | 0.19 / 0.28 |
+| (c) per-element skew <= 42 ns, guard 50 ns | 0.57 / 1.77 | 0.39 / 1.26 | 0 (gap to perfect H) |
+**Bar FAILED** (a: guard is worse than doing nothing). The identity behind the idea is exact
+(checked: 2.5e-15), and a diagnostic showed the shifted factors ARE representable even in the plain
+basis (projection error 1e-4). So representation was never the problem: the DPSS prior shrinks the
+improbable shifted factors, and a wider window spreads the prior over more dimensions (more noise).
+The same fact explains week7's 30 dB failure: the pilot residual is nearly flat in the offset.
+This led to L2b (evidence-based timing, bar fixed before running).
+
+### L2b result: blind timing by Bayesian evidence (`week8_timing_evidence.m`), 12 trials
+Same seed, channels and offsets as week7_timing_refine (its residual numbers are reproduced exactly).
+Off-grid offsets uniform in +-0.5 slot, Np = 2:
+| | offset error rms (slot) | loss resid / evid / known (dB) |
+|---|---|---|
+| 20 dB | resid 0.0045, evid 0.0011 | 0.57 / **0.25** / 0.25 |
+| 30 dB | resid 0.0210, evid 0.0012 (5 ns) | 4.80 / **0.40** / 0.41 |
+**Bar PASSED** (30 dB: evidence-blind 0.40 dB vs 0.41 dB known). The receiver no longer needs the RIS
+timing offset: it finds it from 2 pilot symbols to ~5 ns. The 30 dB "~10 ns alignment" limitation is
+removed. What remains: random per-edge jitter changes the pattern shape, not just its delay, so it
+is not absorbed; it must stay below ~4 ns at 30 dB (cheap clocks have ps-level jitter). A fixed
+per-element skew would need 16 offsets; not tested.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
