@@ -1,4 +1,4 @@
-function st = learn_input_side(Ys, Ss, T, F, lam, s2, r, iters)
+function st = learn_input_side(Ys, Ss, T, F, lam, s2, r, iters, ninit)
 %LEARN_INPUT_SIDE Learn the static input side W_s = F V_s from Nf frames (G = 1).
 %   Improved version of est_twoscale('learn'): the initial V comes from ALL frames.
 %   Each frame's linear first stage (pooled LMMSE, as in est_general) estimates
@@ -9,12 +9,15 @@ function st = learn_input_side(Ys, Ss, T, F, lam, s2, r, iters)
 %   The prior of U is also learned (empirical Bayes over frames): the learned W is an
 %   arbitrary mixture of the true input side, so the U columns are correlated:
 %       Cov(vec U) = kron(Ru, diag(lam)),  Ru = mean_f U_f^T diag(1/lam) conj(U_f) / L.
+%   ninit (optional): use only the first ninit frames for the stacked-SVD init (saves
+%   the per-frame linear solves); ALS still uses all frames. Default: all frames.
 %   Returns W, V, sclU, U and Ru (use with EST_U_FRAME).
 
 Nf = numel(Ys); L = size(F, 2);
+if nargin < 9 || isempty(ninit), ninit = Nf; end
 pl = kron(lam(:), lam(:)); w = [pl; pl];
-Cst = zeros(Nf*L, 2*L);
-for f = 1:Nf
+Cst = zeros(ninit*L, 2*L);
+for f = 1:ninit
     [M, Np] = size(Ss{f}); y = Ys{f}(:); Phi = zeros(M*Np, 2*L*L);
     for s = 1:2
         for p = 1:Np
@@ -29,7 +32,7 @@ for f = 1:Nf
 end
 [~, Sg, Wc] = svd(Cst, 'econ');
 r = min(r, 2*L);
-sv = sqrt(Sg(1:r,1:r) / sqrt(Nf));
+sv = sqrt(Sg(1:r,1:r) / sqrt(ninit));
 V = {conj(Wc(1:L, 1:r)) * sv, conj(Wc(L+1:end, 1:r)) * sv};
 wl = repmat(lam(:), r, 1);
 sclV = mean(abs([V{1}(:); V{2}(:)]).^2 ./ [wl; wl]); sclU = sclV;

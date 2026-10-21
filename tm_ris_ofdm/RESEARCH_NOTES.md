@@ -68,3 +68,40 @@ is the blind eavesdropper attack above (ideal, Toeplitz, TMA).
 | C4 cyclic shift = diagonal modulations | identity known (STC: time delay -> -2 pi m tau / T harmonic phase, Zhang/Cui 2018); its use for estimation is new |
 | C5 matrix-free CG equaliser | known technique: Hrycak, Das, Matz, Feichtinger, IEEE TSP 58(11) 2010 (product-convolution operators + LSQR/GMRES, BEM). Our only addition: the TM-RIS coupling is EXACTLY product-convolution |
 Paper claims only C1, C2 and the use in C4; C3/C5 are cited as adopted methods.
+
+## Fourth novelty sweep (2026-10-21), five weeks after the anchor paper
+
+Searched arXiv / web for follow-ups and for the new week-8 ideas.
+
+**Scoop check: none found.**
+- Anchor authors (Iudice arXiv page): no TM-RIS paper after arXiv:2609.18360.
+- arXiv:2610.12773 (Wang, Xiang, Petropulu, 8 Oct 2026), generative (flow-matching) control of
+  TM-IRS for directional modulation with OFDM. Transmitter-side pattern design; no receiver,
+  estimator or equaliser. Cite as concurrent TM-IRS + OFDM work.
+- No paper found on channel estimation or ICI equalisation for OFDM through a time-modulated /
+  space-time-coded RIS. Closest: time-coded RIS + OFDM tensor DOA/delay estimation (Sensors 2022,
+  doi 10.3390/s22187083), STC-RIS localisation (arXiv:2410.20505), STMM modelling (arXiv:2302.08310).
+  None estimates the harmonic coupling for detection.
+
+**Week-8 ideas: what is new and what must be credited.**
+- Evidence-based blind timing (L2b). The TOOL is known: Bayesian model selection for OFDM channel
+  estimation under residual timing offsets (IEEE Access 2019, eprints.gla.ac.uk/188514); model
+  averaging over timing offset (IEEE TWC letter 2010, hub.hku.hk/handle/10722/124742); AIC/BIC for
+  joint channel, length and time offset (LATINCOM 2016). Related RIS timing work: blind sync-offset
+  estimation for RIS symbiotic radio (Chen, Long, Liang, Schober, ICC 2024, doi
+  10.1109/ICC51166.2024.10622298): the RIS backscatters its own symbols with an unknown offset that
+  causes ICI, estimated via virtual-subcarrier energy detection; ML timing offsets in distributed
+  multi-RIS (arXiv:2205.02426, 2107.12717). What appears NEW: for a TM-RIS, the switching offset is
+  exactly an opposite delay shift of the two hops (T_d o (FU)(FV)^T = T o (D FU)(D* FV)^T), which makes
+  the pilot residual nearly flat in the offset (why residual search fails at high SNR), and the
+  evidence under the DPSS prior resolves it. Claim the insight and the application, not the tool.
+- Two-timescale estimation (L1/L1b/L1c). WELL KNOWN for conventional RIS: quasi-static common BS-RIS
+  channel estimated rarely, RIS-user often (Hu and Dai, arXiv:1912.07990; cell-free RIS
+  arXiv:2207.14182; double-RIS arXiv:2211.16183; near field arXiv:2501.02985). Not a novelty claim.
+  Our contribution at most: the same principle for the harmonic-coupled TM-RIS model, with the
+  stacked-SVD initialisation of the shared input side. Must cite these.
+- Matrix-free CG for non-diagonal OFDM: known (Hrycak et al. 2010, already cited).
+
+**Verdict.** The core claim (timing-only estimator plus receiver for TM-RIS OFDM, no element model)
+is still unscooped. Evidence-based timing is a solid secondary contribution if credited as above.
+Two-timescale learning is an application of a known principle.
