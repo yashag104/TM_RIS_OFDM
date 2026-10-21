@@ -591,6 +591,34 @@ of week5 (MMSE SINR with |diag(WH)|^2 as signal) is blind to a common phase rota
 the receiver tracks the common phase (as 5G phase-tracking RS do). Week5's "~40 symbols at 30 km/h"
 holds with common-phase tracking; an uncoded detector without it needs fresh pilots far more often.
 
+### L1b/L1c results: two-timescale learning at 300 ns (`week8_twoscale_300ns_b.m`, `_c.m`)
+L1b (stopped after TDL-A, verdict already fixed): TDL-A, 8 pilots, gap at 20/30 dB: single 0.40/1.84,
+10 frames 0.36/1.08, 30 frames 0.31/0.77, genie 0.15/0.38. **L1b bar FAILED** (0.31 > 0.3).
+L1c (100 frames, 6 trials), gap at 20 dB / 30 dB, 8 pilots:
+| | single frame | learned W, 100 frames | true W (genie) |
+|---|---|---|---|
+| TDL-A 300 ns | 0.36 / 1.91 | **0.23** / 0.85 | 0.12 / 0.37 |
+| TDL-C 300 ns | 0.46 / 1.84 | **0.26** / 0.99 | 0.12 / 0.32 |
+| TDL-D 300 ns | 0.85 / 2.74 | 0.64 / 2.89 | 0.56 / 1.61 |
+**L1c bar FAILED on TDL-D** (A and C pass at 20 dB and halve the 30 dB gap). TDL-D fails even with
+the TRUE static side (0.56), so it is not the learning: at 300 ns TDL-D has taps up to 12.5 x 300 ns
+= 3.8 us, beyond the 2.34 us normal CP and outside any CP-limited delay window (taps beyond the CP
+carry ~ -20 dB). A real system would use an extended CP there. Statement for the paper: with the
+static BS -> RIS hop learned over ~100 frames (well within its coherence of minutes), 300 ns delay
+spread is handled for TDL-A and TDL-C with 8 pilots; channels whose taps exceed the CP remain out of
+scope. The learning principle itself is known for conventional RIS (RESEARCH_NOTES, fourth sweep).
+
+### L5b result: batched operator + stopping rule (`week8_eq_walltime3.m`), fresh seed
+| M | dense | CG (iterations used) | SER dense / CG |
+|---|---|---|---|
+| 2048 | 0.88 s | 0.83 s (8) | 0.0128 / 0.0151 |
+| 3276 | 2.95 s | **1.12 s (5)** | 0.0001 / 0.0001 |
+| 6552 | not run (memory) | 1.85 s (5) | - / 0.0001 |
+**Bar PASSED** at M = 3276 (2.6x faster, same SER). Caveats: at 3276 both SERs are ~1e-4, so the SER
+check is weak; at 2048 (reported, not in the bar) CG's SER is 1.18x dense, so the 1e-2 stopping rule
+is slightly loose. With the batched operator CG time grows ~linearly in M (1.1 s -> 1.9 s from 3276
+to 6552) while dense grows ~M^3 and does not fit at 6552.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
