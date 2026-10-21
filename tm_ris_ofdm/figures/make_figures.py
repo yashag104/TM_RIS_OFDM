@@ -745,6 +745,105 @@ def fig_complexity_fix():
     fig.tight_layout(); save(fig, "fig18_complexity_fix")
 
 
+# Fig. 19 - pilot overhead: net throughput vs pilots, speed and channel (week8_pilot_overhead.m)
+NS_REFRESH = [4, 6, 8, 10, 15, 20, 30, 40, 60, 80, 120, 160, 240, 320]
+
+
+def _arr(x):
+    return np.array(x, dtype=float)
+
+
+def net_rate(curve, grid, Np, N):
+    """Net rate (N - Np)/N * mean rate over data symbols Np..N-1 (curve on the grid)."""
+    g = np.asarray(grid, float); ok = (g >= Np) & np.isfinite(curve)
+    if N <= Np or ok.sum() < 1 or g[ok][0] > Np or (N - 1) > g[ok][-1]:
+        return np.nan
+    n = np.arange(Np, N)
+    return (N - Np) / N * np.interp(n, g[ok], curve[ok]).mean()
+
+
+def best_net(curves, grid, nps):
+    """curves: list over Np of rate-vs-grid arrays. Returns (net, Np, N)."""
+    best = (np.nan, None, None)
+    for np_, c in zip(nps, curves):
+        for N in NS_REFRESH:
+            v = net_rate(c, grid, np_, N)
+            if np.isfinite(v) and not (best[0] >= v):
+                best = (v, np_, N)
+    return best
+
+
+def overhead_tables(d, metric=0):
+    """{chan: {speed: {snr: {recv: (net, Np, N)}}}} with BEM's best hmax per case."""
+    grid = d["grid"]; out = {}
+    for ch in [c for c in ("phys", "TDLA", "TDLC", "TDLD") if c in d]:
+        C = d[ch]; O = _arr(C["ours"])[0]; T = _arr(C["onetap"])[0]; B = _arr(C["bem"])[0]; Pf = _arr(C["perfect"])[0]
+        out[ch] = {}
+        for iv, v in enumerate(d["speeds_kmh"]):
+            out[ch][v] = {}
+            for i_s, snr in enumerate(d["snr_db"]):
+                res = {"ours": best_net([O[ip, iv, i_s, :, metric] for ip in range(len(d["Np_ours"]))], grid, d["Np_ours"]),
+                       "onetap": best_net([T[ip, iv, i_s, :, metric] for ip in range(len(d["Np_ours"]))], grid, d["Np_ours"])}
+                bb = [best_net([B[ip, ih, iv, i_s, :, metric] for ip in range(len(d["Np_bem"]))], grid, d["Np_bem"])
+                      for ih in range(B.shape[1])]
+                res["bem"] = max(bb, key=lambda x: -1 if not np.isfinite(x[0]) else x[0])
+                res["perfect"] = (np.nanmean(Pf[iv, i_s, :]), 0, None)
+                # ours: best refresh for each Np (for the figure)
+                res["ours_perNp"] = [best_net([O[ip, iv, i_s, :, metric]], grid, [d["Np_ours"][ip]])
+                                     for ip in range(len(d["Np_ours"]))]
+                res["bem_perNp"] = [max([best_net([B[ip, ih, iv, i_s, :, metric]], grid, [d["Np_bem"][ip]])
+                                         for ih in range(B.shape[1])], key=lambda x: -1 if not np.isfinite(x[0]) else x[0])
+                                    for ip in range(len(d["Np_bem"]))]
+                out[ch][v][snr] = res
+    return out
+
+
+def fig_pilot_overhead(src="week8_pilot_overhead"):
+    path = RES / f"{src}.json"
+    if not path.exists():
+        print("skip overhead: run matlab/week8_pilot_overhead.m first"); return
+    d = json.loads(path.read_text())
+    for k in ("speeds_kmh", "snr_db", "Np_ours", "Np_bem", "grid"):
+        d[k] = [int(x) for x in np.atleast_1d(d[k])]
+    chans = [c for c in ("phys", "TDLA", "TDLC", "TDLD") if c in d]
+    tabs = {m: overhead_tables(d, m) for m in (0, 1)}
+    speeds = d["speeds_kmh"]; i20 = 0
+    names = {"phys": "6-path Rician, 30 ns", "TDLA": "TDL-A, 100 ns", "TDLC": "TDL-C, 100 ns", "TDLD": "TDL-D, 100 ns"}
+    fig, axes = plt.subplots(len(chans), len(speeds), figsize=(7.2, 1.9 * len(chans) + 0.6), squeeze=False)
+    for r_, ch in enumerate(chans):
+        for c_, v in enumerate(speeds):
+            ax = axes[r_, c_]; t = tabs[0][ch][v][20]; t1 = tabs[1][ch][v][20]
+            ax.plot(d["Np_ours"], [x[0] for x in t["ours_perNp"]], color=OURS, marker="o", ms=4, mec="white", mew=0.6, label="Ours")
+            ax.plot(d["Np_ours"], [x[0] for x in t1["ours_perNp"]], color=OURS, ls=":", marker="o", ms=3.5, mfc="white", label="Ours, no phase tracking")
+            ax.plot(d["Np_bem"], [x[0] for x in t["bem_perNp"]], color=BEM, marker="s", ms=4, mec="white", mew=0.6, label="CE-BEM (best harmonics)")
+            ax.axhline(t["onetap"][0], color=ONETAP, lw=1.4, label="One-tap (best pilots)")
+            ax.axhline(t["perfect"][0], color=INK, ls="--", lw=1.1, label="Perfect, no pilots")
+            ax.set_xscale("log", base=2); ax.set_xticks([1, 2, 4, 8, 16, 32], ["1", "2", "4", "8", "16", "32"]); ax.minorticks_off()
+            ax.set_ylim(0, 7.2)
+            if r_ == 0: _title(ax, f"{v} km/h")
+            if c_ == 0: ax.set_ylabel(f"{names[ch]}\nnet rate", fontsize=7.5)
+            else: ax.set_yticklabels([])
+            if r_ == len(chans) - 1: ax.set_xlabel("Pilot symbols per refresh")
+            bo = t["ours"]
+            ax.text(0.97, 0.06, f"best: {bo[1]} pilots / {bo[2]} sym\n({100*bo[1]/bo[2]:.0f}% overhead)", transform=ax.transAxes,
+                    ha="right", va="bottom", fontsize=6.2, color=INK)
+    h, l = axes[0, 0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, fontsize=7, bbox_to_anchor=(0.5, -0.005))
+    fig.suptitle("Net throughput at 20 dB (bit/s/Hz after pilot overhead), refresh interval optimised for each point",
+                 x=0.01, ha="left", fontsize=9.3, color=INK)
+    fig.tight_layout(rect=(0, 0.07, 1, 1)); save(fig, "fig19_pilot_overhead")
+    # table for the README
+    lines = ["| channel | speed | SNR | ours: net (Np/N, overhead) | ours, no phase tracking | CE-BEM best | one-tap | perfect |", "|---|---|---|---|---|---|---|---|"]
+    for ch in chans:
+        for v in speeds:
+            for snr in d["snr_db"]:
+                t = tabs[0][ch][v][snr]; t1 = tabs[1][ch][v][snr]
+                f = lambda x: f"{x[0]:.2f} ({x[1]}/{x[2]}, {100*x[1]/x[2]:.0f}%)" if x[1] else f"{x[0]:.2f}"
+                lines.append(f"| {names[ch]} | {v} | {snr} | {f(t['ours'])} | {f(t1['ours'])} | {f(t['bem'])} | {f(t['onetap'])} | {t['perfect'][0]:.2f} |")
+    (RES / "week8_pilot_overhead_table.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines))
+
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
@@ -766,3 +865,4 @@ if __name__ == "__main__":
     fig_baselines()
     fig_directlink()
     fig_complexity_fix()
+    fig_pilot_overhead()
