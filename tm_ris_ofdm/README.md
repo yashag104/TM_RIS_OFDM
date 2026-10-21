@@ -576,6 +576,19 @@ such: at 120 km/h pilots must recur every ~10 symbols at 20 dB (as 5G's addition
 needs a Doppler-ICI-aware model. Side note (not the pre-registered receiver, not counted as a pass):
 simply reusing the two-timescale estimate gives 0.24 at 20 dB.
 
+### L4 result: warm start at the full band (`week8_fullband_warm.m`), M = 3276, 4 trials x 5 updates
+30 km/h, refresh every 40 symbols, Np = 2, 16-QAM, 20 dB, data 20 symbols after the pilots:
+time per update cold 12.5 s, **warm 1.4 s (8.6x faster)**; SER cold 0.3976, warm 0.3986 (ratio 1.00).
+**Bar PASSED** (>= 5x faster, SER within 1.2x). The ~2.5 TOPS extrapolation of week 7 is now a
+measurement: ~9x fewer seconds per update at the full band.
+Caveat found here (applies to week5 too): the absolute SER (0.40 vs 0.029 with the current true channel)
+is set by staleness, not by the estimator. Diagnostic (1 trial): data 2 symbols after the pilots, SER cold
+0.056 / true 0.043 (1.3x, as week4); 20 symbols after, cold 0.31, and even the TRUE channel of the pilot
+time gives 0.32. At 30 km/h the dominant path rotates by up to ~0.45 rad in 20 symbols. The rate metric
+of week5 (MMSE SINR with |diag(WH)|^2 as signal) is blind to a common phase rotation, i.e. it assumes
+the receiver tracks the common phase (as 5G phase-tracking RS do). Week5's "~40 symbols at 30 km/h"
+holds with common-phase tracking; an uncoded detector without it needs fresh pilots far more often.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"
