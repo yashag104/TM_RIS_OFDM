@@ -499,6 +499,8 @@ Bars fixed BEFORE running. A failed bar stays failed and is reported.
 | L2 | Timing must be known to ~10 ns at 30 dB | a clock offset d equals delaying the output hop and advancing the input hop by d slots (D T D* o (FU)(FV)^T = T o (D FU)(D* FV)^T), so a two-sided delay window with a guard absorbs it | unknown off-grid offset up to +-0.02 slot (83 ns), NO timing search: loss within 1 dB of known timing at 30 dB |
 | L2b (added 2026-10-21 after L2 failed, before running) | same | choose the offset by the Bayesian evidence of the linear first-stage model (penalises fits that need improbable spread factors), instead of the pilot residual, which is nearly flat in the offset | off-grid offsets uniform in +-0.5 slot (as week7), 30 dB: evidence-blind within 1 dB of known timing |
 | L1 | 300 ns delay spread unsolved | learn the static input-side factor V (BS -> RIS hop, full inner dimension r = Q) once from several frames; per frame estimate only U (linear, convex) | TDL-A/C/D at 300 ns, 20 dB, 8 pilots: gap <= 0.3 bit/s/Hz for all three; and lower than the single-frame estimator at 30 dB |
+| L1b (added 2026-10-21 after the first L1 model showed learned-W = single-frame, before running) | same | learn W from the row space of ALL frames' stacked linear estimates (SVD), then ALS, with the U prior covariance also learned over frames; Nf = 10 and 30 frames (40 cut to 30 for run time, before running) | same bar as L1: 300 ns, 20 dB, 8 pilots, gap <= 0.3 for A, C, D, and below single at 30 dB |
+| L3b (added 2026-10-21 after L3 failed, before running) | same | proper Kalman filter on vec(U): covariance propagated, process noise P0w kron(Ru, diag lam) with the same physics-set P0w, W and Ru from learn_input_side, measurement noise per symbol = max(s2, residual power of that symbol with the predicted channel and its decisions) | same bar as L3 |
 | L3 | 120 km/h outdates the estimate in a few symbols | with V fixed, track U symbol by symbol from decisions (Kalman-style ridge to the previous U) | 120 km/h: gap <= 0.25 bit/s/Hz averaged over symbols 1-40 after the pilots at 20 dB, and <= 0.5 over 1-20 at 30 dB |
 
 
@@ -540,6 +542,39 @@ timing offset: it finds it from 2 pilot symbols to ~5 ns. The 30 dB "~10 ns alig
 removed. What remains: random per-edge jitter changes the pattern shape, not just its delay, so it
 is not absorbed; it must stay below ~4 ns at 30 dB (cheap clocks have ps-level jitter). A fixed
 per-element skew would need 16 offsets; not tested.
+
+### L1 result: two-timescale estimator, first version (`week8_twoscale_300ns.m`, `est_twoscale.m`)
+TDL-A 300 ns, 6 trials, gap (bit/s/Hz) for Np = 2/4/8:
+| | single frame | learned W (10 frames) | true W (genie) |
+|---|---|---|---|
+| 20 dB | 1.53 / 0.77 / 0.33 | 1.38 / 0.77 / 0.37 | 0.57 / 0.29 / 0.11 |
+| 30 dB | 4.54 / 3.42 / 1.91 | 4.41 / 3.03 / 1.51 | 1.89 / 0.84 / 0.40 |
+**Bar FAILED** (TDL-A at 20 dB, 8 pilots: 0.37 > 0.3; the bar needs all three models), so the run was
+stopped after TDL-A to free the machine (`results/week8_twoscale_300ns.json` transcribed from the log).
+The genie column shows the idea is right: with the true static side, 300 ns is solved (0.11 at 20 dB,
+0.40 at 30 dB). The weak link was learning W: it started from ONE frame's poor estimate. This led to
+L1b (all-frame initialisation by SVD of the stacked linear estimates, plus a learned U prior), bar
+unchanged and fixed before running. Development of L1b used one separate smoke-test channel
+(TDL-A, 30 dB: single 1.80, stacked-SVD init 0.61, + learned U prior 0.48, genie 0.13).
+
+### L3 result: decision-directed tracking at 120 km/h (`week8_tracking_120.m`), 8 trials
+Average gap (bit/s/Hz) over symbols 1-40 at 20 dB / 1-20 at 30 dB:
+reuse single-frame 0.33 / 1.13 | reuse two-timescale 0.28 / 1.11 | **track 0.52 / 1.30**.
+**Bar FAILED**: tracking is worse than reusing the pilot estimate. Two flaws: (i) the update ignored the
+uncertainty of the previous estimate (a ridge to the previous U, not a Kalman filter), so decision
+errors (16/64-QAM) bias it and are never corrected; (ii) it used the first, weak learning of W.
+This led to L3b (proper Kalman filter), bar unchanged and fixed before running.
+
+### L3b result: Kalman tracking (`week8_tracking_120b.m`), same channels as L3, 8 trials
+Average gap (bit/s/Hz) over symbols 1-40 at 20 dB / 1-20 at 30 dB:
+reuse single-frame 0.33 / 1.13 | reuse two-timescale (L1b learning) **0.24** / 1.02 | Kalman 0.46 / 0.95.
+**Bar FAILED.** Gap at symbols 1/10/20/40, 20 dB: Kalman 0.15 / 0.17 / 0.47 / 0.75 (decision-directed
+drift after ~10 symbols); 30 dB: even symbol 1 is at 0.44-0.52 for every receiver, because the
+intra-symbol Doppler ICI at 120 km/h (-34 dB, week5) is not in our model, so <= 0.5 at 30 dB is out of
+reach without modelling it. Stopped after two principled attempts. Remaining limitation, stated as
+such: at 120 km/h pilots must recur every ~10 symbols at 20 dB (as 5G's additional DMRS do), and 30 dB
+needs a Doppler-ICI-aware model. Side note (not the pre-registered receiver, not counted as a pass):
+simply reusing the two-timescale estimate gives 0.24 at 20 dB.
 
 ## Run
 ```

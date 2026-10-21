@@ -1,0 +1,10 @@
+{
+  "note": "Run stopped after TDL-A 300 ns (6 trials): the pre-registered bar (gap <= 0.3 for A, C AND D) had already failed on A. Values transcribed from the run log.",
+  "names": ["single", "twoscale", "genieW"],
+  "Np": [2, 4, 8],
+  "snr_db": [20, 30],
+  "TDLA_ds300ns": {
+    "gap_bits_20dB": [[1.53, 0.77, 0.33], [1.38, 0.77, 0.37], [0.57, 0.29, 0.11]],
+    "gap_bits_30dB": [[4.54, 3.42, 1.91], [4.41, 3.03, 1.51], [1.89, 0.84, 0.40]]
+  }
+}
