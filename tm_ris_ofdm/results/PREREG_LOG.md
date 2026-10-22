@@ -141,3 +141,9 @@ FRESH channels (new seeds): shared-path 30 ns, TDL-A 100 ns, TDL-C 100 ns; Np 2/
 PASS (adopt "no fallback" in the paper's Algorithm 1): mean gap without fallback <= mean gap with fallback + 0.02
 bit/s/Hz in every case, AND the paired t-CI excludes zero in favour of "no fallback" in at least one TDL case at
 30 dB. Otherwise the fallback stays and the ablation finding is reported as such.
+
+## 2026-10-22 — H2/H3 rerun (deviation note)
+The first week11_eq_amortised run started while week11_overhead_heldout was still running (the idle check in
+idle_run.sh failed silently). Its output is kept as week11_eq_amortised_loaded.json and is NOT used for wall-clock
+claims (H2). Iteration counts, residuals and SER (H3) do not depend on load and are reported from it. The identical
+script is rerun unchanged on an idle machine (idle_run2.sh) for H2. Git 6dbd32e.

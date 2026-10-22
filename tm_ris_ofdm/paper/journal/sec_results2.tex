@@ -342,6 +342,17 @@ two are equal in time and the stopping rule left CG's SER 1.18$\times$ that of t
 suggests a tighter tolerance there. The dense solve's time varied by 2$\times$ between runs with machine
 load; comparisons are within a run (Fig.~\ref{fig:cost}).
 
+\emph{CG tolerance (pre-registered H3).} The 1.18$\times$ SER at $M=2048$ prompted a tolerance sweep
+($\epsilon\in\{10^{-1},3\cdot10^{-2},10^{-2},3\cdot10^{-3},10^{-3}\}$, true channel, 16-QAM, 20\,dB, 120 symbols per
+size). With $\epsilon=10^{-2}$ CG matches the dense SER at $M=1024$ and $2048$ (within 3\%), but not at $M=3276$
+(0.217 vs 0.189, 1.15$\times$) or $M=6552$ (0.152 against 0.129 at $\epsilon=10^{-3}$). With $\epsilon=3\cdot10^{-3}$ the
+SER is within 2\% of the dense solve at every size, after 8, 16, 20 and 19 iterations for $M=1024$, 2048, 3276 and
+6552; tightening further changes nothing. The iteration count is therefore bounded and nearly independent of $M$
+beyond 2048. We change the default of Algorithm~\ref{alg:cg} to $\epsilon=3\cdot10^{-3}$; a looser tolerance trades SER
+for time at large $M$. The amortised wall-clock comparison (dense factorization reused over $N$ symbols, H2) is being
+rerun on an idle machine, because the first run overlapped with another job; until then, the speed claim above is
+limited to $N=12$ symbols per channel estimate.
+
 \begin{figure}[!htbp]\centering
 \includegraphics[width=\columnwidth]{fig22_compute_measured.pdf}
 \caption{Measured equalizer time versus $M$ and full-band update time.}

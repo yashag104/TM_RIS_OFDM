@@ -217,7 +217,7 @@ frequency domain, and one batched inverse FFT follows.
 \begin{algorithm}[!htbp]
 \caption{Matrix-free CG-MMSE equalization}\label{alg:cg}
 \begin{algorithmic}[1]
-\Require $\bm y_d$ (one or several symbols as columns); factored $\hat{\bm H}$; $\sigma^2$; tolerance $\epsilon=10^{-2}$; $i_{\max}=50$
+\Require $\bm y_d$ (one or several symbols as columns); factored $\hat{\bm H}$; $\sigma^2$; tolerance $\epsilon=3\cdot10^{-3}$; $i_{\max}=50$
 \State $\bm b\gets\hat{\bm H}^{\mathsf H}\bm y_d$; $\bm x\gets\bm 0$; $\bm r\gets\bm b$; $\bm p\gets\bm r$
 \For{$i=1,\dots,i_{\max}$}
   \State $\bm q\gets\hat{\bm H}^{\mathsf H}(\hat{\bm H}\bm p)+\sigma^2\bm p$ \Comment{two batched FFT products}
