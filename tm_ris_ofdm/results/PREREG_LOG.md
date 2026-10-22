@@ -68,3 +68,22 @@ Frozen estimator unchanged (tau_max 0.3 us, L 16, r 8, 20 it, Np 2, pilots only)
   absorbed for G = 1 and not for G = 4.
 PASS (per mismatch at its middle level, and A1a/A1b): loss vs matched within 0.3 bit/s/Hz at 20 and 30 dB
 (mean paired difference). Every level is reported; failures are diagnosed, not removed.
+
+## 2026-10-22 | git 6c66544 | Step 3: workstream C1 + C4 + E2 + E3 + E6 (fair baselines, re-derived pilot counts)
+Channels: shared-path 30 ns (estimator window 0.3 us, L 16, r 8; CE-BEM two-hop window 0.6 us, L2 17) and
+3GPP TDL-C 100 ns (cascade 1.73 us < CP; ours window 1 us, L 18, r 16; CE-BEM window 2 us, L2 28).
+30 channels, 20/30 dB, Np in {2, 4, 8, 16, 32}, pilots only, frozen hyperparameters (listed in the script).
+Estimators: one-tap; ideal-element model-aware LMMSE (strongest "ideal +-1 element" estimator, replaces the
+25-coefficient Toeplitz straw man); CE-BEM |h| <= 12, 40, 128 and ALL harmonics (matrix-free CG LMMSE,
+identical estimator to the dense one; all-harmonic at Np >= 8); OMP (harmonic x delay); ours (est_general).
+Equalisers for EVERY estimator: naive MMSE; robust MMSE with sigma_e^2 from the pilot residual,
+W = (Hh'Hh + (s2 + se2) I) \ Hh', se2 = max(||Y - Hh S||^2/(M Np) - s2, 0); robust with the ORACLE error power
+(upper bound for any scalar regularisation). Rates scored on the true H, with the detector knowing G_mm
+(metric 13) and with the detector using its own estimated gain diag(W Hh) (E6).
+* C1 sanity (before any baseline claim): with the oracle-robust equaliser CE-BEM's rate must not fall from 20 to
+  30 dB; if it does, the baseline is debugged before reporting.
+* E3: minimal Np in the grid with mean gap <= 0.3 bit/s/Hz at 20 dB (robust-residual equaliser), per method and
+  channel; "> 32" if never reached.
+* E2: pilot ratio Np_min(best CE-BEM) / Np_min(ours).
+* C4 / claim: paired difference ours - best baseline (best over harmonic sets and equalisers, i.e. favouring the
+  baseline) per Np and SNR, t-CI. The claim "beats CE-BEM" survives only where the CI excludes zero.
