@@ -49,3 +49,22 @@ Frozen estimator as in step 1. Mode (ii) physical timing (RIS locked to the BS c
   on the same grid; (R2) fine-grid residual (0.01, 20 iterations) vs evidence, Np = 1; (R3) same with TDL-C
   100 ns, window 1 us, r = 16, Np = 8; (R4) wall-clock per search, fine-grid residual vs evidence (M = 256).
   The paper claims an evidence advantage only in regimes whose CI excludes zero; otherwise "equivalent, cheaper".
+
+## 2026-10-22 | git 5ac0dde | Step 2: workstream A1 + A3 (independent ground truth, model mismatch)
+Frozen estimator unchanged (tau_max 0.3 us, L 16, r 8, 20 it, Np 2, pilots only). Shared-path channel, 30 channels,
+20/30 dB, paired t-CIs against the matched result (same channel, nominal truth, same noise).
+* A1a: received pilots/data from the sampled-gating time-domain simulator (td_simulate, Nfft = 4096) at
+  Q = 16, K = 8, multipath on both hops; true H for scoring obtained by probing the simulator column by column.
+* A1b: element memory: add the exact switching transient of the single-pole element (state-space solution:
+  at each edge the internal state carries over and decays with the new state's pole). Report its relative
+  size and the loss.
+* A3 (truth built per slot, H = sum_k T_k o (Aout_k Ain_k^T), validated against coupling_matrix):
+  (m1) state-dependent output response: a_d,q -> a_d,q (1 + eps eta_{q,s}), eps in {0.05, 0.1, 0.2};
+  (m2) mutual coupling depending on BOTH elements' states, kappa in {0.02, 0.05, 0.08}, for identical
+       patterns (G = 1) and for 4 random per-element patterns (G = 4);
+  (m3) frequency-dependent array phase (beam squint, k = 2 pi f / c), Q = 16 and Q = 256;
+  (m4) per-element resonance spread 10 MHz (kept from week 6) for completeness.
+  Predictions written before running: state-independent coupling is absorbed exactly; joint-state coupling is
+  absorbed for G = 1 and not for G = 4.
+PASS (per mismatch at its middle level, and A1a/A1b): loss vs matched within 0.3 bit/s/Hz at 20 and 30 dB
+(mean paired difference). Every level is reported; failures are diagnosed, not removed.
