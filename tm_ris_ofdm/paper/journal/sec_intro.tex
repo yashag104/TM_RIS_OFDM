@@ -88,7 +88,7 @@ truncated estimators and banded equalizers fail on this channel
 
 \subsection{Contributions}
 \begin{itemize}
-\item \textbf{C1, receiver structure.} The first receiver for OFDM through a
+\item \textbf{C1, receiver structure.} To our knowledge, the first pilot-based receiver for OFDM through a
 (dispersive) TM-RIS: pilot-based estimation of the complete coupling matrix and joint
 equalization, organized around the timing/propagation separation above
 (Fig.~\ref{fig:pipeline}, Algorithms~\ref{alg:est}--\ref{alg:cg}).
@@ -97,8 +97,9 @@ input response, so that no element model, calibration or resonance knowledge is 
 and a low-rank shared-subspace estimator that covers identical, cyclically shifted and
 arbitrary per-element switching patterns in one form.
 \item \textbf{C3, blind clock-offset recovery.} The opposite-delay identity for a
-TM-RIS clock offset, the resulting explanation of why residual-based timing fails at
-high SNR, and an evidence-based estimator that absorbs the offset from two pilot symbols
+TM-RIS clock offset and its physical meaning (bulk hop delays cancel if the RIS follows the incident signal;
+the BS--RIS delay becomes an offset if it follows the BS clock), the resulting overfitting mechanism of
+residual-based timing, and an evidence-based estimator of the offset and the delay reference that absorbs the offset from two pilot symbols
 with no rate loss against known timing. (Because of the identity, the offset is defined only
 relative to the reference of the delay prior; the meaningful metric is the rate loss.)
 \item \textbf{C4, exhaustive evaluation.} An evaluation against the strongest

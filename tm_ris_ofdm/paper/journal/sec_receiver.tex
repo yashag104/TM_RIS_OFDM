@@ -128,14 +128,23 @@ It is evaluated in the parameter domain ($2L^2$ dimensions instead of $MN_p$) wi
 models that can fit too much. A wrong offset fits through improbable shifted responses
 and loses evidence even when it fits well.
 
+\emph{The delay reference.} The prior places each hop's delays in $[t_0,t_0+\tau_{\max}]$. After
+synchronization the two hops' first arrivals add to zero up to the offset, so a window that starts after the
+synchronization reference ($t_0>0$) cannot hold both hops, and a late synchronization has the same effect.
+We therefore let the evidence also choose $t_0$ from a small set, jointly with $d$ (Algorithm~\ref{alg:offset}):
+the evidence of different priors is directly comparable.
+
 \begin{algorithm}[!htbp]
-\caption{Blind clock-offset estimation by evidence}\label{alg:offset}
+\caption{Blind clock-offset and delay-reference estimation by evidence}\label{alg:offset}
 \begin{algorithmic}[1]
-\Require pilots $\bm Y,\bm S$; nominal kernels $\{\bm T_{g,s}\}$; $\bm F,\bm\lambda,\sigma^2$
-\State $\mathcal E(d)\gets$~\eqref{eq:evidence} with kernels $\bm D_d\bm T_{g,s}\bm D_d^{*}$
-\State $d_0\gets\arg\max\mathcal E(d)$ over the grid $d\in\{-0.5,-0.475,\dots,0.5\}$ slot (41 points)
-\State $\hat d\gets$ golden-section maximization of $\mathcal E$ on $[d_0-0.025,d_0+0.025]$, 14 steps
-\State \Return $\hat d$; Algorithm~\ref{alg:est} then runs with kernels $\bm D_{\hat d}\bm T_{g,s}\bm D_{\hat d}^{*}$
+\Require pilots $\bm Y,\bm S$; nominal kernels $\{\bm T_{g,s}\}$; DPSS $\bm F,\bm\lambda$; $\sigma^2$; window starts $\mathcal T_0=\{-150,-75,0,+75\}$\,ns
+\For{each $t_0\in\mathcal T_0$}
+  \State $\bm F_{t_0}\gets\diag(e^{-j2\pi m\Delta f t_0})\bm F$ \Comment{delays $[t_0,t_0+\tau_{\max}]$}
+  \State $\mathcal E_{t_0}(d)\gets$~\eqref{eq:evidence} with kernels $\bm D_d\bm T_{g,s}\bm D_d^{*}$ and basis $\bm F_{t_0}$
+  \State $d_0\gets\arg\max\mathcal E_{t_0}(d)$ over $d\in\{-0.5,-0.475,\dots,0.5\}$ slot (41 points)
+  \State $\hat d_{t_0}\gets$ golden-section maximization of $\mathcal E_{t_0}$ on $[d_0-0.025,d_0+0.025]$, 14 steps
+\EndFor
+\State $\hat t_0\gets\arg\max_{t_0}\mathcal E_{t_0}(\hat d_{t_0})$; \Return $(\hat d_{\hat t_0},\hat t_0)$; Algorithm~\ref{alg:est} runs with these kernels and basis
 \end{algorithmic}
 \end{algorithm}
 
@@ -218,7 +227,7 @@ C_{\rm it}=\sum_{n\in\{Lr,\,2Lr,\,Gr^2\}}\Big(MN_pn^2+\frac{n^3}{3}\Big),
 \end{equation}
 and the regressors cost $2GN_pL(N_{\rm f}\log_2N_{\rm f}+2N_{\rm f})$ once ($N_{\rm f}$ the FFT length).
 The first stage adds $MN_p(2L^2)^2+(2L^2)^3/3$. One evidence evaluation in Algorithm~\ref{alg:offset}
-costs about the same as the first stage, and the search uses 55 of them. One CG iteration costs
+costs about the same as the first stage, and the search uses 55 of them per window start (220 for four starts). One CG iteration costs
 two products of $\mathcal O(rM\log M)$ each. Table~\ref{tab:cost} evaluates these expressions;
 Section~\ref{sec:res-cost} gives measured times.
 

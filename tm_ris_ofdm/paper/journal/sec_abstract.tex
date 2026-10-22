@@ -12,9 +12,9 @@ state separates the coupling into Toeplitz factors fixed by the switching timing
 which the receiver knows, and per-state input responses that absorb both the
 propagation and the element dispersion, which it does not. Every receiver block
 follows from this separation: a pilot-based low-rank estimator that needs no
-element model; a blind estimator of the RIS clock offset, based on the observation
-that an offset is exactly an opposite delay of the two hops, so that the Bayesian
-evidence identifies it where the pilot residual cannot; a two-timescale extension
+element model; a blind estimator of the RIS clock offset and of the delay reference, based on the
+observation that an offset is exactly an opposite delay of the two hops, which makes a
+wrong offset overfit the pilots; a two-timescale extension
 that learns the static base-station--RIS side once; warm-started updates; and an
 exact matrix-free equalizer. In an extensive evaluation with the published cell of
 the anchor model, physical and 3GPP channels, mobility, hardware impairments and

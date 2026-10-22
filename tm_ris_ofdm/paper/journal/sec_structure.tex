@@ -101,13 +101,31 @@ Shifting the pattern by $d$ slots multiplies its $h$-th coefficient by $e^{-j2\p
 e^{-j2\pi\bar md/K}e^{+j2\pi md/K}$ with $h=\bar m-m$, which is~\eqref{eq:offset} entrywise.
 \end{proof}
 
-\begin{remark}[Why residual-based timing fails]
-By Proposition~\ref{prop:offset}, a receiver that assumes the wrong offset can still fit
-the pilots almost perfectly with a delayed user hop and an advanced BS hop, as long as the
-delay basis represents those shifted responses. With the DPSS basis used here the
-projection error of the shifted responses is about $10^{-4}$, so the pilot residual is nearly
-flat in $d$ (Section~\ref{sec:res-timing}). The wrong-offset fit is, however, improbable
-under the delay prior, because the shifted responses need basis functions with tiny prior
-variance. A criterion that scores both fit and prior probability, the evidence, can
-therefore identify the offset (Section~\ref{sec:timing}).
+\begin{proposition}[Physical timing]\label{prop:physical}
+Let the BS--RIS and RIS--user hops have bulk delays $\tau_b$ and $\tau_u$ on all their paths, and let the
+receiver synchronize its FFT window to the first cascaded arrival. (i) If the RIS controller is locked to the
+signal arriving at the RIS, the synchronized coupling matrix equals the one without bulk delays: bulk delays
+have no effect. (ii) If the controller is locked to the BS clock, the synchronized coupling matrix equals the
+one without bulk delays and with a clock offset $d=-\tau_b/T_{\rm slot}$.
+\end{proposition}
+\begin{proof}
+The delay $\tau_b$ multiplies the input side by $e^{-j2\pi f_m\tau_b}$ and $\tau_u$ the output side by
+$e^{-j2\pi f_{\bar m}\tau_u}$; synchronization multiplies the output by $e^{+j2\pi f_{\bar m}(\tau_b+\tau_u)}$. In (i) the
+switching edges are delayed by $\tau_b$, which by Proposition~\ref{prop:offset} contributes
+$e^{-j2\pi(\bar m-m)\Delta f\tau_b}$; all phases cancel. In (ii) the edges are not delayed, and the residual
+phases are those of an offset $-\tau_b$. Both identities hold numerically to $7\cdot10^{-15}$
+(Section~\ref{sec:res-timing}).
+\end{proof}
+
+\begin{remark}[When can the pilot residual identify the offset?]
+By Proposition~\ref{prop:offset}, a receiver that assumes a wrong offset can still fit the pilots with a
+delayed user hop and an advanced BS hop, \emph{if} its delay basis represents those shifted responses. With
+the DPSS basis used here ($L=16$, $\tau_{\max}=0.3\,\mu$s) the projection error of an advanced response is
+$1.1\cdot10^{-5}$, $2.7\cdot10^{-4}$, $1.4\cdot10^{-2}$ and $0.82$ for shifts of 50, 100, 200 and 500\,ns: the
+residual is nearly flat only for small offsets, which are exactly the physical ones (Proposition~\ref{prop:physical}(ii)
+gives $|d|T_{\rm slot}=\tau_b$, typically tens to hundreds of ns). A wrong offset then overfits the pilots:
+it explains them with improbable responses and predicts held-out pilots poorly. Two criteria resist this
+overfitting: the pilot residual of a full low-rank estimate evaluated on a fine grid, and the Bayesian evidence
+of the linear first stage, which penalizes improbable responses explicitly. Section~\ref{sec:res-timing}
+compares them; the evidence is the cheaper and smoother of the two, not the only one that works.
 \end{remark}

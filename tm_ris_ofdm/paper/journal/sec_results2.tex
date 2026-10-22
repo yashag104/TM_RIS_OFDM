@@ -26,14 +26,25 @@ with $Q$ (Corollary~\ref{cor:lowrank}). With $Q=1024$ (1.3\,m aperture, Fraunhof
 and the TDL-D line-of-sight path computed from exact element distances, a user at 3, 10 and 30\,m
 sees a gap of 0.09--0.18 / 0.38--0.60 (Fig.~\ref{fig:tdl}).
 
-\textbf{Validity warning for 300\,ns.} The cyclic-prefix condition (A2) applies to the \emph{cascade}
-of both hops, and our generator gives each hop the full TDL profile. The maximum cascaded delay is
-$2\times9.66$, $2\times8.65$ and $2\times12.5$ times the delay spread for TDL-A, C and D: 5.8, 5.2 and
-7.5\,$\mu$s at 300\,ns, all beyond the 2.34\,$\mu$s prefix (and 2.5\,$\mu$s for TDL-D at 100\,ns, a weak
-violation through taps below $-27$\,dB). The ground truth~\eqref{eq:io} assumes the prefix condition and
-omits the resulting inter-symbol interference, so \emph{all 300\,ns results below are physically invalid}
-and are kept only as a record; they are not claims of this paper. A valid long-delay test needs
-a realistic split (e.g. a short line-of-sight BS--RIS hop) and is future work.
+\textbf{Cyclic-prefix validity.} The prefix condition (A2) applies to the \emph{cascade} of the two hops, whose
+delays add. Table~\ref{tab:cp} gives, for each TDL profile and delay spread, the maximum cascaded delay and the
+fraction of cascaded energy that falls beyond the prefix (2.34\,$\mu$s, plus the 13.8\,ns element memory). All 30\,ns
+and 100\,ns cases are valid (TDL-D at 100\,ns has a single weak tap pair beyond the prefix, at $-56$\,dB). All 300\,ns
+cases are \emph{invalid}: 0.3--1.9\% of the energy ($-25$ to $-17$\,dB) arrives after the prefix, and the ground
+truth~\eqref{eq:io} omits the resulting inter-symbol interference. The 300\,ns results below are therefore kept only as
+a record and are not claims of this paper; a valid long-delay study needs an extended prefix or a realistic split
+of the delay spread between the hops.
+
+\begin{table}[!htbp]\centering
+\caption{Cascaded delay of the two hops and energy beyond the cyclic prefix (both hops with the same TDL profile and delay spread).}\label{tab:cp}
+\begin{tabular}{lccc}\toprule
+Profile, delay spread & max cascaded delay & energy beyond CP & valid \\\midrule
+TDL-A/C/D, 30\,ns & 0.58 / 0.52 / 0.75\,$\mu$s & none & yes \\
+TDL-A/C, 100\,ns & 1.93 / 1.73\,$\mu$s & none & yes \\
+TDL-D, 100\,ns & 2.51\,$\mu$s & $-56$\,dB & yes \\
+TDL-A/C/D, 300\,ns & 5.80 / 5.19 / 7.51\,$\mu$s & $-25.3$ / $-23.1$ / $-17.2$\,dB & no \\\bottomrule
+\end{tabular}
+\end{table}
 
 \emph{300\,ns (invalid, see above): learning the static side.} At 300\,ns, eight pilot symbols are not enough. With
 Algorithm~\ref{alg:learn} (input side learned from 100 frames of other users or earlier positions,
@@ -69,54 +80,65 @@ TDL-D & 0.85 / 2.74 & 0.64 / 2.89 & 0.56 / 1.61 \\\bottomrule
 \subsection{Timing knowledge and blind offset recovery}\label{sec:res-timing}
 \emph{Sensitivity.} With the nominal timing, an unknown common offset of 0.02 slot (83\,ns) costs
 4.3/11.3\,dB at 20/30\,dB, and 0.2 slot costs 15.1/25.3\,dB (Fig.~\ref{fig:timing}). The receiver must
-therefore either know or estimate the offset.
+therefore know or estimate the offset.
 
-\emph{Residual-based recovery.} Scanning the offset and keeping the smallest pilot residual recovers
-on-grid offsets exactly (0.05, 0.20, 0.40 slot; loss within 0.03\,dB of known timing). For off-grid
-offsets (uniform in $\pm0.5$ slot, grid plus golden section, 12 channels) it works at 20\,dB (0.20\,dB
-vs 0.19 known) but fails at 30\,dB: rms error 0.021 slot (87\,ns), loss 4.80\,dB against 0.41\,dB
-known. Refining with the full estimator and with decided data did not help (3.78\,dB). The error
-grew from 20 to 30\,dB, which indicates an ambiguity rather than noise, as Proposition~\ref{prop:offset}
-predicts.
-
-\emph{A failed idea.} Since an offset is a delay, a delay window widened by a guard should absorb it
-with no search. It does not (criterion failed): at 30\,dB, for offsets up to 83\,ns, the guard
-window loses 2.32\,dB against 1.76\,dB without it (0.39 known); for offsets up to 208\,ns it improves
-12.3 to 9.2\,dB, far from 0.28. A diagnostic showed why: the shifted responses were representable
-in the plain basis already (projection error $10^{-4}$); the issue is the prior, which shrinks the
-improbable shifted responses, and a wider window spreads the prior over more dimensions.
-
-\emph{Evidence-based recovery} (Algorithm~\ref{alg:offset}) uses exactly that prior. On the same
-channels and offsets as the residual search, it gives an rms error of 0.0012 slot (5\,ns) at both
-20 and 30\,dB (measured against the generator's offset, which shares the delay reference of the
-prior; by Proposition~\ref{prop:offset} only the rate loss is reference-free), and losses of 0.25 and 0.40\,dB against 0.25 and 0.41\,dB with the offset known
-(Table~\ref{tab:timing}, Fig.~\ref{fig:blind}); the pre-registered criterion (within 1\,dB of known at
-30\,dB) passed. Every one of the 12 channels at 30\,dB lies on the known-timing line, including the
-three where the residual search lost more than 10\,dB.
+\emph{Physical timing.} Proposition~\ref{prop:physical} was checked numerically with bulk delays
+$\tau_b\sim\mathcal U(50,300)$\,ns and $\tau_u\sim\mathcal U(30,300)$\,ns on every path and synchronization to the
+first cascaded arrival: both identities hold to $7\cdot10^{-15}$ (30 channels). With the RIS locked to the incident
+signal, the receiver with the nominal timing is within $+0.001\pm0.007$ (20\,dB) and $+0.040\pm0.082$\,bit/s/Hz (30\,dB)
+of the bulk-delay-free result, also with 1\,ns rms switching jitter ($+0.086\pm0.062$ at 30\,dB). With the RIS locked to
+the BS clock, ignoring the offset costs 1.62/4.23\,bit/s/Hz, while Algorithm~\ref{alg:offset} is within
+$+0.011\pm0.019$ and $+0.033\pm0.066$\,bit/s/Hz of a receiver that knows the offset (paired differences, t-based 95\%
+intervals; Table~\ref{tab:timing2}).
 
 \begin{table}[!htbp]\centering
-\caption{Blind recovery of an off-grid clock offset (12 channels, $N_p=2$).}\label{tab:timing}
-\begin{tabular}{lcccc}\toprule
- & \multicolumn{2}{c}{rms error (slot)} & \multicolumn{2}{c}{loss (dB)} \\
- & 20\,dB & 30\,dB & 20\,dB & 30\,dB \\\midrule
-Residual search & 0.0045 & 0.0210 & 0.57 & 4.80 \\
-\textbf{Evidence search (Alg.~\ref{alg:offset})} & \textbf{0.0011} & \textbf{0.0012} & \textbf{0.25} & \textbf{0.40} \\
-Offset known & -- & -- & 0.25 & 0.41 \\\bottomrule
+\caption{Physical timing (30 channels, paired differences with t-based 95\% CIs, bit/s/Hz).}\label{tab:timing2}
+\begin{tabular}{lcc}\toprule
+ & 20\,dB & 30\,dB \\\midrule
+RIS locked to incident signal: nominal timing $-$ no bulk delay & $+0.001\pm0.007$ & $+0.040\pm0.082$ \\
+\quad same, 1\,ns rms per-edge jitter & $+0.015\pm0.016$ & $+0.086\pm0.062$ \\
+RIS locked to BS clock: offset ignored, gap & 1.62 & 4.23 \\
+\quad evidence search $-$ known offset & $+0.011\pm0.019$ & $+0.033\pm0.066$ \\
+Sync error $\pm150$\,ns, evidence with default window $-$ reference & $+0.22\pm0.18$ & $+1.16\pm0.67$ \\
+\quad fixed window margin $[-150\,{\rm ns},\tau_{\max}]$ & $+0.21\pm0.06$ & $+0.79\pm0.23$ \\
+\quad window start chosen by evidence (Alg.~\ref{alg:offset}) & $\bm{+0.05\pm0.05}$ & $\bm{+0.05\pm0.08}$ \\\bottomrule
 \end{tabular}
 \end{table}
 
-\emph{Jitter.} Random jitter of individual switching edges changes the pattern's shape, not only
-its delay, so it is not absorbed. It must stay below about 20\,ns rms for 20\,dB operation and 4\,ns for
-30\,dB (loss at 4/8/21\,ns: 0.24/0.40/0.97\,dB at 20\,dB, 0.94/2.05/5.91\,dB at 30\,dB). Microcontroller
-and FPGA clocks have jitter in the picosecond range.
+\emph{Delay reference.} A delay window that starts after the synchronization reference fails completely:
+with $[100,400]$\,ns, the loss against known timing is 6.68\,bit/s/Hz at 30\,dB, while $[-100,200]$\,ns and
+$\tau_{\max}\times0.5$ or $\times1.5$ stay within 0.3\,dB (a pre-registered test that failed for the first variant). The
+same failure appears when the receiver synchronizes late. With a synchronization error uniform in $\pm150$\,ns,
+letting the evidence also choose the window start (Algorithm~\ref{alg:offset}) brings the loss to $+0.05$\,bit/s/Hz
+at both SNRs, whereas a fixed margin does not (Table~\ref{tab:timing2}; fresh channels, criterion fixed before the run).
+
+\emph{Residual versus evidence.} Earlier residual-based recovery, which scanned a 0.025-slot grid with a reduced
+8-iteration estimator and refined only locally, failed at 30\,dB (rms error 0.021 slot, loss 4.80\,dB against 0.41\,dB
+known). That failure was partly a property of the procedure, not of the criterion: with the full estimator on a
+0.01-slot grid, the in-sample residual is not significantly worse than the evidence ($+0.021\pm0.032$ and
+$+0.092\pm0.140$\,bit/s/Hz at 20/30\,dB; one of 30 channels with an error above 0.01 slot, none for the evidence).
+The overfitting explanation of the Remark was tested directly with two held-out pilot symbols: the held-out residual
+and the evidence select the same offset (within 0.005 slot) in 93\% of channels and give the same rate
+($-0.001\pm0.029$ at 30\,dB). \TODO{insert F2 regimes: coarse procedure, $N_p=1$, TDL-C 100\,ns, wall-clock.} The
+evidence is therefore preferred for its cost (no low-rank estimation per candidate) and smoothness, not because it
+is the only criterion that works.
+
+\emph{A failed idea.} Since an offset is a delay, widening the delay window by a guard should absorb it without
+a search. It does not: for offsets up to 83\,ns the guard window loses 2.32\,dB against 1.76\,dB without it (0.39
+known); for offsets up to 208\,ns it improves 12.3 to 9.2\,dB, far from 0.28. A wider window spreads the prior over
+more dimensions; the shifted responses were representable in the plain basis already.
+
+\emph{Jitter.} Random jitter of individual switching edges changes the pattern's shape, not only its delay, so
+it is not absorbed: it must stay below about 20\,ns rms for 20\,dB operation and 4\,ns for 30\,dB (loss at
+4/8/21\,ns: 0.24/0.40/0.97\,dB at 20\,dB, 0.94/2.05/5.91\,dB at 30\,dB); at 1\,ns the loss is $+0.09\pm0.06$\,bit/s/Hz at 30\,dB.
 
 \begin{figure}[!htbp]\centering
 \includegraphics[width=\columnwidth]{fig12_timing.pdf}
-\caption{Timing: offset sensitivity, jitter, residual-based off-grid recovery.}
+\caption{Timing: offset sensitivity, jitter, residual-based off-grid recovery (coarse procedure).}
 \label{fig:timing}\end{figure}
 \begin{figure}[!htbp]\centering
 \includegraphics[width=\columnwidth]{fig20_blind_timing.pdf}
-\caption{Evidence-based blind offset recovery; per-channel losses; the failed guard-window idea.}
+\caption{Evidence-based blind offset recovery (free offset stress test); per-channel losses; the failed guard-window idea.}
 \label{fig:blind}\end{figure}
 
 \subsection{Hardware impairments}\label{sec:res-hw}
@@ -141,6 +163,14 @@ $\le1$\,kHz, 20\,dB) failed at 1\,kHz and was borderline at 100\,Hz: the pilots 
 Most of the loss, however, is the generic phase-noise ICI that any receiver suffers (the genie
 itself falls from 6.63 to 4.72\,bit/s/Hz at 1\,kHz). Requirement: linewidth below about 100\,Hz at
 30\,kHz spacing, or standard phase tracking (Fig.~\ref{fig:hw}).
+
+\emph{Out-of-band emission.} Switching spreads energy beyond the occupied band. For full-band loading (3276
+subcarriers, 100\,MHz channel spacing, $D=0.75$, $K=8$), the ratio of in-band to adjacent-channel power of the
+reflected signal is 36.8\,dB with ideal edges, below the 45\,dB that 3GPP requires of a base station~\cite{ts38104}; a
+passive RIS has no requirement of its own, but this matters for deployment. A finite rise time fixes it: 42.3, 52.7
+and 60.6\,dB for rise times of 0.01, 0.05 and 0.1 slot (42, 208, 417\,ns), and the second adjacent channel is above
+47\,dB in all cases (analytic, from the exact harmonic coefficients). Our receiver handles rise times by building its
+kernels from the calibrated or blindly fitted ramp (above).
 
 \begin{figure}[!htbp]\centering
 \includegraphics[width=0.85\columnwidth]{fig13_hardware.pdf}

@@ -19,6 +19,13 @@ OFDM~\cite{verde2023}. Iudice \emph{et al.}~\cite{iudice2026} gave the first phy
 consistent model with dispersive elements, showed that dispersion breaks the Toeplitz
 structure, and listed equalization across coupled subcarriers as open.
 
+Closest in spirit outside RIS are OFDM backscatter systems, in which a tag switches its reflection within OFDM
+symbols: the receiver there decodes the \emph{tag's} data from the switching, or avoids the resulting intercarrier
+interference with unused subcarriers~\cite{liu2021tscatter,bsici2024,sr2024free}; space-time-coding metasurfaces
+have also been used for sensing from harmonic amplitudes and for non-coherent modulation~\cite{stcisac2025,stcdiff2025}.
+Linear periodically time-varying channels are well studied in power-line communication, but with periods much
+longer than a symbol and hence no harmonic coupling at the subcarrier spacing~\cite{plc_lptv}.
+
 \emph{Difference.} We design the legitimate receiver for the dispersive model: we
 estimate and equalize the coupling instead of treating it as interference, and our
 estimator does not rely on a Toeplitz (ideal-element) structure, which dispersion breaks.
