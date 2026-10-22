@@ -1,0 +1,36 @@
+{
+ "model": "ideal +-1 element, D=0.75, K=8, uniform loading of 3276 subcarriers, 100 MHz channel spacing",
+ "results": {
+  "rho_0.0": {
+   "ACLR_dB": 36.775852806397424,
+   "ACLR2_dB": 47.534734570802115,
+   "outside_band_frac_dB": -29.202613990747665
+  },
+  "rho_0.001": {
+   "ACLR_dB": 37.38534405200173,
+   "ACLR2_dB": 56.5389738504388,
+   "outside_band_frac_dB": -29.567672682942565
+  },
+  "rho_0.01": {
+   "ACLR_dB": 42.29088527874643,
+   "ACLR2_dB": 77.66151652184143,
+   "outside_band_frac_dB": -30.812608579550943
+  },
+  "rho_0.05": {
+   "ACLR_dB": 52.71004131033105,
+   "ACLR2_dB": 91.58414553233698,
+   "outside_band_frac_dB": -31.977615770314998
+  },
+  "rho_0.1": {
+   "ACLR_dB": 60.56201021221173,
+   "ACLR2_dB": 97.41384823690154,
+   "outside_band_frac_dB": -32.5776993341625
+  },
+  "rho_0.3": {
+   "ACLR_dB": 69.07846535801872,
+   "ACLR2_dB": 106.96288918965851,
+   "outside_band_frac_dB": -33.68088393039754
+  }
+ },
+ "reference": "3GPP NR BS ACLR requirement 45 dB (TS 38.104); a passive RIS has no requirement of its own"
+}

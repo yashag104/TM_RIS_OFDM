@@ -119,3 +119,16 @@ W = (Hh'Hh + (s2 + se2) I) \ Hh', se2 = max(||Y - Hh S||^2/(M Np) - s2, 0); robu
 * E4 (week11_overhead_heldout): (N, Np) chosen per method and case by maximum mean net rate on the 20-channel
   selection set; reported on the 20-channel held-out set: mean net rate, t-CI, ratio to perfect CSI, 20 and
   30 dB, common-phase metric (main), all CE-BEM with robust equaliser and no harmonic cap.
+
+## 2026-10-22 | git 5272ea6 | Step 6: D2, D3, G1, G2, K2, K3, H2, H3 (decided before running; descriptive, no pass bars
+except where stated)
+* D2 week11_cdl_rank: CDL-A/C/D (cluster angles, 20 rays) vs TDL + random directions at 100 ns; ours Np 2/4/8.
+  Paired CDL - TDL gap differences reported; the paper uses CDL as the main 3GPP model if it differs.
+* D3: effective rank (99% / 99.9% energy) of the true element-domain matrix vs Q 16..1024, narrow / 98 MHz
+  bandwidth, far field without and with squint, near field 3 m / 10 m. The low-rank claim (Cor. 5) is restated
+  with the measured ranks; where rank approaches Q, the paper says the low-rank property is weak.
+* G1/G2 week11_theory: effective dof vs observations; BMSE bound vs achieved NMSE for the linear first stage.
+* K2 week11_rise_small: rise times 2-83 ns, nominal vs calibrated kernels.
+* K3 (computed, results/k3_oob.json, analytic): ACLR of the switched reflection, ideal edges and rise times.
+* H2/H3 week11_eq_amortised (idle machine): amortised dense vs CG wall-clock, break-even N; CG tolerance needed
+  to match the dense SER at each M.
