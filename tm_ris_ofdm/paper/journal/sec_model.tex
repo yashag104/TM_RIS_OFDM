@@ -1,0 +1,84 @@
+\section{System Model}\label{sec:model}
+
+\subsection{OFDM through a time-modulated RIS}
+A base station (BS) transmits OFDM with $M$ active subcarriers at frequencies
+$f_m=f_c+m\Delta f$, $m\in\mathcal M=\{-M/2,\dots,M/2-1\}$, useful duration
+$T_u=1/\Delta f$ and cyclic prefix $T_{\rm cp}$. The signal reaches the user through a
+RIS of $Q$ elements on a $\sqrt Q\times\sqrt Q$ grid with half-wavelength spacing. The
+direct BS--user path is first assumed blocked; Section~\ref{sec:res-direct} removes this
+assumption.
+
+Element $q$ is a two-state cell controlled by a periodic sequence
+$s_q[k]\in\{1,2\}$, $k=0,\dots,K-1$, with period $T_u$: it holds state $s_q[k]$ during
+the slot $[kT_u/K,(k+1)T_u/K)$. The duty cycle of a sequence is the fraction $D$ of slots
+in state 1. In state $s$ the element has the single-resonance response~\cite{iudice2026}
+\begin{equation}
+\Gamma_s(f)=-1+\frac{2\xi_{r,s}}{j2\pi(f-f_{0,s})+\xi_{r,s}+\xi_{i,s}},
+\label{eq:gamma}
+\end{equation}
+with resonance $f_{0,s}$, radiative decay $\xi_{r,s}$ and loss $\xi_{i,s}$. We use the
+OpenRIS varactor cell fitted in~\cite[Table~I]{iudice2026}: $f_{0,1}=3.471$\,GHz,
+$f_{0,2}=3.710$\,GHz, $\xi_{r,s}/2\pi=97.5,\,128.4$\,MHz, $\xi_{i,s}/2\pi=8.9,\,9.0$\,MHz.
+Across a 100\,MHz n78 carrier at $f_c=3.594$\,GHz the two states differ by
+$172^\circ$--$184^\circ$ in phase and by up to 0.57\,dB in magnitude, and each state's
+phase drifts by about $47^\circ$ (Fig.~\ref{fig:dispersion}). The element is therefore
+far from the ideal frequency-flat $\pm1$ switch assumed by earlier TM-RIS work.
+
+\subsection{Input--output relation}
+Let $a^{\rm s}_q(f)$ and $a^{\rm d}_q(f)$ be the frequency responses from the BS to
+element $q$ and from element $q$ to the user. If the cyclic prefix covers the delay
+spread of both hops plus the memory of the element response (13.8\,ns for this cell),
+the generalized cyclic-prefix condition of~\cite{iudice2026} holds, and the received
+frequency-domain symbol is
+\begin{equation}
+\bm y=\bm H\bm x+\bm w,\qquad
+H_{\bar m m}=\sum_{q=1}^{Q} a^{\rm d}_q(f_{\bar m})\;b_q^{[\bar m-m]}(f_m)\;a^{\rm s}_q(f_m),
+\label{eq:io}
+\end{equation}
+with $\bm w\sim\mathcal{CN}(\bm 0,\sigma^2\bm I)$ and $b_q^{[h]}(f)$ the $h$-th Fourier
+coefficient, over one period, of the switched response of element $q$ evaluated at the
+input frequency $f$~\cite[eq.~(5)]{iudice2026}. Equation~\eqref{eq:io} is the ground truth
+used throughout the evaluation; its implementation was validated against an independent
+time-domain simulation (filter, gate, FFT) to within 0.27\% median and 0.49\% maximum
+relative error (Section~\ref{sec:res-valid}).
+
+\subsection{Propagation models}
+\emph{Shared-path model.} Elements of a compact surface see the same propagation paths
+and differ only by geometric phase. Each hop has one line-of-sight path and $P=5$
+scattered paths with an exponential power-delay profile (30\,ns rms) and Rician factor
+10\,dB; path $\ell$ with delay $\tau_\ell$, gain $g_\ell$ and arrival direction
+$\bm u_\ell$ gives $a_q(f)=\sum_\ell g_\ell e^{-j\bm k\bm u_\ell^{\top}\bm r_q}e^{-j2\pi f\tau_\ell}$.
+
+\emph{3GPP models.} TR~38.901 TDL-A, TDL-C (non-line-of-sight) and TDL-D
+(line-of-sight)~\cite{tr38901}, with delay spread 30, 100 or 300\,ns; each tap is given
+a random arrival direction, which sets its phase across the surface, and the
+line-of-sight tap of TDL-D can use exact spherical distances (near field).
+
+\emph{Mobility.} When the user moves at speed $v$, only the RIS--user hop changes. Path
+$\ell$ acquires the Doppler shift $\nu_\ell=f_D\cos\phi_\ell$, $f_D=vf_c/c$; it rotates by
+$e^{j2\pi\nu_\ell nT_s}$ from symbol to symbol ($T_s=T_u+T_{\rm cp}=35.67\,\mu$s) and also
+mixes subcarriers within each symbol (the standard Doppler intercarrier-interference
+matrix, included in the ground truth).
+
+\subsection{Assumptions}
+Table~\ref{tab:assump} lists every assumption, why it is reasonable, and where its
+violation is evaluated. Assumptions A1--A3 define the problem; A4--A10 are
+relaxed or stress-tested in Section~\ref{sec:results}.
+
+\begin{table}[!htbp]\centering
+\caption{Assumptions, their justification, and where their violation is evaluated.}\label{tab:assump}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{p{0.4cm}p{4.0cm}p{6.6cm}p{4.2cm}}\toprule
+ & Assumption & Justification & Tested when violated \\\midrule
+A1 & The receiver knows each element's switching \emph{pattern} $s_q[k]$. & The pattern is chosen by the network (the RIS controller is driven by the BS); for a legitimate user it is control information, like a pilot configuration. Without it, the coupling cannot be told apart from propagation. & Wrong pattern for one of two panels: rate collapses (Sec.~\ref{sec:res-direct}). Stated as a requirement. \\
+A2 & Generalized CP: $T_{\rm cp}$ covers both hops' delay spread plus the element memory. & Condition of the anchor model~\cite{iudice2026}; the cell memory is 13.8\,ns, far below the NR normal CP of 2.34\,$\mu$s. & TDL-D at 300\,ns has taps up to 3.8\,$\mu$s, beyond the CP: out of scope (Sec.~\ref{sec:res-chan}). \\
+A3 & Switching period equals $T_u$ and is aligned with the OFDM symbol, \emph{up to an unknown clock offset}. & The anchor model and TM-IRS designs synchronize the pattern with the symbol; any residual misalignment is a clock offset, which we estimate. & Offset estimated blindly (Sec.~\ref{sec:res-timing}); random per-edge jitter evaluated as a hardware requirement. \\
+A4 & Two-state elements with responses of the form~\eqref{eq:gamma}. & Published fit of a real cell~\cite{iudice2026}. The \emph{estimator does not use} this form (timing-only); it only defines the ground truth. & Element-to-element spread, model mismatch, transients (Sec.~\ref{sec:res-model},~\ref{sec:res-hw}). \\
+A5 & Elements share propagation paths (compact, far-field surface). & Physical for a surface much smaller than the link distance; it is what makes the unknowns low-rank. & 3GPP taps with random directions, up to 1024 elements, near-field user at 3--30\,m (Sec.~\ref{sec:res-chan}). \\
+A6 & The channel is constant over the pilots and data of one refresh block. & The coherence time is $0.423/f_D$~\cite{rappaport2002}: 42\,ms (1188 symbols) at 3\,km/h. The core results isolate switching-induced coupling from Doppler, as in~\cite{iudice2026}. & Users at 3, 30, 120\,km/h, refresh interval optimized with pilot overhead (Sec.~\ref{sec:res-mob}). \\
+A7 & Common-phase tracking per OFDM symbol (in mobility and phase-noise results). & Standard in 5G NR (phase-tracking reference signals~\cite{ts38211}). & Results without any tracking and with an unrealistic per-subcarrier genie are also reported (Sec.~\ref{sec:res-mob}). \\
+A8 & Residual CFO, phase noise and switching transients are small or handled. & Standard OFDM synchronization; rise time can be fitted blindly. & CFO, Wiener phase noise, finite rise time (Sec.~\ref{sec:res-hw}). \\
+A9 & Noise variance $\sigma^2$ known at the receiver. & Standard; it is readily estimated from empty resource elements. & Not varied. \\
+A10 & No mutual coupling between elements. & As in the anchor model~\cite{iudice2026}; requires a full-wave model. & Not tested; stated as a limitation. \\\bottomrule
+\end{tabular}}
+\end{table}

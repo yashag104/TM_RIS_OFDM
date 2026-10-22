@@ -658,8 +658,8 @@ exactly). First run kept as `results/week8_pilot_overhead_run1.json`.
 | TDL-D, 100 ns | 120 | 30 | 4.94 (1/8, 12%) | 3.66 ... 5.51 | 1.36 (16/160, 10%) | 0.34 (8/160, 5%) | 9.32 |
 
 Findings:
-* Ours beats the best CE-BEM after overhead in every case, typically by 1.5-4 bit/s/Hz (TDL at 30 dB:
-  5.1-8.1 vs 1.2-3.3); one-tap stays at ~0.4.
+* Ours beats the best CE-BEM after overhead in all 24 cases, by 1.1-4.8 bit/s/Hz (median 2.7); one-tap
+  stays at ~0.4.
 * Overhead needed (ours, realistic tracking, 20 dB): walking 2-7%; 30 km/h 2% (6-path) to 5-10% (TDL);
   120 km/h 12% on TDL (1 pilot every 8 symbols). The 6-path model needs less at speed because its
   dominant LoS path makes the Doppler mostly a common phase, which tracking removes; the NLoS TDL

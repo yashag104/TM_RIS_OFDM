@@ -1,0 +1,231 @@
+\section{Results}\label{sec:results}
+
+\subsection{Model validation}\label{sec:res-valid}
+\emph{Element model.} Our implementation of~\eqref{eq:gamma} with the published parameters
+reproduces the dispersion reported in~\cite{iudice2026} (Fig.~\ref{fig:dispersion}): differential
+phase $172^\circ$--$184^\circ$ across 98\,MHz (reported $180^\circ\pm6.5^\circ$), magnitude imbalance
+$\pm0.57$\,dB (reported $<0.75$\,dB), per-state phase variation $46.5^\circ$/$49.2^\circ$
+(reported $\approx47^\circ$/$50^\circ$), ripple 0.62/0.50\,dB (reported $\approx0.6$\,dB).
+
+\emph{Coupling model.} For $K=2$ the coupling follows the $\mathrm{sinc}(h/2)$ envelope with even
+harmonics exactly zero for an ideal element; the dispersive cell creates a DC harmonic at
+$-19$ to $-27$\,dB relative to $h=1$ (Fig.~\ref{fig:harmonics}). The closed form~\eqref{eq:io}
+agrees with an independent time-domain simulation (per-element filtering, sampled gating, FFT;
+$Q=4$, $K=4$ random patterns, multipath on both hops) to 0.27\% median and 0.49\% maximum
+relative error, the residual being the sampling of the gates.
+
+\emph{Energy collection.} Corollary~\ref{cor:parseval} predicts the gain of joint equalization
+over the one-tap receiver as $(2D-1)^{-2}$. Measured with the dispersive cell (Q=16, K=8,
+30 channels, Fig.~\ref{fig:energy}): 11.6, 5.9 and 2.4\,dB at $D=0.625$, 0.75 and 0.875 against
+predicted 12.0, 6.0 and 2.5\,dB. At 20\,dB with perfect knowledge, the one-tap rate is 0.10,
+0.42 and 1.19\,bit/s/Hz at these duty cycles, the joint MMSE rate 6.14, 6.19 and 6.11, and the
+matched-filter bound 6.45, 6.52 and 6.43. Joint MMSE recovers about 95\% of the matched-filter
+bound. With random per-element shifts the matrix is worse conditioned and joint MMSE reaches
+5.13 against a bound of 6.62\,bit/s/Hz at $D=0.75$.
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.9\columnwidth]{figA_element_dispersion.pdf}
+\caption{Reflection magnitude, phase, and phase difference of the two states of the OpenRIS cell across the n78 carrier.}
+\label{fig:dispersion}\end{figure}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.75\columnwidth]{figB_harmonic_leakage.pdf}
+\caption{Harmonic magnitudes for an ideal switch and the dispersive cell ($K=2$).}
+\label{fig:harmonics}\end{figure}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.9\columnwidth]{figC_energy_collection.pdf}
+\caption{Left: rate of joint MMSE and one-tap versus SNR for four duty cycles. Right: predicted
+$(2D-1)^{-2}$ versus measured energy-collection gain.}
+\label{fig:energy}\end{figure}
+
+\subsection{Value of not needing the element model}\label{sec:res-model}
+Table~\ref{tab:model} compares receivers that differ only in what they assume about the
+element (identical patterns, two pilot symbols plus two DD iterations, loss in dB against
+perfect knowledge; fresh seed, 30 channels, 95\% CI on the rate loss $\le\pm0.05$\,bit/s/Hz).
+A model-aware estimator with the exact model is excellent, but its accuracy collapses at high
+SNR as soon as the model is wrong: a 10\,MHz resonance error costs 2.4\,dB at 30\,dB, and the
+frequency-flat $\pm1$ model of earlier TM-RIS work costs 6.6\,dB. The timing-only estimator,
+which uses no element model at all, is within 0.04--0.21\,dB at every SNR
+(Fig.~\ref{fig:model}). This is the practical core of Corollary~\ref{cor:nomodel}: the
+receiver needs only the switching timing.
+
+\begin{table}[!htbp]\centering
+\caption{Loss (dB) against perfect channel knowledge for different element knowledge. First run / confirmation run on a fresh seed (30 channels).}\label{tab:model}
+\begin{tabular}{lccc}\toprule
+Receiver assumes & 10\,dB & 20\,dB & 30\,dB \\\midrule
+Exact element model & 0.02 & 0.05 / 0.06 & 0.12 / 0.16 \\
+Resonance off by 5\,MHz & -- & 0.53 & 2.59 \\
+Resonance off by 10\,MHz & 0.06 & 0.66 / 0.47 & 3.36 / 2.44 \\
+Resonance off by 20\,MHz & -- & 0.55 & 2.91 \\
+Ideal $\pm1$ switch (earlier TM-RIS work) & 0.18 & 1.41 / 1.42 & 6.57 / 6.60 \\
+\textbf{No model, timing only (proposed)} & \textbf{0.04} & \textbf{0.08 / 0.10} & \textbf{0.11 / 0.21} \\\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.75\columnwidth]{fig2_element_model_knowledge.pdf}
+\caption{Loss against perfect knowledge for four assumptions about the element.}
+\label{fig:model}\end{figure}
+
+\subsection{Estimators and baselines}\label{sec:res-est}
+\emph{Against the literature's estimators.} Table~\ref{tab:est} and Fig.~\ref{fig:est} compare
+estimators on the same pilots and channels (20 channels, $M=256$). The one-tap receiver is
+capped at its interference ratio (Corollary~\ref{cor:parseval}). The Toeplitz model of the ideal
+element reaches 2.3/1.4\,bit/s/Hz: dispersion breaks its structure. CE-BEM with up to $\pm12$
+harmonics reaches at most 2.3/1.4 and barely improves with pilots: by Corollary~\ref{cor:tail} it
+misses 3.4\% of the coupling energy at $\pm12$. It even degrades from 20 to 30\,dB, because an
+MMSE filter that trusts a wrong model hurts more when noise no longer masks the model error.
+The proposed estimator is within 0.09\,bit/s/Hz (20\,dB) and 0.24\,bit/s/Hz (30\,dB) of perfect
+knowledge with two pilot symbols.
+
+\begin{table}[!htbp]\centering
+\caption{Rate (bit/s/Hz) with each estimator, 20 channels, 95\% CI. $N_p$ = pilot symbols.}\label{tab:est}
+\begin{tabular}{lcccc}\toprule
+ & \multicolumn{2}{c}{20\,dB} & \multicolumn{2}{c}{30\,dB}\\
+Estimator & $N_p=2$ & $N_p=8$ & $N_p=2$ & $N_p=8$ \\\midrule
+One-tap & 0.42 & 0.42 & 0.43 & 0.43 \\
+Toeplitz (ideal element) & $2.27\pm0.08$ & $2.46\pm0.10$ & $1.42\pm0.10$ & $1.52\pm0.03$ \\
+CE-BEM $|h|\le4$ & $1.29\pm0.04$ & $1.33\pm0.03$ & $0.57\pm0.05$ & $0.58\pm0.02$ \\
+CE-BEM $|h|\le8$ & $1.82\pm0.06$ & $1.88\pm0.04$ & $0.81\pm0.07$ & $0.99\pm0.04$ \\
+CE-BEM $|h|\le12$ & $2.20\pm0.08$ & $2.32\pm0.04$ & $1.08\pm0.10$ & $1.38\pm0.06$ \\
+\textbf{Proposed} & $\bm{6.52\pm0.02}$ & $\bm{6.58\pm0.02}$ & $\bm{9.68\pm0.08}$ & $\bm{9.87\pm0.02}$ \\
+Perfect knowledge & 6.61 & 6.61 & 9.92 & 9.92 \\\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.85\columnwidth]{fig1_estimators_vs_pilots.pdf}
+\caption{Rate versus pilot symbols at 20 and 30\,dB (20 channels, 95\% CI).}
+\label{fig:est}\end{figure}
+
+\emph{Strongest baselines.} A reviewer may object that CE-BEM failed only because it was
+truncated. Table~\ref{tab:bem} gives CE-BEM with up to all 255 harmonics and up to 32 pilot
+symbols (20 channels; all harmonics on 4 channels because of its 8687 unknowns). Full-harmonic
+CE-BEM does approach our result, but only with 32 pilot symbols (6.18/9.37\,bit/s/Hz): the
+proposed estimator with two pilot symbols (6.51/9.69) is better than full CE-BEM with 32, a
+16-fold pilot saving. At equal overhead ($N_p=2$) full CE-BEM collapses to 0.13/0.08, because its
+8687 unknowns cannot be determined from 512 observations. Sparse recovery (OMP) behaves like
+truncated CE-BEM (2.32/1.19), and unstructured banded least squares is worst even with 32 orthogonal
+pilot symbols (0.85/0.54).
+
+\begin{table}[!htbp]\centering
+\caption{Strongest baselines: rate (bit/s/Hz) at 20 / 30\,dB.}\label{tab:bem}
+\begin{tabular}{lccc}\toprule
+ & $N_p=2$ & $N_p=8$ & $N_p=32$ \\\midrule
+CE-BEM $|h|\le12$ & 2.13 / 1.09 & 2.26 / 1.26 & 2.33 / 1.41 \\
+CE-BEM $|h|\le40$ & 2.06 / 1.82 & 4.20 / 3.34 & 4.44 / 3.82 \\
+CE-BEM $|h|\le128$ & 0.15 / 0.07 & 4.25 / 6.06 & 6.08 / 8.15 \\
+CE-BEM all 255 harmonics & 0.13 / 0.08 & 2.97 / 4.19 & 6.18 / 9.37 \\
+OMP (harmonic$\times$delay) & 2.32 / 1.19 & -- & -- \\
+Unstructured banded LS & -- & -- & 0.85 / 0.54 \\
+\textbf{Proposed} & \textbf{6.51 / 9.69} & -- & -- \\
+Perfect knowledge & 6.59 / 9.89 & & \\\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{Equalizers.} Table~\ref{tab:eq} feeds the same estimate, and the true channel, to
+equalizers from the high-mobility OFDM literature. Banded MMSE fails even with the true channel:
+a $\pm32$ band given the true channel reaches 6.21 against 9.89\,bit/s/Hz for the dense MMSE at 30\,dB, because of the harmonic tail
+(Corollary~\ref{cor:tail}). The iterative matrix-free solver matches the dense MMSE in 10
+iterations, which justifies Algorithm~\ref{alg:cg}.
+
+\begin{table}[!htbp]\centering
+\caption{Equalizers on the proposed estimate (true channel in brackets), rate (bit/s/Hz).}\label{tab:eq}
+\begin{tabular}{lcc}\toprule
+Equalizer & 20\,dB & 30\,dB \\\midrule
+One-tap & 0.42 (0.42) & 0.43 (0.43) \\
+Banded MMSE $\pm4$ & 3.23 (3.24) & 3.35 (3.35) \\
+Banded MMSE $\pm16$ & 4.82 (4.83) & 5.26 (5.26) \\
+Banded MMSE $\pm32$ & 5.45 (5.47) & 6.20 (6.21) \\
+LSQR/CG, 10 iterations & 6.51 (6.59) & 9.66 (9.83) \\
+Dense MMSE & 6.51 (6.59) & 9.69 (9.89) \\\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=\columnwidth]{fig16_strong_baselines.pdf}
+\caption{(a) CE-BEM with more harmonics and pilots; (b) equalizers with the true channel;
+(c) pilot layouts.}
+\label{fig:strong}\end{figure}
+
+\emph{Fair-case check.} Earlier TM-IRS designs choose the pattern so that the intended user sees
+little coupling. Table~\ref{tab:designed} uses per-element polarities that co-phase the $h=0$
+harmonic at the user. Even then the one-tap receiver saturates at its interference ratio
+(3.47\,bit/s/Hz at 30\,dB for $D=0.875$, interference ratio $+10.0$\,dB), while the proposed
+receiver continues to 9.37. At 10\,dB the gain is modest (+0.6\,bit/s/Hz, about 2\,dB).
+
+\begin{table}[!htbp]\centering
+\caption{User the pattern is designed for: one-tap versus proposed (estimated, $N_p=2$), bit/s/Hz at 10/20/30\,dB.}\label{tab:designed}
+\begin{tabular}{lccc}\toprule
+Duty, user & one-tap SIR & one-tap & proposed \\\midrule
+0.875, designed & $+10.0$\,dB & 2.51 / 3.34 / 3.47 & 3.13 / 6.18 / 9.37 \\
+0.75, designed & $+3.5$\,dB & 1.44 / 1.70 / 1.74 & 2.77 / 5.63 / 8.80 \\
+0.625, designed & $-2.3$\,dB & 0.62 / 0.70 / 0.71 & 2.24 / 4.53 / 7.38 \\
+0.75, generic & $-12.3$\,dB & 0.17 / 0.19 / 0.19 & 2.24 / 4.77 / 7.66 \\\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Full band}\label{sec:res-full}
+At $M=3276$ all estimation and equalization use only the FFT operator. With the linear
+first stage alone ($2L^2=1800$ unknowns) the estimate is noise-limited at $-23$ to $-29$\,dB at
+28\,dB SNR (it reaches $-45$ to $-49$\,dB at 60\,dB SNR, so the model is right); the low-rank form
+reaches $-39$\,dB with two pilot symbols. Table~\ref{tab:full} gives SER over 10 channels. With
+pilots only, the proposed receiver's SER is 1.09$\times$ that of perfect knowledge at 20\,dB/16-QAM
+and 1.54$\times$ at 28\,dB/64-QAM (an earlier 3-channel run gave 2.3$\times$); one DD pass brings
+these to 1.05$\times$ and 1.14$\times$. Both numbers are reported because the DD figure alone would
+overstate the pilots-only performance. A second DD pass made 64-QAM worse (SER 0.24 in an earlier
+run), because decision errors feed back into the estimate; we use at most one. With per-element
+cyclic shifts, the shift structure (Corollary~\ref{cor:groups}) gives an operator error of
+$-34.4$\,dB at 28\,dB and SER ratios of 1.10 and 1.12 (5 channels).
+
+\begin{table}[!htbp]\centering
+\caption{Full band ($M=3276$), SER, 10 channels, 95\% CI.}\label{tab:full}
+\begin{tabular}{lcc}\toprule
+Receiver & 20\,dB, 16-QAM & 28\,dB, 64-QAM \\\midrule
+One-tap & $0.839\pm0.003$ & $0.955\pm0.002$ \\
+Perfect knowledge (CG-MMSE) & $0.031\pm0.024$ & $0.035\pm0.021$ \\
+Proposed, pilots only & $0.034\pm0.025$ (1.09$\times$) & $0.054\pm0.032$ (1.54$\times$) \\
+Proposed, + 1 DD pass & $0.032\pm0.024$ (1.05$\times$) & $0.040\pm0.022$ (1.14$\times$) \\
+CE-BEM, pilots / + 1 DD & 0.549 / 0.563 & 0.865 / 0.865 \\\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.85\columnwidth]{fig3_full_band.pdf}
+\caption{Full-band symbol error rate for identical and per-element patterns.}
+\label{fig:full}\end{figure}
+
+\subsection{Coded performance}\label{sec:res-coded}
+Fig.~\ref{fig:coded} and Table~\ref{tab:coded} give the block error rate with the convolutional
+code (30 channels $\times$ 4 blocks per point). The one-tap receiver never decodes a block. CE-BEM
+reaches at best 0.31 near 12--14\,dB and then degrades to 0.97 at 24\,dB, again the overconfident
+wrong model. The proposed receiver reaches 0.025 at 10\,dB and no errors from 12\,dB; interpolating
+in the logarithm of BLER, it crosses 10\% at 8.84\,dB against 8.46\,dB with perfect knowledge, a gap
+of 0.4\,dB. Goodput saturates at the code limit of 1.98\,bit per subcarrier from 12\,dB.
+
+\begin{table}[!htbp]\centering
+\caption{Coded block error rate (rate-1/2 convolutional code, 16-QAM).}\label{tab:coded}
+\begin{tabular}{lccccc}\toprule
+SNR (dB) & 6 & 8 & 10 & 12 & 14--24 \\\midrule
+One-tap & 1 & 1 & 1 & 1 & 1 \\
+CE-BEM & 1 & 1 & 0.71 & 0.31 & 0.31--0.97 \\
+Proposed & 0.93 & 0.28 & 0.025 & 0 & 0 \\
+Perfect knowledge & 0.93 & 0.21 & 0.008 & 0 & 0 \\\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.9\columnwidth]{fig15_coded_bler.pdf}
+\caption{Coded block error rate and goodput.}
+\label{fig:coded}\end{figure}
+
+\subsection{Sensitivity to design parameters}\label{sec:res-sweep}
+Every parameter we chose was varied one at a time around the default (12 channels per point,
+Fig.~\ref{fig:sweep}). The gap to perfect knowledge stays at 0.06--0.09 / 0.10--0.20\,bit/s/Hz
+(20/30\,dB) for $Q=4$ to 144 elements, 0.06--0.09 / 0.11--0.16 for $K=2$ to 16 slots, and 0.05--0.13 /
+0.12--0.23 for duty cycles 1/8 to 7/8. The one parameter that matters is the number $G$ of
+\emph{distinct} patterns: with two pilot symbols the gap grows from 0.07 / 0.10 at $G=1$ to 0.32 / 1.03 at
+$G=16$, because the unknowns grow with $Gr^2$ (Table~\ref{tab:unknowns}); four pilot symbols bring it to
+0.19 / 0.38. This gives a design rule: use four pilot symbols when the surface uses many distinct
+per-element patterns, as security-oriented designs do.
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.85\textwidth]{fig10_parameter_sweep.pdf}
+\caption{Sensitivity to the number of elements, slots, duty cycle and distinct patterns.}
+\label{fig:sweep}\end{figure}
+
+\input{sec_results2}

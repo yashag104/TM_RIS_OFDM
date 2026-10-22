@@ -1,0 +1,84 @@
+\section{Evaluation Methodology}\label{sec:method}
+
+\subsection{Setup}
+Table~\ref{tab:params} lists the default parameters. Results at the full 100\,MHz n78
+carrier use $M=3276$; most comparisons use $M=256$ with the same subcarrier spacing,
+which preserves the per-subcarrier coupling structure at a cost that permits 10--30
+independent channels per point. Only the central half of the band is scored, so that
+band-edge effects do not favour any method. The receiver never uses the ground-truth
+channel or the element model, except in the explicitly labelled genie and oracle references.
+
+\begin{table}[!htbp]\centering
+\caption{Default evaluation parameters.}\label{tab:params}
+\begin{tabular}{ll}\toprule
+Carrier, spacing & $f_c=3.594$\,GHz (n78), $\Delta f=30$\,kHz, $T_{\rm cp}=2.34\,\mu$s \\
+Subcarriers & $M=256$ (central 128 scored); full band $M=3276$ (central 1638) \\
+Surface & $Q=16$ elements ($4\times4$, $\lambda/2$); up to 1024 tested \\
+Switching & $K=8$ slots per $T_u$, duty $D=0.75$, identical patterns (S1) unless stated \\
+Element & OpenRIS cell, two states,~\cite[Table~I]{iudice2026} \\
+Channel & shared paths, 1 LoS + 5 NLoS per hop, 30\,ns rms, $K_{\rm R}=10$\,dB; 3GPP TDL-A/C/D \\
+Pilots & $N_p=2$ QPSK pilot symbols unless stated \\
+Estimator & DPSS, $\tau_{\max}=0.3\,\mu$s, $L=16$ ($M=256$); $\tau_{\max}=0.2\,\mu$s, $L=30$ ($M=3276$); $r=8$; 20 iterations \\
+TDL setting & $\tau_{\max}=\min(T_{\rm cp},10\times$ delay spread$)$, $L=\lceil M\Delta f\tau_{\max}\rceil+10$, $r=16$ \\
+Equalizer & MMSE (direct at $M=256$, CG at $M=3276$) \\
+SNR & $\mathrm{SNR}=P_c/\sigma^2$, $P_c$ the mean received power per subcarrier \\\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metrics}
+\emph{Achievable rate.} For an estimate $\hat{\bm H}$, the MMSE filter
+$\bm W=(\hat{\bm H}^{\mathsf H}\hat{\bm H}+\sigma^2\bm I)^{-1}\hat{\bm H}^{\mathsf H}$ is applied to the
+\emph{true} channel; with $\bm G=\bm W\bm H$, subcarrier $m$ has
+\begin{equation}
+\mathrm{SINR}_m=\frac{|G_{mm}|^2}{\sum_{n\ne m}|G_{mn}|^2+\sigma^2\|\bm w_m\|^2},\qquad
+R=\frac{1}{|\mathcal M_c|}\sum_{m\in\mathcal M_c}\log_2(1+\mathrm{SINR}_m),
+\label{eq:rate}
+\end{equation}
+over the scored set $\mathcal M_c$. The \emph{gap} is $R(\bm H)-R(\hat{\bm H})$, with $R(\bm H)$
+the rate with perfect knowledge. Where losses are quoted in dB, they are the rate gap divided
+by the local slope of $R$ versus SNR (0.31 and 0.33\,bit/s/Hz per dB at 20 and 30\,dB).
+Under mobility,~\eqref{eq:rate} treats $G_{mm}$ as known to the detector, which amounts to
+per-subcarrier gain tracking; we therefore also report two other versions. With
+\emph{common-phase tracking} the receiver corrects one complex gain
+$a=\hat{\bm g}^{\mathsf H}\bm g/\hat{\bm g}^{\mathsf H}\hat{\bm g}$ per symbol, where $\bm g=\diag(\bm G)$ and
+$\hat{\bm g}=\diag(\bm W\hat{\bm H})$, and the residual $|g_m-a\hat g_m|^2$ adds to the interference.
+With \emph{no tracking} it trusts $\hat{\bm g}$ directly. Mobility results use common-phase
+tracking as the main metric (A7).
+
+\emph{Error rates.} Uncoded symbol error rate (SER) with QAM; coded block error rate (BLER)
+with a rate-1/2, constraint-length-7 convolutional code (generators 133, 171 octal), a random
+interleaver, Gray-mapped 16-QAM, max-log LLRs computed from each receiver's \emph{own} estimate,
+and soft Viterbi decoding, 506 information bits per block.
+
+\emph{Net throughput.} With pilots on the first $N_p$ of every $N$ symbols, the net rate is
+$R_{\rm net}=\frac{N-N_p}{N}\cdot\frac{1}{N-N_p}\sum_{n=N_p}^{N-1}R(n)$, where $R(n)$ is the rate at
+symbol $n$ of the block (the estimate ages with $n$); $N$ and $N_p$ are optimized per case.
+
+\subsection{Baselines}
+All estimators use the same pilots, noise and channels, and all model-based baselines get
+the same LMMSE/DPSS prior as ours, so that differences come from the model, not the
+regularization.
+\begin{itemize}
+\item \textbf{One-tap}: per-subcarrier least squares from the pilots and one-tap
+equalization: today's OFDM receiver.
+\item \textbf{Toeplitz mixing}: the ideal-element model $H_{\bar mm}=t(\bar m-m)\,c(m)$ implied by
+frequency-flat switching, as assumed in~\cite{tao2025secure}, estimated with our prior.
+\item \textbf{CE-BEM}~\cite{tang2007}: $\bm H=\sum_{|h|\le H_b}\bm S_h\diag(\bm F_2\bm c_h)$ with
+$\bm S_h$ the shift by $h$ and a two-hop DPSS basis ($0.6\,\mu$s, $L_2=17$); $H_b=4,8,12,40,128$
+and all 255 harmonics; $N_p$ up to 32.
+\item \textbf{OMP}~\cite{tropp2007} over a harmonic$\times$delay dictionary, stopping at the noise level or 300 atoms.
+\item \textbf{Unstructured banded LS}: every entry within $|h|\le16$ estimated independently, with 32 orthogonal pilot symbols (16 times our overhead).
+\item \textbf{Model-aware LMMSE} (a variant of ours): the coupling built from the \emph{exact} or a mismatched element model, to measure the value of not needing one.
+\item \textbf{Equalizers} fed the same estimate and the true channel (oracle): banded MMSE with window $\pm W$~\cite{schniter2004,rugini2005}; LSQR/CG~\cite{hrycak2010}; dense MMSE.
+\item \textbf{References}: perfect channel knowledge (upper bound); genie channel without phase-noise knowledge (Section~\ref{sec:res-hw}).
+\end{itemize}
+Deep-learning estimators were not included: they require training data matched to the
+switching pattern and element, and the question studied here is the value of model structure.
+
+\subsection{Protocol}
+Each point averages 6--30 independent channel draws (stated per experiment), with 95\%
+confidence intervals. Calibration (DPSS window and regularization) was done once on a
+separate seed and frozen. For each experiment added after the core results, a pass/fail
+criterion was written down \emph{before} running it; failed criteria are reported as failures,
+with diagnosis, and follow-up methods were given new pre-registered criteria. Appendix~\ref{app:repro}
+maps every table and figure to its script and result file.

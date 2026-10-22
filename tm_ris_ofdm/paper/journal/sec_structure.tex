@@ -1,0 +1,113 @@
+\section{Structure of the Coupling}\label{sec:structure}
+
+This section derives the one structural fact on which the receiver is built and the
+consequences that each receiver block uses.
+
+\begin{proposition}[Timing--propagation separation]\label{prop:sep}
+For a piecewise-constant $K$-slot pattern with period $T_u$,
+\begin{align}
+b_q^{[h]}(f)&=\sum_{s=1}^{2}t_{q,s}[h]\,\Gamma_s(f),\nonumber\\
+t_{q,s}[h]&=\frac{e^{-j\pi h/K}}{K}\,\mathrm{sinc}\!\Big(\frac hK\Big)\sum_{k:\,s_q[k]=s}e^{-j2\pi hk/K}.
+\label{eq:tqs}
+\end{align}
+Hence, with $\bm a^{\rm d}_q=[a^{\rm d}_q(f_m)]_m$, $\bm a^{\rm s}_q=[a^{\rm s}_q(f_m)]_m$,
+$\bm\Gamma_s=[\Gamma_s(f_m)]_m$ and Toeplitz matrices $[\bm T_{q,s}]_{\bar m m}=t_{q,s}[\bar m-m]$,
+\begin{equation}
+\bm H=\sum_{q=1}^{Q}\sum_{s=1}^{2}\bm T_{q,s}\circ\big(\bm a^{\rm d}_q(\bm\Gamma_s\odot\bm a^{\rm s}_q)^{\top}\big).
+\label{eq:sep}
+\end{equation}
+\end{proposition}
+\begin{proof}
+During slot $k$ the element applies $\Gamma_{s_q[k]}(f)$, so its switched response is
+$\sum_s\Gamma_s(f)\,\mathbb 1_s(t)$, where $\mathbb 1_s(t)$ indicates the slots in state $s$.
+The $h$-th Fourier coefficient of the indicator of slot $k$ is
+\[\tfrac1K e^{-j\pi h/K}\,\mathrm{sinc}(h/K)\,e^{-j2\pi hk/K};\]
+summing over the slots in state $s$ gives $t_{q,s}[h]$. This is the slot sum of~\cite[eq.~(5)]{iudice2026} grouped by state.
+Substituting into~\eqref{eq:io} and noting that $t_{q,s}$ depends on $\bar m-m$ only gives~\eqref{eq:sep}.
+\end{proof}
+
+The identity is elementary; its value lies in the following consequences.
+
+\begin{corollary}[No element model is needed]\label{cor:nomodel}
+The element response appears in~\eqref{eq:sep} only through $\bm\Gamma_s\odot\bm a^{\rm s}_q$,
+a per-state \emph{input-side} response that also contains the unknown BS--RIS channel.
+Estimating $\bm v_{q,s}:=\bm\Gamma_s\odot\bm a^{\rm s}_q$ as an unknown absorbs the dispersion
+exactly; the receiver needs only $\bm T_{q,s}$, i.e. the switching timing.
+\end{corollary}
+
+\begin{corollary}[Fast products]\label{cor:fft}
+$\big(\bm T\circ(\bm a\bm b^{\top})\big)\bm x=\bm a\odot\big(\bm T(\bm b\odot\bm x)\big)$, and
+$\bm T\bm z$ is a linear convolution of length-$M$ sequences. Hence $\bm H\bm x$ and
+$\bm H^{\mathsf H}\bm y$ cost $\mathcal O(QM\log M)$ with FFTs of length $\ge 3M-2$, and
+$\bm H$ never needs to be formed. If all elements use the same pattern, $\bm T_{q,s}=\bm T_s$
+for all $q$, and one batched FFT per state serves all elements.
+\end{corollary}
+
+\begin{corollary}[Harmonic tail]\label{cor:tail}
+$|t_{q,s}[h]|\le\frac1K|\mathrm{sinc}(h/K)|\,|\{k:s_q[k]=s\}|$ decays as $1/|h|$, so the
+coupling energy decays as $1/h^2$. For the ideal $\pm1$ element, $K=8$ and $D=0.75$, the
+fraction of energy outside $|h|\le H$ is 9.7\%, 5.0\%, 3.4\%, 1.0\% and 0.31\% for
+$H=4,8,12,40,128$ (numerical evaluation of~\eqref{eq:tqs}). A model truncated to
+$|h|\le H$ therefore has a normalized error floor of at least $10\log_{10}$ of that fraction:
+$-14.7$\,dB at $H=12$, which matches the $-14$ to $-16$\,dB floor measured for a truncated
+estimator (Section~\ref{sec:res-est}). The same tail limits any banded equalizer.
+\end{corollary}
+
+\begin{corollary}[Energy on the original subcarrier]\label{cor:parseval}
+For ideal $\pm1$ elements with a common pattern of duty $D$, $b^{[0]}=2D-1$ and
+$\sum_h|b^{[h]}|^2=1$. A receiver that equalizes subcarrier $m$ with the diagonal of $\bm H$
+alone (one-tap) collects the fraction $(2D-1)^2$ of the reflected energy and sees the rest
+as interference; its signal-to-interference ratio is bounded by $(2D-1)^2/(1-(2D-1)^2)$, i.e.
+$-4.8$\,dB at $D=0.75$ and $+1.1$\,dB at $D=0.875$. Joint equalization collects all of it,
+an energy-collection gain of $(2D-1)^{-2}$: 6.0\,dB at $D=0.75$ (Appendix~\ref{app:parseval};
+measured 5.9\,dB with the dispersive cell, Section~\ref{sec:res-valid}).
+\end{corollary}
+
+\begin{corollary}[Shared paths give low rank]\label{cor:lowrank}
+Under A5, $a^{\rm d}_q(f)=\sum_{\ell=1}^{P_d}g_\ell e^{-j\bm k\bm u_\ell^{\top}\bm r_q}e^{-j2\pi f\tau_\ell}$,
+so $[\bm a^{\rm d}_1,\dots,\bm a^{\rm d}_Q]$ has rank at most $P_d$, the number of user-hop paths,
+whatever $Q$; the same holds for the input side. With a delay basis $\bm F\in\mathbb C^{M\times L}$
+spanning delays $[0,\tau_{\max}]$, the element-domain factors can be written
+$\bm a^{\rm d}_q=\bm F\bm U\bm\alpha_q$ and $\bm v_{q,s}=\bm F\bm V_s\bm\beta_q$ with
+$\bm U,\bm V_s\in\mathbb C^{L\times r}$ and $r$ on the order of the number of paths.
+\end{corollary}
+
+\begin{corollary}[Groups, shifts and the direct path]\label{cor:groups}
+(i) Elements with the same pattern share $\bm T_{q,s}$; with $G$ distinct patterns,
+\begin{equation}
+\bm H=\sum_{g=1}^{G}\sum_{s=1}^{2}\bm T_{g,s}\circ\big((\bm F\bm U)\bm\Lambda_g(\bm F\bm V_s)^{\top}\big),
+\qquad\bm\Lambda_g=\textstyle\sum_{q\in\mathcal G_g}\bm\alpha_q\bm\beta_q^{\top}\in\mathbb C^{r\times r}.
+\label{eq:model}
+\end{equation}
+(ii) If pattern $g$ is the base pattern cyclically shifted by $k$ slots,
+$t_{g,s}[h]=t_{0,s}[h]e^{-j2\pi hk/K}$, i.e. $\bm T_{g,s}=\bm D_k\bm T_{0,s}\bm D_k^{*}$ with
+$\bm D_k=\diag(e^{-j2\pi mk/K})$; this is the harmonic phase rule of space-time
+coding~\cite{zhang2018}. (iii) Since each element is always in one of its two states,
+$\bm T_{q,1}+\bm T_{q,2}=\bm I$; an unswitched (direct) path is the special case of equal
+input responses in both states, so it is already contained in~\eqref{eq:model}.
+\end{corollary}
+
+\begin{proposition}[A clock offset is an opposite delay of the two hops]\label{prop:offset}
+If the switching runs $d$ slots late relative to the receiver's timing, every kernel
+becomes $\bm D\bm T_{g,s}\bm D^{*}$ with $\bm D=\diag(e^{-j2\pi md/K})$, and
+\begin{equation}
+(\bm D\bm T\bm D^{*})\circ(\bm a\bm b^{\top})=\bm T\circ\big((\bm D\bm a)(\bm D^{*}\bm b)^{\top}\big).
+\label{eq:offset}
+\end{equation}
+Multiplying a frequency response by $\bm D$ delays it by $dT_u/K$; by $\bm D^{*}$, advances it.
+\end{proposition}
+\begin{proof}
+Shifting the pattern by $d$ slots multiplies its $h$-th coefficient by $e^{-j2\pi hd/K}=
+e^{-j2\pi\bar md/K}e^{+j2\pi md/K}$ with $h=\bar m-m$, which is~\eqref{eq:offset} entrywise.
+\end{proof}
+
+\begin{remark}[Why residual-based timing fails]
+By Proposition~\ref{prop:offset}, a receiver that assumes the wrong offset can still fit
+the pilots almost perfectly with a delayed user hop and an advanced BS hop, as long as the
+delay basis represents those shifted responses. With the DPSS basis used here the
+projection error of the shifted responses is about $10^{-4}$, so the pilot residual is nearly
+flat in $d$ (Section~\ref{sec:res-timing}). The wrong-offset fit is, however, improbable
+under the delay prior, because the shifted responses need basis functions with tiny prior
+variance. A criterion that scores both fit and prior probability, the evidence, can
+therefore identify the offset (Section~\ref{sec:timing}).
+\end{remark}

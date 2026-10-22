@@ -1,0 +1,41 @@
+% =====================================================================
+% Full-length paper (IEEE Transactions style, no page limit).
+% Every number is read from tm_ris_ofdm/results/*.json; Appendix D maps each
+% table and figure to the script that produced it. Derived numbers (coherence
+% times, unknown counts, operation counts, energy fractions) are computed in the
+% text or in Appendix C. \TODO marks items that still need checking.
+% =====================================================================
+\documentclass[journal,onecolumn,11pt,draftclsnofoot]{IEEEtran}
+\usepackage{amsmath,amssymb,amsthm,bm,graphicx,booktabs,cite,multirow,array}
+\usepackage{algorithm,algpseudocode}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\vect}{vec}
+\DeclareMathOperator{\tr}{tr}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}\newtheorem{remark}{Remark}
+\graphicspath{{../../figures/}}
+\renewcommand{\arraystretch}{1.15}
+
+\begin{document}
+\title{A Timing-Only Receiver for OFDM through\\ Dispersive Time-Modulated Reconfigurable Intelligent Surfaces}
+\author{\TODO{authors and affiliations}}
+\maketitle
+
+\input{sec_abstract}
+\input{sec_intro}
+\input{sec_related}
+\input{sec_model}
+\input{sec_structure}
+\input{sec_receiver}
+\input{sec_method}
+\input{sec_results}
+\input{sec_tradeoffs}
+\input{sec_conclusion}
+\appendices
+\input{sec_appendix}
+\input{sec_refs}
+\end{document}

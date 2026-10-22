@@ -1,0 +1,32 @@
+\begin{abstract}
+A time-modulated reconfigurable intelligent surface (TM-RIS) switches its elements
+several times within each OFDM symbol. The switching creates harmonics that couple
+every received subcarrier to many transmitted ones, and when the elements are
+frequency dispersive, as real varactor cells are, the coupling matrix is neither
+diagonal nor Toeplitz. Existing TM-RIS systems therefore treat the coupling as
+interference, which caps the rate of the legitimate receiver at the
+signal-to-harmonic-interference ratio, and a recent physically consistent model of
+the dispersive TM-RIS channel leaves receiver design open. This paper builds that
+receiver around one structural fact: grouping the harmonic expansion by switching
+state separates the coupling into Toeplitz factors fixed by the switching timing,
+which the receiver knows, and per-state input responses that absorb both the
+propagation and the element dispersion, which it does not. Every receiver block
+follows from this separation: a pilot-based low-rank estimator that needs no
+element model; a blind estimator of the RIS clock offset, based on the observation
+that an offset is exactly an opposite delay of the two hops, so that the Bayesian
+evidence identifies it where the pilot residual cannot; a two-timescale extension
+that learns the static base-station--RIS side once; warm-started updates; and an
+exact matrix-free equalizer. In an extensive evaluation with the published cell of
+the anchor model, physical and 3GPP channels, mobility, hardware impairments and
+coding, the receiver is within 0.1\,bit/s/Hz of perfect channel knowledge with two
+pilot symbols, needs 16 times fewer pilots than a full-harmonic basis-expansion
+estimator, decodes within 0.5\,dB of perfect knowledge where the conventional
+receiver never decodes, recovers an unknown clock offset to about 5\,ns with no
+loss, and keeps 3.9--5.7\,bit/s/Hz net of pilot overhead on 3GPP TDL channels from
+walking speed to 120\,km/h. All limits found, including failed attempts, are reported.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Reconfigurable intelligent surface, time modulation, space-time coding, OFDM,
+intercarrier interference, channel estimation, synchronization, equalization.
+\end{IEEEkeywords}

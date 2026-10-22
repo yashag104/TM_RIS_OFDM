@@ -1,0 +1,74 @@
+\section{Energy on the original subcarrier}\label{app:parseval}
+For ideal elements $\Gamma_1=+1$, $\Gamma_2=-1$ and a common pattern, the switched response is
+$\gamma(t)=\mathbb 1_1(t)-\mathbb 1_2(t)\in\{\pm1\}$ with Fourier coefficients
+$b^{[h]}=t_1[h]-t_2[h]$. Then $b^{[0]}=D-(1-D)=2D-1$, and by Parseval
+$\sum_h|b^{[h]}|^2=\frac1{T_u}\int_0^{T_u}|\gamma(t)|^2dt=1$. A one-tap receiver uses only $b^{[0]}$:
+the useful fraction is $(2D-1)^2$ and the rest, $1-(2D-1)^2$, reaches the subcarrier from its
+neighbours as interference, so $\mathrm{SIR}\le(2D-1)^2/(1-(2D-1)^2)$; at $D=0.75$,
+$0.25/0.75=-4.77$\,dB, and at $D=0.875$, $0.5625/0.4375=+1.09$\,dB. Joint equalization collects
+the full unit energy, a gain of $1/(2D-1)^2$: 12.0, 6.02 and 2.5\,dB at $D=0.625$, 0.75 and 0.875.
+The numerical sum of~\eqref{eq:tqs} over $|h|\le20000$ gives 0.99998, confirming the normalization
+used for the tail fractions of Corollary~\ref{cor:tail}.
+
+\section{Evaluating the evidence}\label{app:evidence}
+Let $\bm\Phi=\bm\Phi_d$, $n=MN_p$ and $\bm P^{1/2}$ diagonal. With
+$\bm C=\sigma^2\bm I+\bm\Phi\bm P\bm\Phi^{\mathsf H}$ and $\bm B=\bm I+\sigma^{-2}\bm P^{1/2}\bm\Phi^{\mathsf H}\bm\Phi\bm P^{1/2}=\bm R^{\mathsf H}\bm R$,
+the matrix determinant lemma gives $\det\bm C=\sigma^{2n}\det\bm B$, and the Woodbury identity gives
+$\bm C^{-1}=\sigma^{-2}\big(\bm I-\sigma^{-2}\bm\Phi\bm P^{1/2}\bm B^{-1}\bm P^{1/2}\bm\Phi^{\mathsf H}\big)$. Hence
+\begin{equation}
+\log p(\bm y|d)=-\frac{\|\bm y\|^2}{\sigma^2}+\frac{\|\bm R^{-\mathsf H}\bm P^{1/2}\bm\Phi^{\mathsf H}\bm y\|^2}{\sigma^4}-2\sum_i\log R_{ii}+\text{const},
+\end{equation}
+which needs one Cholesky factorization of a $2L^2\times2L^2$ matrix per candidate. The scale
+$\varsigma$ in $\bm P$ is set per candidate by moment matching,
+$\varsigma=(\|\bm y\|^2/n-\sigma^2)/(\sum_i\|\bm\phi_i\|^2p_i/n)$, as in the estimator.
+
+\section{Derived quantities}\label{app:derived}
+\emph{Coherence time.} $f_D=vf_c/c$ with $f_c=3.594$\,GHz: 9.98, 99.8 and 399.3\,Hz at 3, 30 and
+120\,km/h; $T_c=0.423/f_D$~\cite{rappaport2002}: 42.4, 4.24 and 1.06\,ms; divided by
+$T_s=1/\Delta f+T_{\rm cp}=35.67\,\mu$s: 1188, 119 and 30 symbols.
+
+\emph{Unknown counts} (Table~\ref{tab:unknowns}). $L=\lceil M\Delta f\tau_{\max}\rceil+10$:
+$\lceil256\cdot30\,{\rm kHz}\cdot0.3\,\mu{\rm s}\rceil=\lceil2.30\rceil=3$ is the bandwidth--delay
+product, and $L=16$ was fixed in calibration; at the full band $\lceil3276\cdot30\,{\rm kHz}\cdot0.2\,\mu{\rm s}\rceil+10=\lceil19.66\rceil+10=30$.
+Ours: $3Lr+Gr^2=3\cdot16\cdot8+64=448$ ($G=1$), $384+16\cdot64=1408$ ($G=16$), $3\cdot30\cdot8+64=784$
+(full band). CE-BEM: $(2H_b+1)L_2$ with $L_2=\lceil256\cdot30\,{\rm kHz}\cdot0.6\,\mu{\rm s}\rceil+12=17$:
+425, 1377, 4369 and 8687 for $H_b=12$, 40, 128 and 255.
+
+\emph{Operation counts} (Table~\ref{tab:cost}) evaluate~\eqref{eq:cost} with $N_p=2$, $r=8$, 20
+iterations and FFT length $N_{\rm f}=2^{\lceil\log_2 4M\rceil}$. Dense storage is $16M^2$ bytes
+(complex double): 172\,MB at $M=3276$ and 687\,MB at $M=6552$.
+
+\emph{Losses in dB} are rate gaps divided by the local slope of the perfect-knowledge rate,
+0.31\,bit/s/Hz per dB at 20\,dB and 0.33 at 30\,dB, measured on the same channels.
+
+\emph{Coded crossing.} Interpolating $\log_{10}$BLER linearly in SNR between 8 and 10\,dB:
+proposed $8+2\cdot\frac{\log_{10}0.1-\log_{10}0.275}{\log_{10}0.025-\log_{10}0.275}=8.84$\,dB; perfect
+knowledge $8+2\cdot\frac{\log_{10}0.1-\log_{10}0.208}{\log_{10}0.0083-\log_{10}0.208}=8.46$\,dB.
+
+\section{Reproducibility}\label{app:repro}
+All code is base MATLAB (R2026a); figures are drawn by one Python script from the saved results.
+Table~\ref{tab:repro} maps every result to its script. Pre-registered criteria are recorded with
+dates in the project log before the corresponding runs.
+
+\begin{table}[h]\centering
+\caption{Results and the scripts that produced them (\texttt{tm\_ris\_ofdm/matlab/}; results in \texttt{results/<script>.json}).}\label{tab:repro}
+\small\begin{tabular}{p{5.6cm}p{9.6cm}}\toprule
+Result & Script \\\midrule
+Model validation, Fig.~\ref{fig:dispersion},~\ref{fig:harmonics} & \texttt{gate1\_reproduce}, \texttt{td\_simulate} \\
+Energy collection, Fig.~\ref{fig:energy} & \texttt{gate2\_equalization} \\
+Element knowledge, Table~\ref{tab:model} & \texttt{week3\_mismatch}, \texttt{week3\_modelfree}, \texttt{week3\_modelfree\_confirm} \\
+Estimators, Table~\ref{tab:est} & \texttt{week4\_bem\_compare} \\
+Strong baselines, Tables~\ref{tab:bem},~\ref{tab:eq} & \texttt{week7\_strong\_baselines}, \texttt{week6\_baselines\_pilots} \\
+Designed user, Table~\ref{tab:designed} & \texttt{week3\_designed\_user} \\
+Full band, Table~\ref{tab:full} & \texttt{week4\_fullband\_trials}, \texttt{week4\_fullband\_s2\_shift} \\
+Coded, Table~\ref{tab:coded} & \texttt{week6\_coded} \\
+Sensitivity, Fig.~\ref{fig:sweep} & \texttt{week5\_param\_sweep} \\
+3GPP, near field, Table~\ref{tab:tdl} & \texttt{week6\_channels}, \texttt{week6\_channels\_fix} \\
+300\,ns, Table~\ref{tab:300} & \texttt{week8\_twoscale\_300ns(\_b,\_c)} \\
+Timing, Table~\ref{tab:timing} & \texttt{week6\_timing(\_offgrid)}, \texttt{week7\_timing\_refine}, \texttt{week8\_timing\_guard}, \texttt{week8\_timing\_evidence} \\
+Hardware & \texttt{week6\_hardware(\_fix)}, \texttt{week6\_phasenoise} \\
+Direct path, panels, interference & \texttt{week6\_directlink} \\
+Mobility, overhead, Table~\ref{tab:overhead} & \texttt{week5\_mobility}, \texttt{week8\_tracking\_120(b)}, \texttt{week8\_pilot\_overhead} \\
+Cost, Table~\ref{tab:updates}, Fig.~\ref{fig:cost} & \texttt{week7\_complexity\_fix}, \texttt{week8\_fullband\_warm}, \texttt{week8\_eq\_walltime(2,3)} \\\bottomrule
+\end{tabular}
+\end{table}

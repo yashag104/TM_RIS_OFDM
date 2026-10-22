@@ -1,0 +1,98 @@
+\section{Related Work and Positioning}\label{sec:related}
+
+\subsection{Time-modulated surfaces and OFDM}
+Space-time-coding digital metasurfaces~\cite{zhang2018} control harmonics by the
+switching pattern: a time delay of an element's pattern multiplies harmonic $h$ by a
+linear phase, which steers harmonic beams. In communications, time-modulated
+intelligent reflecting surfaces aligned with OFDM symbols have been designed for
+waveform security, so that the intended direction receives an undistorted signal and
+other directions receive scrambled symbols~\cite{xu2023tmirs}; pattern design has been
+cast as generative search~\cite{tao2025gflownet,wang2026generative} and extended to
+sensing~\cite{tao2025isac}. In this line of work the legitimate receiver is a
+conventional OFDM receiver and the harmonic coupling it sees is either designed to be
+small in its direction or treated as interference. All of it uses an ideal,
+frequency-flat element. The only work that undoes the mixing is an attack: an
+eavesdropper recovers directional-modulation symbols by blind independent component
+analysis, resolving ambiguities with the Toeplitz structure that the ideal model
+implies~\cite{tao2025secure}. Rapidly time-varying RIS have also been analysed without
+OFDM~\cite{verde2023}. Iudice \emph{et al.}~\cite{iudice2026} gave the first physically
+consistent model with dispersive elements, showed that dispersion breaks the Toeplitz
+structure, and listed equalization across coupled subcarriers as open.
+
+\emph{Difference.} We design the legitimate receiver for the dispersive model: we
+estimate and equalize the coupling instead of treating it as interference, and our
+estimator does not rely on a Toeplitz (ideal-element) structure, which dispersion breaks.
+
+\subsection{Estimating non-diagonal OFDM channels}
+Intra-symbol channel variation from Doppler makes the OFDM channel matrix
+non-diagonal. The standard estimator expands the time variation on a basis: complex
+exponentials (CE-BEM)~\cite{tang2007}, or discrete prolate spheroidal
+sequences~\cite{zemen2005}, giving a banded frequency-domain matrix with one unknown
+gain profile per harmonic. Sparse recovery over harmonic--delay dictionaries
+(orthogonal matching pursuit~\cite{tropp2007}) is an alternative. These methods assume
+that the time variation is \emph{unknown}; they must estimate it.
+
+\emph{Difference.} For a TM-RIS the time variation is known, up to the propagation
+and the element response. Our estimator uses the known timing and estimates only the
+static propagation (with the dispersion absorbed). The difference is large in
+practice: with two pilot symbols CE-BEM reaches 2.2/1.1\,bit/s/Hz at 20/30\,dB against
+our 6.5/9.7, and a full-harmonic CE-BEM needs 32 pilot symbols to approach our
+two-pilot result (Section~\ref{sec:res-est}). We use CE-BEM, with the same delay prior
+as ours, as the main baseline.
+
+\subsection{Equalization of non-diagonal OFDM channels}
+Banded MMSE equalizers keep only the strongest neighbouring subcarriers~\cite{schniter2004,rugini2005}.
+Iterative Krylov solvers (LSQR, GMRES) with fast products through product-convolution
+operators equalize a basis-expansion channel without forming the matrix~\cite{hrycak2010}.
+
+\emph{Difference.} We adopt the iterative approach. For a TM-RIS the product-convolution
+form is exact (Proposition~\ref{prop:sep}), not a basis-expansion approximation, and for
+identical patterns all elements share one kernel per state, so a product needs one
+batched FFT per state. Banded equalizers fail here even with the true channel, because
+of the $1/h$ harmonic envelope (Section~\ref{sec:res-est}).
+
+\subsection{RIS channel estimation}
+Conventional RIS channel estimation assumes a configuration that is constant during
+each OFDM symbol and changes it between symbols, so that the cascaded channel can be
+separated~\cite{zheng2020ofdm}; low-rank and sparse structure of the cascaded channel is
+widely exploited~\cite{wang2020compressed}. Two-timescale schemes estimate the
+quasi-static BS--RIS channel rarely and the mobile RIS--user channel often~\cite{hu2019twotimescale}.
+
+\emph{Difference.} None of these handles switching inside the symbol, where each
+received subcarrier mixes many transmitted ones. We use low-rank structure and the
+two-timescale principle, but inside the harmonic-coupled model, where the static side
+also carries the element dispersion.
+
+\subsection{Synchronization}
+Timing offsets between RIS reflection patterns and the receiver have been studied for
+distributed multi-RIS systems with maximum-likelihood estimators~\cite{zhao2022multiris}
+and for RIS-assisted symbiotic radio, where the RIS modulates its own data and an
+unknown offset causes intercarrier interference that is estimated blindly from virtual
+subcarriers~\cite{chen2024sr}. Bayesian model selection and model averaging over timing
+offsets have been used in OFDM channel estimation~\cite{access2019bayes,hku2010}, building
+on the evidence framework~\cite{mackay1992}.
+
+\emph{Difference.} We show that for a TM-RIS a clock offset is exactly an opposite
+delay shift of the two hops. Consequently the pilot residual is nearly flat in the
+offset, a fact that explains the failure of residual search at high SNR and motivates
+evidence-based estimation. We use the evidence of our own first-stage model; the tool
+is known, its necessity and its use here are not.
+
+\begin{table}[!htbp]\centering
+\caption{Capabilities of existing approaches and of the proposed receiver for OFDM through a TM-RIS.
+``Pilots'' is the number of OFDM pilot symbols needed to come within 0.3\,bit/s/Hz of perfect channel knowledge at 20\,dB in our setting (Section~\ref{sec:res-est}).}
+\label{tab:features}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{p{4.4cm}ccccccc}\toprule
+Approach & \parbox{1.3cm}{\centering in-symbol\\ switching} & \parbox{1.2cm}{\centering dispersive\\ element} & \parbox{1.4cm}{\centering element\\ model needed} & \parbox{1.3cm}{\centering full\\ coupling} & pilots & \parbox{1.3cm}{\centering clock\\ offset} & \parbox{1.6cm}{\centering cost per\\ $\bm H\bm x$} \\\midrule
+One-tap OFDM (TM-IRS designs~\cite{xu2023tmirs,tao2025gflownet}) & coupling as noise & -- & -- & no & 1 & -- & $M$ \\
+Blind ICA attack~\cite{tao2025secure} & yes & no (Toeplitz) & ideal & partly & 0 & -- & -- \\
+Model-aware LMMSE (ours, Sec.~\ref{sec:res-model}) & yes & yes & exact & yes & 2 & -- & $QM\log M$ \\
+CE-BEM, $|h|\le 12$~\cite{tang2007} & generic & yes & no & truncated & never & -- & $HM$ \\
+CE-BEM, all harmonics~\cite{tang2007} & generic & yes & no & yes & 32 & -- & $M^2$ \\
+OMP, harmonic$\times$delay~\cite{tropp2007} & generic & yes & no & truncated & never & -- & sparse \\
+RIS-OFDM estimation~\cite{zheng2020ofdm} & no & -- & -- & -- & -- & -- & $M$ \\
+Two-timescale RIS~\cite{hu2019twotimescale} & no & -- & -- & -- & -- & -- & -- \\
+\textbf{Proposed (timing-only)} & \textbf{yes} & \textbf{yes} & \textbf{no} & \textbf{yes} & \textbf{2} & \textbf{blind} & $\bm{QM\log M}$ \\\bottomrule
+\end{tabular}}
+\end{table}

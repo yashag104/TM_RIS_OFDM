@@ -1,0 +1,137 @@
+\section{Introduction}\label{sec:intro}
+
+\subsection{Context and problem}
+A reconfigurable intelligent surface (RIS) shapes the radio channel with many
+passive, electronically switched elements~\cite{basar2019,wu2019}. Most RIS work
+keeps the configuration fixed during an OFDM symbol and changes it, if at all,
+between symbols. A \emph{time-modulated} RIS (TM-RIS), also called a
+space-time-coding metasurface, instead switches each element several times within
+the symbol~\cite{zhang2018}. The reflected signal then contains harmonics of the
+switching frequency, and the surface can steer, scramble or split energy across
+frequency as well as space. OFDM-aligned time modulation has been proposed for
+waveform security and directional modulation~\cite{xu2023tmirs,tao2025gflownet,wang2026generative}
+and for joint sensing and security~\cite{tao2025isac}.
+
+For the user that the surface serves, the same harmonics are a problem. A harmonic
+at $h$ times the subcarrier spacing moves energy from transmitted subcarrier $m$ to
+received subcarrier $m+h$, so the frequency-domain channel matrix is no longer
+diagonal. Iudice \emph{et al.}~\cite{iudice2026} recently derived a physically
+consistent model of this channel in which each element has a frequency-dispersive
+(finite-memory) response, as a real varactor cell does. They showed that a
+generalized cyclic prefix removes inter-symbol interference but that the coupling
+between subcarriers remains for any prefix length, and that with dispersive elements
+the coupling matrix is not even Toeplitz. Receiver design was explicitly left open.
+
+How large is the problem? For a two-state element with ideal reflection $\pm1$ and
+duty cycle $D$ (fraction of the period in state 1), Parseval's theorem gives the
+fraction of reflected energy that stays on the original subcarrier as
+$(2D-1)^2$ (Appendix~\ref{app:parseval}). At $D=0.75$ only 25\% stays; the
+remaining 75\% is spread over the other harmonics. A conventional one-tap OFDM
+receiver treats that 75\% as interference, so its signal-to-interference ratio is
+at most $(2D-1)^2/(1-(2D-1)^2)=-4.8$\,dB, and its rate saturates however high the
+SNR. In our evaluation the one-tap receiver delivers 0.42\,bit/s/Hz at both 20 and
+30\,dB, against 6.6 and 9.9\,bit/s/Hz with perfect channel knowledge and joint
+equalization (Section~\ref{sec:res-est}).
+
+Recovering this rate requires the full coupling matrix at the receiver. The matrix
+has up to $M^2$ entries ($M=3276$ subcarriers in a 100\,MHz 5G NR carrier) and
+depends on the propagation on both hops, on the switching pattern, and on the
+element response. A generic estimator of a non-diagonal OFDM channel, such as the
+basis-expansion model used for high-mobility channels~\cite{tang2007}, does not
+know where the coupling comes from. It must estimate every harmonic separately.
+Because rectangular switching leaves a slowly decaying $1/h^2$ energy tail, it
+either truncates (and then misses 3.4\% of the energy at $|h|\le 12$, which caps its
+accuracy near $-15$\,dB) or keeps all harmonics (and then needs many pilots).
+
+\subsection{Central idea}
+The receiver of a TM-RIS link is in an unusual position: it knows \emph{how} the
+channel varies inside the symbol, because the variation is the switching pattern,
+and the switching pattern is set by the network. What it does not know is the
+propagation and the exact element response. This paper turns that observation
+into an exact structural statement and builds the entire receiver on it.
+
+Grouping the harmonic expansion of~\cite{iudice2026} by element \emph{state} rather
+than by harmonic gives (Proposition~\ref{prop:sep})
+\begin{equation*}
+\bm H=\sum_{q=1}^{Q}\sum_{s=1}^{2}\underbrace{\bm T_{q,s}}_{\text{timing only}}\circ
+\big(\underbrace{\bm a^{\rm d}_q}_{\text{user hop}}\,
+(\underbrace{\bm\Gamma_s\odot\bm a^{\rm s}_q}_{\text{BS hop and dispersion}})^{\!\top}\big),
+\end{equation*}
+where each $\bm T_{q,s}$ is a Toeplitz matrix fixed by the switching timing alone.
+The algebra is a regrouping of~\cite[eq.~(5)]{iudice2026}, and we credit it as such.
+What is new is what the regrouping implies for a receiver. Each consequence becomes
+one block of the receiver:
+\begin{enumerate}
+\item The element dispersion multiplies only the input side, together with the
+unknown base-station (BS)--RIS channel, so it can be absorbed into an unknown
+per-state input response. \emph{The receiver needs no element model}
+(Section~\ref{sec:est}). Assuming the ideal $\pm1$ element of earlier work costs
+1.4/6.6\,dB at 20/30\,dB; the timing-only receiver loses 0.08/0.11\,dB.
+\item All elements see the same propagation paths, so the unknown factors live in a
+low-dimensional delay subspace shared by all elements and both states. The unknowns
+fall from up to $M^2$ to about $3Lr$ ($L$ delay functions, rank $r$), and two pilot
+symbols suffice.
+\item A clock offset between the RIS and the receiver changes $\bm T_{q,s}$ to
+$\bm D\bm T_{q,s}\bm D^{*}$, which is \emph{exactly} a delay of the user hop and an
+advance of the BS hop. This explains why a pilot-residual timing search fails at high
+SNR (the delays absorb the offset), and why the Bayesian evidence, which also asks how
+probable the absorbing delays are, recovers it (Section~\ref{sec:timing}).
+\item The BS--RIS side does not move, so it can be learned once over many frames, and
+each new frame estimates only the user side (Section~\ref{sec:twoscale}).
+\item Each $\bm T_{q,s}\bm x$ is a linear convolution, so products with $\bm H$ cost
+$\mathcal O(QM\log M)$ and the MMSE equalizer can run matrix-free
+(Section~\ref{sec:eq}).
+\item The $1/h$ amplitude envelope of $\bm T_{q,s}$ explains, quantitatively, why
+truncated estimators and banded equalizers fail on this channel
+(Corollary~\ref{cor:tail}).
+\end{enumerate}
+
+\subsection{Contributions}
+\begin{itemize}
+\item \textbf{C1, receiver structure.} The first receiver for OFDM through a
+(dispersive) TM-RIS: pilot-based estimation of the complete coupling matrix and joint
+equalization, organized around the timing/propagation separation above
+(Fig.~\ref{fig:pipeline}, Algorithms~\ref{alg:est}--\ref{alg:cg}).
+\item \textbf{C2, timing-only estimation.} Absorbing the dispersion into the unknown
+input response, so that no element model, calibration or resonance knowledge is needed,
+and a low-rank shared-subspace estimator that covers identical, cyclically shifted and
+arbitrary per-element switching patterns in one form.
+\item \textbf{C3, blind clock-offset recovery.} The opposite-delay identity for a
+TM-RIS clock offset, the resulting explanation of why residual-based timing fails at
+high SNR, and an evidence-based estimator that recovers the offset to about 5\,ns from
+two pilot symbols with no loss against known timing.
+\item \textbf{C4, exhaustive evaluation.} An evaluation against the strongest
+baselines we could build (full-harmonic basis expansion given 16$\times$ more pilots,
+sparse recovery, unstructured least squares, literature equalizers given the true
+channel), on physical and 3GPP channels, with coding, mobility and pilot overhead,
+hardware impairments, timing errors, multiple panels and interference, and the
+complexity in operations and measured time. Pass/fail criteria were fixed before each
+experiment; failures are reported with their diagnosis.
+\end{itemize}
+
+We adopt, and do not claim: low-rank modelling of RIS cascaded
+channels~\cite{wang2020compressed}; the DPSS delay basis~\cite{slepian1978,zemen2005};
+matrix-free iterative equalization through product-convolution
+operators~\cite{hrycak2010} (here the representation is exact rather than a
+basis-expansion approximation); learning the quasi-static BS--RIS channel on a slow
+timescale~\cite{hu2019twotimescale}; Bayesian evidence for model and timing
+selection~\cite{mackay1992,access2019bayes}; and the observation, known from
+space-time-coding metasurfaces, that a time shift of the switching pattern multiplies
+harmonic $h$ by a linear phase~\cite{zhang2018}. Section~\ref{sec:related} explains
+how each differs from its use here.
+
+\subsection{Organization and notation}
+Section~\ref{sec:related} positions the work. Section~\ref{sec:model} gives the system
+model and every assumption with its justification. Section~\ref{sec:structure} derives
+the structure of the coupling. Section~\ref{sec:receiver} presents the receiver,
+algorithm by algorithm, with its complexity. Section~\ref{sec:method} describes the
+evaluation protocol and baselines, Section~\ref{sec:results} the results, and
+Section~\ref{sec:tradeoffs} the trade-offs and limitations.
+
+Bold lower- and upper-case letters denote vectors and matrices; $\circ$ and $\odot$ are
+the Hadamard product of matrices and vectors; $(\cdot)^{\top}$, $(\cdot)^{\mathsf H}$ and
+$(\cdot)^{*}$ are transpose, conjugate transpose and conjugate; $\diag(\bm a)$ is the
+diagonal matrix with $\bm a$ on its diagonal; $\vect(\cdot)$ stacks columns;
+$\mathcal{CN}(\bm\mu,\bm C)$ is the circularly symmetric complex Gaussian distribution;
+$\mathrm{sinc}(x)=\sin(\pi x)/(\pi x)$. Confidence intervals are $\pm1.96\,s/\sqrt{n}$
+over $n$ independent channel draws.

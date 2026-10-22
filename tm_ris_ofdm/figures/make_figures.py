@@ -931,6 +931,70 @@ def fig_compute_measured():
     fig.tight_layout(); save(fig, "fig22_compute_measured")
 
 
+# Fig. P - complete system and receiver pipeline (architecture figure for the paper)
+def fig_pipeline():
+    from matplotlib.patches import FancyBboxPatch
+    fig, ax = plt.subplots(figsize=(7.4, 5.4)); ax.set_xlim(0, 100); ax.set_ylim(0, 76); ax.axis("off")
+    LIGHT = "#e8f1fc"; GREYF = "#f4f4f2"
+
+    def box(x, y, w, h, txt, fc=GREYF, ec=MUTED, fs=6.3):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.35,rounding_size=1.0", fc=fc, ec=ec, lw=0.9))
+        ax.text(x + w/2, y + h/2, txt, ha="center", va="center", fontsize=fs, color=INK, linespacing=1.15)
+
+    def arr(pts, c=INK, ls="-", lab=None, lp=None):
+        xs, ys = zip(*pts)
+        if len(pts) > 2: ax.plot(xs[:-1], ys[:-1], color=c, lw=0.9, ls=ls)
+        ax.annotate("", xy=pts[-1], xytext=pts[-2], arrowprops=dict(arrowstyle="-|>", color=c, lw=0.9, ls=ls, shrinkA=0, shrinkB=1))
+        if lab: ax.text(lp[0], lp[1], lab, ha="center", fontsize=5.8, color=MUTED)
+
+    def band(y, h, title):
+        ax.add_patch(FancyBboxPatch((0.5, y), 99, h, boxstyle="round,pad=0.2,rounding_size=1", fc="none", ec=GRID, lw=1.0))
+        ax.text(1.5, y + h - 1.8, title, fontsize=6.8, color=MUTED, weight="bold")
+
+    # ---- transmitter and channel
+    band(53, 22.5, "Transmitter and channel")
+    box(2, 56, 12, 9, "QAM data\n+ pilot symbols\n(or comb, empty\nneighbours)")
+    box(17.5, 56, 8, 9, "IFFT\n+ CP")
+    box(29, 56, 13, 9, "BS→RIS hop\n$a^{\\rm s}_q(f)$\nstatic (minutes)")
+    box(45.5, 56, 16, 9, "TM-RIS, Q elements\nstate $s_q[k]$, K slots\nper useful symbol;\ndispersive $\\Gamma_s(f)$", fc=LIGHT, ec=OURS)
+    box(45.5, 68, 16, 4.2, "RIS controller", fs=6)
+    arr([(53.5, 67.6), (53.5, 65.4)])
+    box(65, 56, 13, 9, "RIS→user hop\n$a^{\\rm d}_q(f,n)$\nmoving (Doppler)")
+    box(81.5, 56, 16, 9, "+ noise; CFO, phase\nnoise, direct path,\ninterference (tested)")
+    for a, b in ((14.4, 17.5), (25.9, 29), (42.4, 45.5), (61.9, 65), (78.4, 81.5)): arr([(a, 60.5), (b, 60.5)])
+    # ---- receiver, fast timescale
+    band(29.5, 22.5, "Receiver, every refresh block (fast timescale)")
+    box(81.5, 41, 16, 7, "remove CP, FFT,\ncommon-phase\ntracking")
+    arr([(89.5, 55.6), (89.5, 48.4)])
+    box(60.5, 41, 17.5, 7, "split pilots $\\mathbf{Y}_p$ (known\n$\\mathbf{S}_p$) and data $\\mathbf{y}_d$")
+    arr([(81.1, 44.5), (78.4, 44.5)])
+    box(37.5, 41, 19.5, 7, "Alg. 2: blind clock offset\n$\\hat d$ maximises the\nBayesian evidence", fc=LIGHT, ec=OURS)
+    arr([(60.1, 44.5), (57.4, 44.5)])
+    box(14.5, 41, 19.5, 7, "timing kernels $\\mathbf{T}_{g,s}(\\hat d)$\nToeplitz, from the\nswitching pattern only", fc=LIGHT, ec=OURS)
+    arr([(37.1, 44.5), (34.4, 44.5)], lab="$\\hat d$", lp=(35.8, 45.5))
+    box(2, 41, 9.5, 7, "pattern\n$s_q[k]$\n(known)", fs=6)
+    arr([(11.9, 44.5), (14.1, 44.5)])
+    box(46, 32, 46, 6.5, "Alg. 1: timing-only low-rank estimator, no element model\n$\\hat{\\mathbf{H}}=\\sum_{g,s}\\mathbf{T}_{g,s}\\circ(\\mathbf{FU}\\Lambda_g(\\mathbf{FV}_s)^{\\top})$: LMMSE init, block ALS",
+        fc=LIGHT, ec=OURS, fs=6.1)
+    arr([(24.2, 40.6), (24.2, 39.6), (50, 39.6), (50, 38.9)])
+    arr([(69, 40.6), (69, 38.9)])
+    box(24, 32, 18.5, 6.5, "Alg. 4: warm start from\nprevious $\\mathbf{U},\\mathbf{V},\\Lambda$\n(2 iterations)", fc=LIGHT, ec=OURS, fs=6.0)
+    arr([(42.9, 35.2), (45.6, 35.2)])
+    box(2, 32, 18.5, 6.5, "Alg. 3 (slow): learn the\nstatic input side W\nover ~100 frames", fc=LIGHT, ec=OURS, fs=6.0)
+    arr([(20.9, 35.2), (23.6, 35.2)], ls="--")
+    # ---- detection
+    band(1, 26.5, "Receiver, detection")
+    box(46, 16, 24, 8.5, "Alg. 5: matrix-free CG-MMSE\n$(\\hat{\\mathbf{H}}^{H}\\hat{\\mathbf{H}}+\\sigma^2\\mathbf{I})\\,\\mathbf{x}=\\hat{\\mathbf{H}}^{H}\\mathbf{y}_d$\nbatched FFTs, stop at $10^{-2}$", fc=LIGHT, ec=OURS, fs=6.0)
+    arr([(58, 31.6), (58, 24.9)], lab="$\\hat{\\mathbf{U}},\\hat{\\mathbf{V}},\\hat\\Lambda$", lp=(53, 27.6))
+    arr([(95.5, 40.6), (95.5, 27), (68, 27), (68, 24.9)], lab="data $\\mathbf{y}_d$", lp=(82, 27.8))
+    box(73, 16, 11, 8.5, "soft demapper\n(max-log LLR)", fs=6)
+    box(87, 16, 11, 8.5, "deinterleave,\nViterbi\n→ bits", fs=6)
+    arr([(70.4, 20.2), (72.6, 20.2)]); arr([(84.4, 20.2), (86.6, 20.2)])
+    box(24, 4.5, 46, 6.5, "optional decision-directed pass: hard decisions $\\hat{\\mathbf{x}}_d$\nare added to the pilots and Alg. 1 runs once more", fs=6.0)
+    arr([(78.5, 15.6), (78.5, 7.8), (70.4, 7.8)])
+    arr([(26, 11.4), (26, 29), (44, 29), (44, 34), (45.6, 34)], ls="--")
+    save(fig, "figP_pipeline")
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
@@ -956,3 +1020,4 @@ if __name__ == "__main__":
     fig_blind_timing()
     fig_two_timescale()
     fig_compute_measured()
+    fig_pipeline()
