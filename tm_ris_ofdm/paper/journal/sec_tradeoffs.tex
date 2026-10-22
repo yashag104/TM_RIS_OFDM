@@ -21,6 +21,7 @@ Two-timescale learning & fewer per-frame unknowns (gain shown only at 300\,ns, a
 Warm start & 12$\times$ fewer operations (8.6$\times$ faster at full band) & +0.03\,bit/s/Hz gap \\
 Freezing $\bm V$ in updates & $\sim$100$\times$ fewer operations & +0.23\,bit/s/Hz at 30\,dB unless the input side is learned with $r=Q$ \\
 CG tolerance / iterations & Linear cost in $M$; fits where dense does not & Loose tolerance ($10^{-2}$) left SER 1.18$\times$ dense at $M=2048$; iterations grow with bandwidth \\
+Switching rise time & Lower emission (ACLR 36.8 $\to$ 52.7\,dB for 0 $\to$ 0.05 slot) & Shrinks our advantage over truncated estimators (CE-BEM 4.7 $\to$ 8.2 at 0.3 slot); calibrated kernels needed above $\sim$40\,ns \\
 Comb pilots & Same accuracy as full pilot symbols, NR-compatible & Neighbouring resource elements must be empty (data next to pilots: 9.79 $\to$ 5.10 at 30\,dB) \\\bottomrule
 \end{tabular}}
 \end{table}

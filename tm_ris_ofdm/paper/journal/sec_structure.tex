@@ -50,7 +50,9 @@ fraction of energy outside $|h|\le H$ is 9.7\%, 5.0\%, 3.4\%, 1.0\% and 0.31\% f
 $H=4,8,12,40,128$ (numerical evaluation of~\eqref{eq:tqs}). A model truncated to
 $|h|\le H$ therefore has a normalized error floor of at least $10\log_{10}$ of that fraction:
 $-14.7$\,dB at $H=12$, which matches the $-14$ to $-16$\,dB floor measured for a truncated
-estimator (Section~\ref{sec:res-est}). The same tail limits any banded equalizer.
+estimator (Section~\ref{sec:res-est}). The tail is a property of ideal (instantaneous) edges: with a finite rise time
+the coefficients decay faster (0.45\% outside $|h|\le12$ for a ramp of 0.3 slot), and truncated estimators recover
+accordingly (Section~\ref{sec:res-est}).
 \end{corollary}
 
 \begin{corollary}[Energy on the original subcarrier]\label{cor:parseval}
