@@ -619,6 +619,56 @@ check is weak; at 2048 (reported, not in the bar) CG's SER is 1.18x dense, so th
 is slightly loose. With the batched operator CG time grows ~linearly in M (1.1 s -> 1.9 s from 3276
 to 6552) while dense grows ~M^3 and does not fit at 6552.
 
+### Pilot overhead: net throughput vs pilots, refresh interval, speed, channel (`week8_pilot_overhead.m`, Fig. 19)
+Net rate = (N - Np)/N x mean rate over the data symbols of a refresh block of N symbols with Np pilot
+symbols in front; N and Np optimised per case (N in 4..320, Np in 1..8 ours, 2..32 CE-BEM, CE-BEM's
+best harmonic range per case). Channels: 6-path Rician (30 ns, 8 trials) and 3GPP TDL-A/C/D at 100 ns
+(per-tap Doppler, 4 trials). CE-BEM on TDL limited to |h| <= 40 (|h| <= 128 needs ~1 GB per estimate).
+Three ways the receiver handles the stale estimate: per-subcarrier genie (optimistic), ONE common phase/
+gain corrected per symbol as 5G phase-tracking RS do (realistic, main numbers), no correction
+(pessimistic). The first run used only the genie and the no-correction metrics and mislabelled the
+genie as "phase tracking"; it was rerun with the realistic metric (same seed; the old metrics reproduce
+exactly). First run kept as `results/week8_pilot_overhead_run1.json`.
+
+| channel | speed | SNR | ours, common-phase tracking: net (Np/N, overhead) | ours: no tracking ... genie | CE-BEM best (same tracking) | one-tap | perfect |
+|---|---|---|---|---|---|---|---|
+| 6-path Rician, 30 ns | 3 | 20 | 6.28 (2/120, 2%) | 5.98 ... 6.33 | 5.14 (32/320, 10%) | 0.38 (8/320, 2%) | 6.49 |
+| 6-path Rician, 30 ns | 3 | 30 | 9.29 (2/80, 2%) | 8.43 ... 9.47 | 6.87 (16/240, 7%) | 0.42 (8/320, 2%) | 9.79 |
+| 6-path Rician, 30 ns | 30 | 20 | 6.13 (1/40, 2%) | 5.38 ... 6.53 | 4.83 (16/240, 7%) | 0.39 (8/320, 2%) | 6.60 |
+| 6-path Rician, 30 ns | 30 | 30 | 8.93 (1/30, 3%) | 7.21 ... 9.40 | 6.02 (16/240, 7%) | 0.42 (8/320, 2%) | 9.90 |
+| 6-path Rician, 30 ns | 120 | 20 | 5.59 (1/160, 1%) | 3.70 ... 6.23 | 3.43 (8/320, 2%) | 0.40 (8/320, 2%) | 6.49 |
+| 6-path Rician, 30 ns | 120 | 30 | 7.55 (1/10, 10%) | 4.40 ... 8.56 | 2.96 (16/320, 5%) | 0.43 (8/320, 2%) | 9.78 |
+| TDL-A, 100 ns | 3 | 20 | 5.05 (4/60, 7%) | 4.91 ... 5.34 | 3.44 (16/160, 10%) | 0.33 (8/240, 3%) | 5.91 |
+| TDL-A, 100 ns | 3 | 30 | 6.61 (4/40, 10%) | 6.50 ... 7.03 | 3.25 (16/120, 13%) | 0.39 (8/240, 3%) | 8.94 |
+| TDL-A, 100 ns | 30 | 20 | 4.70 (1/10, 10%) | 4.47 ... 5.29 | 2.25 (8/40, 20%) | 0.34 (8/80, 10%) | 6.31 |
+| TDL-A, 100 ns | 30 | 30 | 5.89 (2/15, 13%) | 5.41 ... 6.96 | 1.93 (16/60, 27%) | 0.40 (8/80, 10%) | 9.54 |
+| TDL-A, 100 ns | 120 | 20 | 4.26 (1/8, 12%) | 3.65 ... 4.97 | 1.53 (16/240, 7%) | 0.34 (8/320, 2%) | 6.28 |
+| TDL-A, 100 ns | 120 | 30 | 5.09 (1/6, 17%) | 4.34 ... 6.08 | 1.24 (16/240, 7%) | 0.38 (8/320, 2%) | 9.51 |
+| TDL-C, 100 ns | 3 | 20 | 5.71 (4/80, 5%) | 5.55 ... 6.02 | 3.70 (16/240, 7%) | 0.38 (8/320, 2%) | 6.34 |
+| TDL-C, 100 ns | 3 | 30 | 8.05 (4/60, 7%) | 7.61 ... 8.60 | 3.33 (16/240, 7%) | 0.42 (8/320, 2%) | 9.58 |
+| TDL-C, 100 ns | 30 | 20 | 4.81 (1/10, 10%) | 4.69 ... 5.20 | 2.10 (8/40, 20%) | 0.33 (8/240, 3%) | 5.95 |
+| TDL-C, 100 ns | 30 | 30 | 6.03 (1/8, 12%) | 5.80 ... 6.73 | 1.73 (8/30, 27%) | 0.37 (8/240, 3%) | 9.13 |
+| TDL-C, 100 ns | 120 | 20 | 4.34 (1/8, 12%) | 3.65 ... 4.95 | 1.66 (16/320, 5%) | 0.33 (8/320, 2%) | 6.07 |
+| TDL-C, 100 ns | 120 | 30 | 5.37 (1/6, 17%) | 4.39 ... 6.39 | 1.39 (16/320, 5%) | 0.40 (8/320, 2%) | 9.30 |
+| TDL-D, 100 ns | 3 | 20 | 5.58 (4/80, 5%) | 5.22 ... 5.77 | 3.63 (16/160, 10%) | 0.39 (8/240, 3%) | 6.25 |
+| TDL-D, 100 ns | 3 | 30 | 8.06 (2/60, 3%) | 7.46 ... 8.51 | 3.26 (16/160, 10%) | 0.40 (8/240, 3%) | 9.51 |
+| TDL-D, 100 ns | 30 | 20 | 5.06 (1/20, 5%) | 4.53 ... 5.60 | 2.88 (32/320, 10%) | 0.37 (8/320, 2%) | 6.49 |
+| TDL-D, 100 ns | 30 | 30 | 7.06 (1/15, 7%) | 5.96 ... 7.73 | 2.55 (16/320, 5%) | 0.42 (8/320, 2%) | 9.75 |
+| TDL-D, 100 ns | 120 | 20 | 3.91 (1/8, 12%) | 3.10 ... 4.74 | 1.64 (16/160, 10%) | 0.32 (8/240, 3%) | 6.13 |
+| TDL-D, 100 ns | 120 | 30 | 4.94 (1/8, 12%) | 3.66 ... 5.51 | 1.36 (16/160, 10%) | 0.34 (8/160, 5%) | 9.32 |
+
+Findings:
+* Ours beats the best CE-BEM after overhead in every case, typically by 1.5-4 bit/s/Hz (TDL at 30 dB:
+  5.1-8.1 vs 1.2-3.3); one-tap stays at ~0.4.
+* Overhead needed (ours, realistic tracking, 20 dB): walking 2-7%; 30 km/h 2% (6-path) to 5-10% (TDL);
+  120 km/h 12% on TDL (1 pilot every 8 symbols). The 6-path model needs less at speed because its
+  dominant LoS path makes the Doppler mostly a common phase, which tracking removes; the NLoS TDL
+  numbers are the realistic ones.
+* Longer delay spread needs more pilots per refresh only when the channel is slow (TDL walking: 4
+  pilots); when it moves, 1 pilot refreshed often beats many pilots refreshed rarely.
+* Without any phase tracking the 120 km/h overhead rises to ~25% (1 pilot every 4 symbols).
+* Replaces the earlier rough estimate ("~3% walking, ~20% urban"): walking 2-7%, 30 km/h 2-10%.
+
 ## Run
 ```
 matlab -batch "cd('C:\Users\hp\RIS\tm_ris_ofdm\matlab'); gate1_reproduce"

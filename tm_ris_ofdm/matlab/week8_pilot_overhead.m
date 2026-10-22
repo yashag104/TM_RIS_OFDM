@@ -17,11 +17,14 @@
 %              all kept; the analysis takes BEM's best per case, in its favour
 %     onetap   per-subcarrier LS from the pilots, Np = 1, 2, 4, 8
 %     perfect  true channel at symbol n, no pilots (upper bound)
-%   Two rate metrics per point:
-%     cpe      MMSE SINR with |diag(WH)|^2 as signal: assumes the receiver tracks the
-%              common phase/gain of each subcarrier (as with 5G phase-tracking RS)
-%     nocpe    the receiver trusts its own effective gain diag(W Hhat); the mismatch
-%              |diag(WH) - diag(W Hhat)|^2 counts as interference (no tracking)
+%   Three rate metrics per point (rerun 2026-10-21: the first run had only 1 and 3, and
+%   metric 1 was wrongly labelled "phase tracking"; it is a per-subcarrier genie):
+%     sub      MMSE SINR with |diag(WH)|^2 as signal: the receiver knows the effective gain
+%              of EVERY subcarrier (per-subcarrier genie; optimistic upper bound)
+%     cpe      the receiver corrects ONE common complex gain a per symbol (as 5G phase-
+%              tracking RS do; a = LS fit of diag(WH) to diag(W Hhat)); the residual
+%              |diag(WH) - a diag(W Hhat)|^2 counts as interference (realistic)
+%     none     no correction: the receiver trusts diag(W Hhat) (pessimistic)
 %   S1, Q = 16, K = 8, M = 256, 20/30 dB.
 
 clear; rng(4900);
@@ -40,7 +43,7 @@ grid = [1:8 10 12 15 20 25 30 40 50 60 80 100 130 160 200 250 320];
 NpO = [1 2 4 8]; NpB = [2 4 8 16 32];
 chans = {'phys', 'TDLA', 'TDLC', 'TDLD'};
 R = struct('speeds_kmh', speeds, 'snr_db', snrs, 'grid', grid, 'Tsym_s', Tsym, ...
-    'Np_ours', NpO, 'Np_bem', NpB, 'metrics', {{'cpe', 'nocpe'}}, ...
+    'Np_ours', NpO, 'Np_bem', NpB, 'metrics', {{'sub', 'cpe', 'none'}}, ...
     'dims_ours', 'Np x speed x snr x grid x metric', 'dims_bem', 'Np x hmax x speed x snr x grid x metric', ...
     'dims_perfect', 'speed x snr x grid');
 nG = numel(grid);
@@ -53,8 +56,8 @@ for ic = 1:numel(chans)
         [F, lamF] = dpss_basis(bins, df, tw, ceil(M*df*tw) + 10);
         L2 = ceil(M*df*Tcp) + 12; [F2, lam2] = dpss_basis(bins, df, Tcp, L2); hB = [12 40];
     end
-    rO = nan(ntrial, numel(NpO), numel(speeds), 2, nG, 2); rT = rO;
-    rB = nan(ntrial, numel(NpB), numel(hB), numel(speeds), 2, nG, 2);
+    rO = nan(ntrial, numel(NpO), numel(speeds), 2, nG, 3); rT = rO;
+    rB = nan(ntrial, numel(NpB), numel(hB), numel(speeds), 2, nG, 3);
     rP = nan(ntrial, numel(speeds), 2, nG);
     for t = 1:ntrial
         for iv = 1:numel(speeds)
@@ -68,7 +71,7 @@ for ic = 1:numel(chans)
                 s2 = Pc / 10^(snrs(is)/10);
                 S = qpsk(M, max(NpB)); Y = zeros(M, max(NpB));
                 for p = 1:max(NpB), Hp = Hc(p-1); Y(:, p) = Hp*S(:, p) + noise(M, 1, s2); end
-                for ig = 1:nG, Hn = Hc(grid(ig)); rP(t, iv, is, ig) = rates(Hn, Hn, s2, evalb) * [1; 0]; end
+                for ig = 1:nG, Hn = Hc(grid(ig)); rP(t, iv, is, ig) = rates(Hn, Hn, s2, evalb) * [1; 0; 0]; end
                 for ip = 1:numel(NpO)
                     Np = NpO(ip);
                     Ho = est_general(Y(:,1:Np), S(:,1:Np), T, ones(Q,1), F, lamF, s2, r, 20);
@@ -106,13 +109,15 @@ end
 
 %% ---------------------------------------------------------------------
 function r = rates(Hh, H, s2, evalb)
-% [cpe, nocpe] rates of MMSE with the estimate Hh on the true channel H
+% [sub, cpe, none] rates of MMSE with the estimate Hh on the true channel H
 M = size(H, 1);
 W = (Hh'*Hh + s2*eye(M)) \ Hh'; G = W*H; g = diag(G); gh = diag(W*Hh);
 it = sum(abs(G).^2, 2) - abs(g).^2 + s2*sum(abs(W).^2, 2);
 s1 = abs(g).^2 ./ it;
+a = (gh(evalb)' * g(evalb)) / (gh(evalb)' * gh(evalb));      % one common gain per symbol
+sc = abs(a*gh).^2 ./ (it + abs(g - a*gh).^2);
 s0 = abs(gh).^2 ./ (it + abs(g - gh).^2);
-r = [mean(log2(1 + s1(evalb))), mean(log2(1 + s0(evalb)))];
+r = [mean(log2(1 + s1(evalb))), mean(log2(1 + sc(evalb))), mean(log2(1 + s0(evalb)))];
 end
 function [As, Adp, nu] = moving_channel(Q, bins, df, fc, popt, fD)
 lam = 3e8 / fc; k = 2*pi/lam; n = round(sqrt(Q));

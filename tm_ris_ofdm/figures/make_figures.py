@@ -756,8 +756,8 @@ def _arr(x):
 def net_rate(curve, grid, Np, N):
     """Net rate (N - Np)/N * mean rate over data symbols Np..N-1 (curve on the grid)."""
     g = np.asarray(grid, float); ok = (g >= Np) & np.isfinite(curve)
-    if N <= Np or ok.sum() < 1 or g[ok][0] > Np or (N - 1) > g[ok][-1]:
-        return np.nan
+    if N <= Np or ok.sum() < 1 or (N - 1) > g[ok][-1]:
+        return np.nan                      # before the first grid point >= Np: held constant
     n = np.arange(Np, N)
     return (N - Np) / N * np.interp(n, g[ok], curve[ok]).mean()
 
@@ -806,16 +806,18 @@ def fig_pilot_overhead(src="week8_pilot_overhead"):
     for k in ("speeds_kmh", "snr_db", "Np_ours", "Np_bem", "grid"):
         d[k] = [int(x) for x in np.atleast_1d(d[k])]
     chans = [c for c in ("phys", "TDLA", "TDLC", "TDLD") if c in d]
-    tabs = {m: overhead_tables(d, m) for m in (0, 1)}
-    speeds = d["speeds_kmh"]; i20 = 0
+    mi = {m: i for i, m in enumerate(d["metrics"])}          # sub (genie), cpe (realistic), none
+    tabs = {m: overhead_tables(d, i) for m, i in mi.items()}
+    speeds = d["speeds_kmh"]
     names = {"phys": "6-path Rician, 30 ns", "TDLA": "TDL-A, 100 ns", "TDLC": "TDL-C, 100 ns", "TDLD": "TDL-D, 100 ns"}
     fig, axes = plt.subplots(len(chans), len(speeds), figsize=(7.2, 1.9 * len(chans) + 0.6), squeeze=False)
     for r_, ch in enumerate(chans):
         for c_, v in enumerate(speeds):
-            ax = axes[r_, c_]; t = tabs[0][ch][v][20]; t1 = tabs[1][ch][v][20]
-            ax.plot(d["Np_ours"], [x[0] for x in t["ours_perNp"]], color=OURS, marker="o", ms=4, mec="white", mew=0.6, label="Ours")
-            ax.plot(d["Np_ours"], [x[0] for x in t1["ours_perNp"]], color=OURS, ls=":", marker="o", ms=3.5, mfc="white", label="Ours, no phase tracking")
-            ax.plot(d["Np_bem"], [x[0] for x in t["bem_perNp"]], color=BEM, marker="s", ms=4, mec="white", mew=0.6, label="CE-BEM (best harmonics)")
+            ax = axes[r_, c_]; t = tabs["cpe"][ch][v][20]
+            lo = [x[0] for x in tabs["none"][ch][v][20]["ours_perNp"]]; hi = [x[0] for x in tabs["sub"][ch][v][20]["ours_perNp"]]
+            ax.fill_between(d["Np_ours"], lo, hi, color=OURS, alpha=0.15, lw=0, label="Ours: no tracking ... per-subcarrier genie")
+            ax.plot(d["Np_ours"], [x[0] for x in t["ours_perNp"]], color=OURS, marker="o", ms=4, mec="white", mew=0.6, label="Ours, common-phase tracking")
+            ax.plot(d["Np_bem"], [x[0] for x in t["bem_perNp"]], color=BEM, marker="s", ms=4, mec="white", mew=0.6, label="CE-BEM (best harmonics), same tracking")
             ax.axhline(t["onetap"][0], color=ONETAP, lw=1.4, label="One-tap (best pilots)")
             ax.axhline(t["perfect"][0], color=INK, ls="--", lw=1.1, label="Perfect, no pilots")
             ax.set_xscale("log", base=2); ax.set_xticks([1, 2, 4, 8, 16, 32], ["1", "2", "4", "8", "16", "32"]); ax.minorticks_off()
@@ -825,24 +827,24 @@ def fig_pilot_overhead(src="week8_pilot_overhead"):
             else: ax.set_yticklabels([])
             if r_ == len(chans) - 1: ax.set_xlabel("Pilot symbols per refresh")
             bo = t["ours"]
-            ax.text(0.97, 0.06, f"best: {bo[1]} pilots / {bo[2]} sym\n({100*bo[1]/bo[2]:.0f}% overhead)", transform=ax.transAxes,
-                    ha="right", va="bottom", fontsize=6.2, color=INK)
+            ax.text(0.97, 0.06, f"best: {bo[1]} pilot{'s' if bo[1] > 1 else ''} / {bo[2]} sym ({100*bo[1]/bo[2]:.0f}%)",
+                    transform=ax.transAxes, ha="right", va="bottom", fontsize=6.2, color=INK)
     h, l = axes[0, 0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, fontsize=7, bbox_to_anchor=(0.5, -0.005))
-    fig.suptitle("Net throughput at 20 dB (bit/s/Hz after pilot overhead), refresh interval optimised for each point",
+    fig.legend(h, l, loc="lower center", ncol=2, frameon=False, fontsize=7, bbox_to_anchor=(0.5, -0.005))
+    fig.suptitle("Net throughput at 20 dB (bit/s/Hz after pilot overhead), refresh interval optimised per point",
                  x=0.01, ha="left", fontsize=9.3, color=INK)
-    fig.tight_layout(rect=(0, 0.07, 1, 1)); save(fig, "fig19_pilot_overhead")
-    # table for the README
-    lines = ["| channel | speed | SNR | ours: net (Np/N, overhead) | ours, no phase tracking | CE-BEM best | one-tap | perfect |", "|---|---|---|---|---|---|---|---|"]
+    fig.tight_layout(rect=(0, 0.08, 1, 1)); save(fig, "fig19_pilot_overhead")
+    lines = ["| channel | speed | SNR | ours, common-phase tracking: net (Np/N, overhead) | ours: no tracking ... genie | CE-BEM best (same tracking) | one-tap | perfect |",
+             "|---|---|---|---|---|---|---|---|"]
+    f = lambda x: f"{x[0]:.2f} ({x[1]}/{x[2]}, {100*x[1]/x[2]:.0f}%)" if x[1] else f"{x[0]:.2f}"
     for ch in chans:
         for v in speeds:
             for snr in d["snr_db"]:
-                t = tabs[0][ch][v][snr]; t1 = tabs[1][ch][v][snr]
-                f = lambda x: f"{x[0]:.2f} ({x[1]}/{x[2]}, {100*x[1]/x[2]:.0f}%)" if x[1] else f"{x[0]:.2f}"
-                lines.append(f"| {names[ch]} | {v} | {snr} | {f(t['ours'])} | {f(t1['ours'])} | {f(t['bem'])} | {f(t['onetap'])} | {t['perfect'][0]:.2f} |")
+                t = tabs["cpe"][ch][v][snr]
+                lines.append(f"| {names[ch]} | {v} | {snr} | {f(t['ours'])} | {tabs['none'][ch][v][snr]['ours'][0]:.2f} ... "
+                             f"{tabs['sub'][ch][v][snr]['ours'][0]:.2f} | {f(t['bem'])} | {f(t['onetap'])} | {t['perfect'][0]:.2f} |")
     (RES / "week8_pilot_overhead_table.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
-
 
 if __name__ == "__main__":
     fig_estimators()
