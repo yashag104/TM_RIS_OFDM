@@ -265,24 +265,25 @@ TDL-C 100\,ns & 2 & 0.494 / 2.086 & 0.329 / 1.810 & 0.342 / 1.359 & 0.397 / 1.43
 At $M=3276$ all estimation and equalization use only the FFT operator. With the linear
 first stage alone ($2L^2=1800$ unknowns) the estimate is noise-limited at $-23$ to $-29$\,dB at
 28\,dB SNR (it reaches $-45$ to $-49$\,dB at 60\,dB SNR, so the model is right); the low-rank form
-reaches $-39$\,dB with two pilot symbols. Table~\ref{tab:full} gives SER over 10 channels. With
-pilots only, the proposed receiver's SER is 1.09$\times$ that of perfect knowledge at 20\,dB/16-QAM
-and 1.54$\times$ at 28\,dB/64-QAM (an earlier 3-channel run gave 2.3$\times$); one DD pass brings
-these to 1.05$\times$ and 1.14$\times$. Both numbers are reported because the DD figure alone would
-overstate the pilots-only performance. A second DD pass made 64-QAM worse (SER 0.24 in an earlier
-run), because decision errors feed back into the estimate; we use at most one. With per-element
-cyclic shifts, the shift structure (Corollary~\ref{cor:groups}) gives an operator error of
-$-34.4$\,dB at 28\,dB and SER ratios of 1.10 and 1.12 (5 channels).
+reaches $-39$\,dB with two pilot symbols. Table~\ref{tab:full} gives SER over 30 independent channels, with
+95\% intervals of the SER \emph{ratio} to perfect knowledge from a clustered bootstrap (channels resampled,
+$10^4$ resamples). With pilots only, the proposed receiver's SER is 1.10 [1.06, 1.15] times that of perfect knowledge
+at 20\,dB/16-QAM and 1.37 [1.18, 1.86] times at 28\,dB/64-QAM; one DD pass brings these to 1.05 [1.03, 1.08] and 1.12
+[1.08, 1.21]. (An earlier 10-channel run gave 1.54 at 28\,dB pilots-only; the 30-channel interval supersedes it.) Both
+numbers are reported because the DD figure alone would overstate the pilots-only performance. A second DD pass made
+64-QAM worse in an earlier run (decision errors feed back), so we use at most one. With per-element cyclic shifts, the
+shift structure (Corollary~\ref{cor:groups}) gives an operator error of $-34.4$\,dB at 28\,dB and SER ratios of 1.10 and
+1.12 (5 channels).
 
 \begin{table}[!htbp]\centering
-\caption{Full band ($M=3276$), SER, 10 channels, 95\% CI.}\label{tab:full}
+\caption{Full band ($M=3276$), 30 channels: mean SER and, in brackets, the SER ratio to perfect knowledge with its 95\% clustered-bootstrap interval.}\label{tab:full}
 \begin{tabular}{lcc}\toprule
 Receiver & 20\,dB, 16-QAM & 28\,dB, 64-QAM \\\midrule
-One-tap & $0.839\pm0.003$ & $0.955\pm0.002$ \\
-Perfect knowledge (CG-MMSE) & $0.031\pm0.024$ & $0.035\pm0.021$ \\
-Proposed, pilots only & $0.034\pm0.025$ (1.09$\times$) & $0.054\pm0.032$ (1.54$\times$) \\
-Proposed, + 1 DD pass & $0.032\pm0.024$ (1.05$\times$) & $0.040\pm0.022$ (1.14$\times$) \\
-CE-BEM, pilots / + 1 DD & 0.549 / 0.563 & 0.865 / 0.865 \\\bottomrule
+One-tap & 0.843 & 0.956 \\
+Perfect knowledge (CG-MMSE) & 0.031 & 0.027 \\
+Proposed, pilots only & 0.034 (1.10 [1.06, 1.15]) & 0.037 (1.37 [1.18, 1.86]) \\
+Proposed, + 1 DD pass & 0.033 (1.05 [1.03, 1.08]) & 0.031 (1.12 [1.08, 1.21]) \\
+CE-BEM ($|h|\le8$), pilots only & 0.568 (18 [13, 29]) & 0.884 (32 [20, 73]) \\\bottomrule
 \end{tabular}
 \end{table}
 \begin{figure}[!htbp]\centering
