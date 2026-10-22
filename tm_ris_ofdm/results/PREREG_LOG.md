@@ -27,3 +27,7 @@ seeds shared across receivers, paired differences with t-based 95% CIs.
 * T4 (B3, prior sensitivity), 30 dB, mode (ii): DPSS window shifted to [t0, t0+tau_max] with
   t0 in {-100, +100} ns, tau_max scaled 0.5x and 1.5x. Report rate loss and d_hat bias/rms.
   PASS if the rate loss vs known offset stays within 0.5 dB for all four variants.
+
+### Outcomes (recorded 2026-10-22 after the runs)
+T1 PASS (6.9e-15). T2 PASS (both modes, both SNRs). T3 PASS (93%). T4 FAIL (t0 = +100 ns: +6.68 bit/s/Hz loss);
+other three variants pass. Details: SUMMARY_B.md.
