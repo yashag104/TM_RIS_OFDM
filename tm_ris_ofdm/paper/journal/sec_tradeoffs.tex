@@ -46,9 +46,9 @@ about 1\% of the spacing, and oscillator linewidth near 100\,Hz or tracked; tran
 fitting the rise time.
 \item \emph{Low SNR.} At 10\,dB the gain over the one-tap receiver for a user the pattern is designed
 for is modest (+0.6\,bit/s/Hz, about 2\,dB): noise, not coupling, dominates there.
-\item \emph{Pattern secrecy.} If the switching pattern is control information available to the user
-(A1), an eavesdropper that learns it can run the same receiver; the security benefit that motivates
-time modulation then depends on keeping the pattern secret. Not yet evaluated.
+\item \emph{Motivation and secrecy.} For a single user an optimized static RIS gives more rate than a TM-RIS, also with
+our receiver (Section~\ref{sec:res-motiv}); our receiver reduces the cost of time modulation, it does not make it profitable.
+An eavesdropper that learns the pattern can run the same receiver (secrecy rate 0.5--2.9 instead of 1.0--3.6\,bit/s/Hz at 20\,dB).
 \item \emph{Rank.} With $Q=16$ and $r=8$ (or $r=Q$ in Algorithm~\ref{alg:learn}) the low-rank property
 is weak; it matters for large surfaces, where it is tested only up to $Q=1024$ with narrowband array phases.
 \item \emph{Equalizer speed.} The measured CG advantage counts the dense factorization against 12

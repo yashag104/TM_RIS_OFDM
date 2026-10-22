@@ -28,3 +28,4 @@ corrected; WITHDRAWN = no longer claimed; OPEN = test pending (workstream in bra
 | K2 | Realistic rise times | (5-30% only) | week11_rise_small | NEW | 2-42 ns: no calibration needed; 83 ns: calibration needed (0.14 bit/s/Hz @30 dB) |
 | F1 | Full-band SER ratio | 1.09x / 1.54x (10 ch) | week11_fullband30, 30 ch, bootstrap | FIXED | pilots only 1.10 [1.06,1.15] @20 dB/16QAM, 1.37 [1.18,1.86] @28 dB/64QAM; +1 DD 1.05 / 1.12; CE-BEM 18x / 32x |
 | C-E2b | Coded BLER gap | 0.4 dB (120 blocks) | week11_coded_stats, 2000 blocks/pt, bootstrap | FIXED | 0.14 dB [0.09, 0.20]; CE-BEM never reaches 10% (<=14 dB) |
+| I1-I3 | Motivation, secrecy | (not reported) | week11_motivation, 30 ch | NEW | Ours +2.1..+2.3 over one-tap @20 dB, within 0.1-0.2 of perfect; static optimised RIS 1.3-3.7 higher than TM+ours; eve CE-BEM w/o pattern 1.8-2.2, with pattern+ours 2.5-3.0 |

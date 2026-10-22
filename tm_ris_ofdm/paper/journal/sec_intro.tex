@@ -33,7 +33,10 @@ SNR. In our evaluation the one-tap receiver delivers 0.42\,bit/s/Hz at both 20 a
 30\,dB, against 6.6 and 9.9\,bit/s/Hz with perfect channel knowledge and joint
 equalization (Section~\ref{sec:res-est}).
 
-Recovering this rate requires the full coupling matrix at the receiver. The matrix
+Time modulation does not, by itself, give the user more rate: for a single user, an optimized \emph{static} RIS
+delivers more (Section~\ref{sec:res-motiv}). A TM-RIS is deployed for its other functions, such as directional
+security, harmonic steering of several users or sensing, and the question this paper answers is how much of the
+resulting loss the legitimate receiver can win back. Recovering this rate requires the full coupling matrix at the receiver. The matrix
 has up to $M^2$ entries ($M=3276$ subcarriers in a 100\,MHz 5G NR carrier) and
 depends on the propagation on both hops, on the switching pattern, and on the
 element response. A generic estimator of a non-diagonal OFDM channel, such as the
