@@ -31,3 +31,10 @@ Findings that change the paper:
    costs +0.04 +-0.08 bit/s/Hz at 30 dB, not significant) or equal to the BS-RIS delay (search needed and works).
 
 Claims that change: C-C is revised (see CLAIMS_LEDGER.md). Per the stopping rule, work stops here for review.
+
+## Step 1b (fresh seeds), 2026-10-22
+F1 (fix for the T4 failure): receiver sync error +-150 ns. Loss vs reference (perfect sync, known offset):
+default window +0.22/+1.16, fixed margin window +0.21/+0.79, window start chosen by the evidence jointly with the
+offset +0.050 +-0.046 / +0.046 +-0.078 bit/s/Hz (20/30 dB). PASS for the evidence-chosen window (criterion:
+mean <= 0.165 and upper CI <= 0.33 at 30 dB); fixed margin FAILS. The paper's Algorithm 2 now chooses the window
+start jointly with the offset. F2 (residual vs evidence regimes) pending.
