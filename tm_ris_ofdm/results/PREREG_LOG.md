@@ -132,3 +132,12 @@ except where stated)
 * K3 (computed, results/k3_oob.json, analytic): ACLR of the switched reflection, ideal edges and rise times.
 * H2/H3 week11_eq_amortised (idle machine): amortised dense vs CG wall-clock, break-even N; CG tolerance needed
   to match the dense SER at each M.
+
+## 2026-10-22 | git 5ae54bb | Step 7: G3b, removing the pilot-fit fallback (decided before running)
+The ablation (week10_ablation) showed on TDL-C that the fallback (keep the linear estimate if it fits the
+pilots better) is chosen in 37-57% of channels at 30 dB and makes the gap worse (Np 4: 0.77 vs 0.59). Validation on
+FRESH channels (new seeds): shared-path 30 ns, TDL-A 100 ns, TDL-C 100 ns; Np 2/4/8; 30 channels; ranks frozen
+(8 shared-path, 16 TDL); estimator otherwise unchanged.
+PASS (adopt "no fallback" in the paper's Algorithm 1): mean gap without fallback <= mean gap with fallback + 0.02
+bit/s/Hz in every case, AND the paired t-CI excludes zero in favour of "no fallback" in at least one TDL case at
+30 dB. Otherwise the fallback stays and the ablation finding is reported as such.
