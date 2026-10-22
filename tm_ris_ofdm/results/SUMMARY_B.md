@@ -38,3 +38,13 @@ default window +0.22/+1.16, fixed margin window +0.21/+0.79, window start chosen
 offset +0.050 +-0.046 / +0.046 +-0.078 bit/s/Hz (20/30 dB). PASS for the evidence-chosen window (criterion:
 mean <= 0.165 and upper CI <= 0.33 at 30 dB); fixed margin FAILS. The paper's Algorithm 2 now chooses the window
 start jointly with the offset. F2 (residual vs evidence regimes) pending.
+
+## F2 regimes (week9_resid_vs_evidence.json, 30 channels, fresh seeds) — final
+| regime | resid - evid 20 dB | resid - evid 30 dB | evid - known 20/30 | time resid / evid |
+|---|---|---|---|---|
+| R1 coarse procedure, Np 2 | +0.013 +-0.015 | +0.55 +-0.61 | -0.003 / -0.006 | 17.2 / 3.2 s |
+| R2 fine grid, Np 1 | +1.49 +-0.56 | +2.83 +-1.19 | +0.03 / +0.74 | 52.4 / 2.5 s |
+| R3 fine grid, TDL-C 100 ns, Np 8 | -0.002 +-0.003 | -0.001 +-0.013 | +0.002 / +0.007 | 674 / 11.7 s |
+
+Verdict: the evidence is necessary with one pilot symbol (residual overfits), equal otherwise, and 5-58x cheaper.
+Paper wording updated (sec_results2, "Residual versus evidence").

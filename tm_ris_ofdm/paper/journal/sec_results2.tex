@@ -141,9 +141,20 @@ known). That failure was partly a property of the procedure, not of the criterio
 $+0.092\pm0.140$\,bit/s/Hz at 20/30\,dB; one of 30 channels with an error above 0.01 slot, none for the evidence).
 The overfitting explanation of the Remark was tested directly with two held-out pilot symbols: the held-out residual
 and the evidence select the same offset (within 0.005 slot) in 93\% of channels and give the same rate
-($-0.001\pm0.029$ at 30\,dB). \TODO{insert F2 regimes: coarse procedure, $N_p=1$, TDL-C 100\,ns, wall-clock.} The
-evidence is therefore preferred for its cost (no low-rank estimation per candidate) and smoothness, not because it
-is the only criterion that works.
+($-0.001\pm0.029$ at 30\,dB). Three further regimes, pre-registered with fresh channels (30 per point, paired residual minus evidence, offset
+equal to the base-station--RIS delay), show where the difference lies. (R1) With the earlier coarse residual
+procedure and $N_p=2$ the residual is equal at 20\,dB ($+0.013\pm0.015$) and worse on average at 30\,dB
+($+0.55\pm0.61$, not significant, driven by a few channels with losses of several bit/s/Hz). (R2) With a single
+pilot symbol the residual \emph{is} significantly worse even on the fine grid: $+1.49\pm0.56$ and
+$+2.83\pm1.19$\,bit/s/Hz at 20/30\,dB. With 256 observations against several hundred effective parameters, a wrong
+offset fits the pilots as well as the right one, the overfitting mechanism of the Remark in its pure form; the
+evidence still finds the offset ($+0.03\pm0.11$ against known timing at 20\,dB, $+0.74\pm0.67$ at 30\,dB, where a
+single pilot symbol is itself the limit). (R3) On TDL-C at 100\,ns with $N_p=8$ both criteria are equal to known
+timing within $0.02$. In wall-clock time per search the evidence takes 3.2, 2.5 and 11.7\,s against 17.2, 52.4 and
+674\,s for the residual (5 to 58 times faster), because it needs no low-rank estimation per candidate. The evidence is
+therefore preferred for three reasons, in decreasing order of strength: it is the only criterion that works with one
+pilot symbol, it is 5--58 times cheaper, and it is smoother; with two or more pilot symbols and a fine grid, the
+residual works too.
 
 \emph{A failed idea.} Since an offset is a delay, widening the delay window by a guard should absorb it without
 a search. It does not: for offsets up to 83\,ns the guard window loses 2.32\,dB against 1.76\,dB without it (0.39
