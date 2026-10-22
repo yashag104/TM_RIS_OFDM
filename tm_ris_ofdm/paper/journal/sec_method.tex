@@ -63,12 +63,16 @@ regularization.
 equalization: today's OFDM receiver.
 \item \textbf{Toeplitz mixing}: the ideal-element model $H_{\bar mm}=t(\bar m-m)\,c(m)$ implied by
 frequency-flat switching, as assumed in~\cite{tao2025secure}, estimated with our prior.
+\item \textbf{Ideal-element LMMSE}: the strongest ideal-element baseline, $\bm H=(\bm T_1-\bm T_2)\circ(\bm F\bm C\bm F^{\mathsf T})$
+with the ideal $\pm1$ element and our two-sided DPSS prior (Table~\ref{tab:fair}).
 \item \textbf{CE-BEM}~\cite{tang2007}: $\bm H=\sum_{|h|\le H_b}\bm S_h\diag(\bm F_2\bm c_h)$ with
 $\bm S_h$ the shift by $h$ and a two-hop DPSS basis ($0.6\,\mu$s, $L_2=17$); $H_b=4,8,12,40,128$
 and all 255 harmonics; $N_p$ up to 32.
 \item \textbf{OMP}~\cite{tropp2007} over a harmonic$\times$delay dictionary, stopping at the noise level or 300 atoms.
 \item \textbf{Unstructured banded LS}: every entry within $|h|\le16$ estimated independently, with 32 orthogonal pilot symbols (16 times our overhead).
 \item \textbf{Model-aware LMMSE} (a variant of ours): the coupling built from the \emph{exact} or a mismatched element model, to measure the value of not needing one.
+\item \textbf{Equalizer fairness}: in the pre-registered rerun (Table~\ref{tab:fair}) every estimator is given the naive
+MMSE, a robust MMSE with the error power from the pilot residual, and a robust MMSE with the oracle error power.
 \item \textbf{Equalizers} fed the same estimate and the true channel (oracle): banded MMSE with window $\pm W$~\cite{schniter2004,rugini2005}; LSQR/CG~\cite{hrycak2010}; dense MMSE.
 \item \textbf{References}: perfect channel knowledge (upper bound); genie channel without phase-noise knowledge (Section~\ref{sec:res-hw}).
 \end{itemize}

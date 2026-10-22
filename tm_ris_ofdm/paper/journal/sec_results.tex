@@ -124,7 +124,8 @@ Resonance spread 10\,MHz per element & 0.18 & $+0.003\pm0.008$ & $+0.046\pm0.044
 \emph{Against the literature's estimators.} Table~\ref{tab:est} and Fig.~\ref{fig:est} compare
 estimators on the same pilots and channels (20 channels, $M=256$). The one-tap receiver is
 capped at its interference ratio (Corollary~\ref{cor:parseval}). The Toeplitz model of the ideal
-element reaches 2.3/1.4\,bit/s/Hz: dispersion breaks its structure. CE-BEM with up to $\pm12$
+element in its usual form $H_{\bar mm}=t(\bar m-m)c(m)$ reaches 2.3/1.4\,bit/s/Hz: dispersion breaks its structure
+(a much stronger ideal-element baseline, with our two-sided delay prior, is in Table~\ref{tab:fair}). CE-BEM with up to $\pm12$
 harmonics reaches at most 2.3/1.4 and barely improves with pilots: by Corollary~\ref{cor:tail} it
 misses 3.4\% of the coupling energy at $\pm12$. It even degrades from 20 to 30\,dB, because an
 MMSE filter that trusts a wrong model hurts more when noise no longer masks the model error.
@@ -175,6 +176,65 @@ Unstructured banded LS & -- & -- & 0.85 / 0.54 \\
 \textbf{Proposed} & \textbf{6.51 / 9.69} & -- & -- \\
 Perfect knowledge & 6.59 / 9.89 & & \\\bottomrule
 \end{tabular}
+\end{table}
+
+\emph{Pre-registered fair rerun.} Tables~\ref{tab:est} and~\ref{tab:bem} give every baseline the naive MMSE
+equalizer. Table~\ref{tab:fair} repeats the comparison under rules fixed before the run: 30 channels per point, both
+the shared-path channel and 3GPP TDL-C at 100\,ns, $N_p\in\{2,4,8,16,32\}$, CE-BEM with no harmonic cap (matrix-free
+LMMSE, checked against the dense solver to $7\cdot10^{-9}$), and three equalizers for \emph{every} estimator: naive
+MMSE, robust MMSE with the estimation-error power taken from the pilot residual (usable in practice), and robust MMSE
+with the oracle error power. The Toeplitz baseline is replaced by the strongest ideal-element estimator we could build:
+the model-aware LMMSE with the ideal $\pm1$ element, $\bm H=(\bm T_1-\bm T_2)\circ(\bm F\bm C\bm F^{\mathsf T})$, the
+same prior as ours. Table~\ref{tab:fair} reports the loss to perfect knowledge with the residual-based robust
+equalizer; the oracle equalizer changes no conclusion (it helps truncated CE-BEM and OMP by up to 1.5\,bit/s/Hz at
+30\,dB, and ours by at most 0.12).
+
+The ranking survives. Ours is the only estimator that comes within 0.3\,bit/s/Hz of perfect knowledge at 20\,dB with
+at most 32 pilot symbols: it needs $N_p=2$ on the shared-path channel and $N_p=4$ on TDL-C; no baseline gets there
+with 32 (Table~\ref{tab:features}). The best baseline at every point is the ideal-element LMMSE: it loses only
+0.4--0.5\,bit/s/Hz at 20\,dB, so the ideal element is a fair approximation when noise dominates, but 2.0--2.3 at
+30\,dB, where the dispersion it ignores becomes the dominant error, and more pilots do not help it (a model error,
+not an estimation error). Against the best baseline \emph{per channel} (minimum over the six baselines and three
+equalizers, paired over channels), ours gains $0.41\pm0.02$ / $2.16\pm0.04$\,bit/s/Hz at 20/30\,dB with $N_p=2$ on the
+shared-path channel and $0.30\pm0.06$ / $1.14\pm0.25$ on TDL-C, and $0.39$--$0.43$ / $0.54$--$2.15$ at all other pilot
+counts; every interval excludes zero. Uncapped CE-BEM reaches the ideal-element LMMSE only with 32 pilot symbols
+(loss 0.43 at 20\,dB on the shared-path channel), so ``ours with two pilot symbols is better than full CE-BEM with 32''
+also holds under the fair rules. With the estimated-gain detector (the receiver does not know $G_{mm}$) every loss
+grows by at most 0.15\,bit/s/Hz and the ranking is unchanged.
+
+One pre-registered sanity check failed: the oracle-robust rate of the \emph{truncated} CE-BEM sets
+($|h|\le12$, $|h|\le40$) still decreases from 20 to 30\,dB on the shared-path channel, by up to 0.28\,bit/s/Hz.
+A scalar error power cannot represent a truncation error that is concentrated on the missing harmonics, so scalar
+robustification does not fully remove the effect described above; the uncapped sets behave as expected (their rate
+increases with SNR), and the check passes on TDL-C.
+
+\begin{table}[!htbp]\centering
+\caption{Pre-registered fair comparison: loss to perfect knowledge (bit/s/Hz, mean $\pm$ 95\% $t$-interval, 30
+channels), robust MMSE with the residual-based error power for every estimator, known-$G_{mm}$ detector. Perfect
+knowledge: 6.62/9.92 (shared path), 6.20/9.38 (TDL-C). ``--'': fewer observations than unknowns, not run.}\label{tab:fair}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}\toprule
+ & \multicolumn{3}{c}{20\,dB} & \multicolumn{3}{c}{30\,dB}\\
+Estimator & $N_p=2$ & $N_p=8$ & $N_p=32$ & $N_p=2$ & $N_p=8$ & $N_p=32$ \\\midrule
+\multicolumn{7}{l}{\emph{Shared-path channel, 30\,ns}}\\
+One-tap & $6.19\pm0.02$ & $6.19\pm0.02$ & $6.19\pm0.02$ & $9.49\pm0.02$ & $9.49\pm0.02$ & $9.49\pm0.02$ \\
+Ideal-element LMMSE & $0.48\pm0.01$ & $0.44\pm0.00$ & $0.43\pm0.00$ & $2.27\pm0.03$ & $2.16\pm0.01$ & $2.14\pm0.01$ \\
+CE-BEM $|h|\le12$ & $3.77\pm0.09$ & $3.18\pm0.05$ & $3.03\pm0.03$ & $7.26\pm0.10$ & $6.73\pm0.06$ & $6.52\pm0.05$ \\
+CE-BEM $|h|\le40$ & $4.46\pm0.13$ & $2.15\pm0.05$ & $1.84\pm0.03$ & $8.10\pm0.18$ & $5.89\pm0.11$ & $5.35\pm0.04$ \\
+CE-BEM $|h|\le128$ & $6.55\pm0.04$ & $2.34\pm0.16$ & $0.46\pm0.01$ & $9.89\pm0.03$ & $3.60\pm0.19$ & $1.51\pm0.04$ \\
+CE-BEM, all harmonics & -- & $3.42\pm0.21$ & $0.43\pm0.02$ & -- & $5.10\pm0.31$ & $0.55\pm0.04$ \\
+OMP & $4.16\pm0.10$ & $3.13\pm0.05$ & $2.92\pm0.02$ & $7.49\pm0.12$ & $6.67\pm0.06$ & $6.44\pm0.03$ \\
+\textbf{Proposed} & $\bm{0.07\pm0.02}$ & $\bm{0.01\pm0.00}$ & $\bm{0.00\pm0.00}$ & $\bm{0.11\pm0.03}$ & $\bm{0.02\pm0.00}$ & $\bm{0.01\pm0.00}$ \\\midrule
+\multicolumn{7}{l}{\emph{3GPP TDL-C, 100\,ns}}\\
+One-tap & $5.79\pm0.11$ & $5.79\pm0.11$ & $5.79\pm0.11$ & $8.97\pm0.16$ & $8.97\pm0.16$ & $8.97\pm0.16$ \\
+Ideal-element LMMSE & $0.85\pm0.12$ & $0.50\pm0.02$ & $0.41\pm0.01$ & $3.05\pm0.24$ & $2.12\pm0.08$ & $1.95\pm0.07$ \\
+CE-BEM $|h|\le12$ & $4.43\pm0.13$ & $3.16\pm0.10$ & $2.81\pm0.09$ & $7.85\pm0.18$ & $6.39\pm0.17$ & $6.02\pm0.18$ \\
+CE-BEM $|h|\le40$ & $5.83\pm0.09$ & $2.71\pm0.15$ & $1.71\pm0.12$ & $9.19\pm0.15$ & $6.03\pm0.28$ & $4.68\pm0.26$ \\
+CE-BEM $|h|\le128$ & $6.05\pm0.10$ & $5.31\pm0.09$ & $1.02\pm0.04$ & $9.30\pm0.16$ & $8.83\pm0.13$ & $2.14\pm0.18$ \\
+CE-BEM, all harmonics & -- & $5.58\pm0.09$ & $1.17\pm0.03$ & -- & $9.04\pm0.14$ & $1.55\pm0.09$ \\
+OMP & $4.13\pm0.14$ & $2.90\pm0.11$ & $2.59\pm0.10$ & $7.61\pm0.20$ & $6.12\pm0.19$ & $5.80\pm0.20$ \\
+\textbf{Proposed} & $\bm{0.52\pm0.11}$ & $\bm{0.08\pm0.01}$ & $\bm{0.02\pm0.00}$ & $\bm{1.80\pm0.39}$ & $\bm{0.18\pm0.03}$ & $\bm{0.03\pm0.00}$ \\\bottomrule
+\end{tabular}}
 \end{table}
 
 \emph{Equalizers.} Table~\ref{tab:eq} feeds the same estimate, and the true channel, to

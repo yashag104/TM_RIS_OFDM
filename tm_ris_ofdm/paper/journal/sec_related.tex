@@ -87,7 +87,7 @@ is known, its necessity and its use here are not.
 
 \begin{table}[!htbp]\centering
 \caption{Capabilities of existing approaches and of the proposed receiver for OFDM through a TM-RIS.
-``Pilots'' is the number of OFDM pilot symbols needed to come within 0.3\,bit/s/Hz of perfect channel knowledge at 20\,dB in our setting (Section~\ref{sec:res-est}).}
+``Pilots'' is the number of OFDM pilot symbols needed to come within 0.3\,bit/s/Hz of perfect channel knowledge at 20\,dB in our setting, pre-registered fair rerun with 30 channels and the robust equalizer for every estimator (Table~\ref{tab:fair}); $>32$: not reached with 32.}
 \label{tab:features}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4.4cm}ccccccc}\toprule
@@ -95,11 +95,12 @@ Approach & \parbox{1.3cm}{\centering in-symbol\\ switching} & \parbox{1.2cm}{\ce
 One-tap OFDM (TM-IRS designs~\cite{xu2023tmirs,tao2025gflownet}) & coupling as noise & -- & -- & no & 1 & -- & $M$ \\
 Blind ICA attack~\cite{tao2025secure} & yes & no (Toeplitz) & ideal & partly & 0 & -- & -- \\
 Model-aware LMMSE (ours, Sec.~\ref{sec:res-model}) & yes & yes & exact & yes & 2 & -- & $QM\log M$ \\
-CE-BEM, $|h|\le 12$~\cite{tang2007} & generic & yes & no & truncated & never & -- & $HM$ \\
-CE-BEM, all harmonics~\cite{tang2007} & generic & yes & no & yes & $>32$ & -- & $M^2$ \\
-OMP, harmonic$\times$delay~\cite{tropp2007} & generic & yes & no & truncated & never & -- & sparse \\
+Ideal-element LMMSE (Table~\ref{tab:fair}) & yes & no & ideal & yes & $>32$ & -- & $QM\log M$ \\
+CE-BEM, $|h|\le 12$~\cite{tang2007} & generic & yes & no & truncated & $>32$ & -- & $HM$ \\
+CE-BEM, all harmonics~\cite{tang2007} & generic & yes & no & yes & $>32$ & -- & $M^2$ (dense), $M\log M$ per shift (CG) \\
+OMP, harmonic$\times$delay~\cite{tropp2007} & generic & yes & no & truncated & $>32$ & -- & sparse \\
 RIS-OFDM estimation~\cite{zheng2020ofdm} & no & -- & -- & -- & -- & -- & $M$ \\
 Two-timescale RIS~\cite{hu2019twotimescale} & no & -- & -- & -- & -- & -- & -- \\
-\textbf{Proposed (timing-only)} & \textbf{yes} & \textbf{yes} & \textbf{no} & \textbf{yes} & \textbf{2} & \textbf{blind} & $\bm{QM\log M}$ \\\bottomrule
+\textbf{Proposed (timing-only)} & \textbf{yes} & \textbf{yes} & \textbf{no} & \textbf{yes} & \textbf{2 (TDL-C: 4)} & \textbf{blind} & $\bm{QM\log M}$ \\\bottomrule
 \end{tabular}}
 \end{table}
