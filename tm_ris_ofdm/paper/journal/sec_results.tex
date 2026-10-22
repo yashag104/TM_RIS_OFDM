@@ -292,28 +292,27 @@ CE-BEM ($|h|\le8$), pilots only & 0.568 (18 [13, 29]) & 0.884 (32 [20, 73]) \\\b
 \label{fig:full}\end{figure}
 
 \subsection{Coded performance}\label{sec:res-coded}
-Fig.~\ref{fig:coded} and Table~\ref{tab:coded} give the block error rate with the convolutional
-code (30 channels $\times$ 4 blocks per point). The one-tap receiver never decodes a block. CE-BEM
-reaches at best 0.31 near 12--14\,dB and then degrades to 0.97 at 24\,dB, again the overconfident
-wrong model. The proposed receiver reaches 0.025 at 10\,dB and no errors from 12\,dB; interpolating
-in the logarithm of BLER, it crosses 10\% at 8.84\,dB against 8.46\,dB with perfect knowledge, a gap
-of 0.4\,dB. \textbf{Caveat:} with 120 blocks per point the crossing rests on few block errors
-(3 vs 1 at 10\,dB); it is an indication, not a measurement, and is being re-measured with
-$\ge2000$ blocks near the waterfall. Goodput saturates at the code limit of 1.98\,bit per subcarrier from 12\,dB.
+Table~\ref{tab:coded} gives the block error rate with the convolutional code, measured with 200 channels $\times$ 10
+blocks = 2000 blocks per SNR point near the waterfall. The one-tap receiver never decodes a block. CE-BEM with
+$|h|\le12$ floors at 0.34 and never reaches 10\% up to 14\,dB; with $|h|\le40$ it fails completely with two pilot symbols
+(too many unknowns), with or without the robust equalizer. The proposed receiver crosses 10\% BLER at 8.51\,dB
+[8.37, 8.70] against 8.37\,dB [8.23, 8.55] with perfect knowledge, a gap of \textbf{0.14\,dB [0.09, 0.20]} (log-linear
+interpolation, 95\% clustered-bootstrap intervals over channels). An earlier 120-block estimate (0.4\,dB) is superseded.
 
 \begin{table}[!htbp]\centering
-\caption{Coded block error rate (rate-1/2 convolutional code, 16-QAM).}\label{tab:coded}
-\begin{tabular}{lccccc}\toprule
-SNR (dB) & 6 & 8 & 10 & 12 & 14--24 \\\midrule
-One-tap & 1 & 1 & 1 & 1 & 1 \\
-CE-BEM & 1 & 1 & 0.71 & 0.31 & 0.31--0.97 \\
-Proposed & 0.93 & 0.28 & 0.025 & 0 & 0 \\
-Perfect knowledge & 0.93 & 0.21 & 0.008 & 0 & 0 \\\bottomrule
+\caption{Coded block error rate (rate-1/2 convolutional code, 16-QAM, $N_p=2$), 2000 blocks per point.}\label{tab:coded}
+\begin{tabular}{lcccccccc}\toprule
+SNR (dB) & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 14 \\\midrule
+One-tap & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 \\
+CE-BEM $|h|\le12$ & 1 & 1 & 0.985 & 0.891 & 0.713 & 0.531 & 0.381 & 0.338 \\
+CE-BEM $|h|\le40$ (also robust eq.) & 1 & 1 & 1 & 1 & 1 & 1 & 0.997 & 0.985 \\
+Proposed & 0.957 & 0.625 & 0.210 & 0.050 & 0.018 & 0.006 & 0.003 & 0 \\
+Perfect knowledge & 0.926 & 0.559 & 0.173 & 0.040 & 0.013 & 0.005 & 0.003 & 0 \\\bottomrule
 \end{tabular}
 \end{table}
 \begin{figure}[!htbp]\centering
 \includegraphics[width=0.9\columnwidth]{fig15_coded_bler.pdf}
-\caption{Coded block error rate and goodput.}
+\caption{Coded block error rate and goodput (earlier 120-block run; Table~\ref{tab:coded} gives the 2000-block measurement).}
 \label{fig:coded}\end{figure}
 
 \subsection{Sensitivity to design parameters}\label{sec:res-sweep}

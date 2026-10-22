@@ -27,3 +27,4 @@ corrected; WITHDRAWN = no longer claimed; OPEN = test pending (workstream in bra
 | D2/D3 | 3GPP spatial model; rank | TDL + random directions; rank <= #paths | week11_cdl_rank | OK | CDL = TDL within 0.02 at Np 8; effective rank 5 -> 16 for Q 16 -> 1024 (98 MHz, squint): low rank strong for large Q, weak at Q = 16 |
 | K2 | Realistic rise times | (5-30% only) | week11_rise_small | NEW | 2-42 ns: no calibration needed; 83 ns: calibration needed (0.14 bit/s/Hz @30 dB) |
 | F1 | Full-band SER ratio | 1.09x / 1.54x (10 ch) | week11_fullband30, 30 ch, bootstrap | FIXED | pilots only 1.10 [1.06,1.15] @20 dB/16QAM, 1.37 [1.18,1.86] @28 dB/64QAM; +1 DD 1.05 / 1.12; CE-BEM 18x / 32x |
+| C-E2b | Coded BLER gap | 0.4 dB (120 blocks) | week11_coded_stats, 2000 blocks/pt, bootstrap | FIXED | 0.14 dB [0.09, 0.20]; CE-BEM never reaches 10% (<=14 dB) |
