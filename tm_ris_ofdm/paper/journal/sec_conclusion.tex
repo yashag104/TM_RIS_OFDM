@@ -2,11 +2,12 @@
 The harmonic coupling of a time-modulated RIS is not unknown interference: it is the product of a
 switching timing that the network sets and the receiver knows, and a propagation-plus-dispersion
 part that it does not. Grouping the harmonic expansion by switching state makes this separation
-exact. Built on it, a receiver needs no element model; estimates the coupling from two pilot
+exact. Built on it, a receiver needs no element model; estimates the coupling from two to eight pilot
 symbols in a low-dimensional shared delay subspace; finds the RIS clock offset by itself, once one
 recognizes that the offset is an opposite delay of the two hops and uses the evidence rather than
 the fit; learns the static base-station side once; updates cheaply; and equalizes without forming the
-coupling matrix. Against the strongest baselines we could build, it exceeds with two pilot symbols a
+coupling matrix. Against the strongest baselines we could build, including an ideal-element estimator with our prior and robust
+equalizers for all, it is ahead on every channel and pilot count, exceeds with two pilot symbols a
 full-harmonic basis expansion given 32,
 decodes where the conventional receiver never does, and after paying for its pilots keeps
 3.9--5.7\,bit/s/Hz on 3GPP channels from walking speed to 120\,km/h. The limits found, delay spreads
