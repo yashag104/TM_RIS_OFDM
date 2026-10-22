@@ -48,6 +48,24 @@ which uses no element model at all, is within 0.04--0.21\,dB at every SNR
 (Fig.~\ref{fig:model}). This is the practical core of Corollary~\ref{cor:nomodel}: the
 receiver needs only the switching timing.
 
+\emph{Could the receiver fit the element model instead?} A natural alternative is to assume the single-pole
+family and fit its six parameters (resonance and two decay rates per state) from the pilots. Starting from parameters
+off by $\mathcal N(0,10\,{\rm MHz})$ and $\mathcal N(0,10\%)$, we maximized the evidence of the model-aware LMMSE over the
+six parameters (30 channels, Table~\ref{tab:param}). With the correct family, the fitted model is no better than the
+timing-only estimator ($+0.012\pm0.022$ and $+0.079\pm0.047$\,bit/s/Hz worse at 20/30\,dB); when the elements are not
+identical (10\,MHz spread), the fit fails ($+0.73\pm0.43$ at 30\,dB) while the timing-only estimator is unaffected. The
+model-aware estimators use the linear (full delay-matrix) form; part of the timing-only estimator's advantage at 30\,dB
+comes from its low-rank step, which the model-aware form could also use.
+
+\begin{table}[!htbp]\centering
+\caption{Timing-only versus fitting the element model (gap to perfect CSI, bit/s/Hz, 20 / 30\,dB, 30 channels, $N_p=2$).}\label{tab:param}
+\begin{tabular}{lcccc}\toprule
+Truth & timing-only & oracle model & wrong model & fitted model \\\midrule
+Exact single-pole cell & \textbf{0.075 / 0.193} & 0.083 / 0.269 & 0.551 / 2.077 & 0.087 / 0.272 \\
+10\,MHz element spread & \textbf{0.079 / 0.217} & 0.915 / 2.700 & 1.107 / 3.159 & 0.246 / 0.951 \\\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{table}[!htbp]\centering
 \caption{Loss (dB) against perfect channel knowledge for different element knowledge. First run / confirmation run on a fresh seed (30 channels).}\label{tab:model}
 \begin{tabular}{lccc}\toprule
@@ -197,6 +215,27 @@ Duty, user & one-tap SIR & one-tap & proposed \\\midrule
 0.75, designed & $+3.5$\,dB & 1.44 / 1.70 / 1.74 & 2.77 / 5.63 / 8.80 \\
 0.625, designed & $-2.3$\,dB & 0.62 / 0.70 / 0.71 & 2.24 / 4.53 / 7.38 \\
 0.75, generic & $-12.3$\,dB & 0.17 / 0.19 / 0.19 & 2.24 / 4.77 / 7.66 \\\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{What each part of the receiver contributes}\label{sec:res-ablation}
+Table~\ref{tab:ablation} ablates the estimator (30 channels; shared-path 30\,ns and TDL-C 100\,ns). The timing-only
+linear first stage alone already does most of the work: its gap is 0.10/0.23\,bit/s/Hz at 20/30\,dB with two pilot
+symbols on the shared-path channel, where CE-BEM is about 2\,bit/s/Hz below perfect knowledge. The low-rank step adds
+0.04--0.12 there and 0.15--0.73 on TDL-C, where the linear model has more effective unknowns. The rank matters little
+between 4 and 16 (on the shared-path channel $r=2$ is marginally best). One decision-directed pass removes a further
+50--70\% of the gap at 20\,dB. The pilot-fit fallback of an earlier version was removed (Section~\ref{sec:est}).
+
+\begin{table}[!htbp]\centering
+\caption{Ablation: gap to perfect CSI (bit/s/Hz) at 20 / 30\,dB. Full = low rank with the (since removed) pilot-fit fallback.}\label{tab:ablation}
+\begin{tabular}{llccccc}\toprule
+Channel & $N_p$ & linear only & low rank $r=2$ & $r=8$ & $r=16$ & + 1 DD pass \\\midrule
+Shared-path 30\,ns & 2 & 0.104 / 0.229 & 0.046 / 0.104 & 0.065 / 0.108 & 0.090 / 0.124 & 0.019 / 0.029 \\
+ & 4 & 0.050 / 0.108 & 0.026 / 0.054 & 0.030 / 0.049 & 0.036 / 0.053 & 0.014 / 0.019 \\
+ & 8 & 0.026 / 0.051 & 0.014 / 0.027 & 0.015 / 0.024 & 0.017 / 0.025 & 0.009 / 0.014 \\
+TDL-C 100\,ns & 2 & 0.494 / 2.086 & 0.329 / 1.810 & 0.342 / 1.359 & 0.397 / 1.433 & 0.131 / 1.159 \\
+ & 4 & 0.248 / 0.966 & 0.171 / 0.857 & 0.149 / 0.589 & 0.174 / 0.583 & 0.076 / 0.385 \\
+ & 8 & 0.125 / 0.265 & 0.088 / 0.432 & 0.069 / 0.166 & 0.075 / 0.141 & 0.048 / 0.108 \\\bottomrule
 \end{tabular}
 \end{table}
 

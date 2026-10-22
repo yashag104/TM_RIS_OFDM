@@ -64,15 +64,20 @@ is linear in the two $L\times L$ delay matrices $\bm C_s$. Its LMMSE estimate wi
 $\varsigma(\bm\lambda\otimes\bm\lambda)$ is exact for identical patterns ($G=1$), and its SVD,
 $[\hat{\bm C}_1\;\hat{\bm C}_2]=\bm Y\bm\Sigma\bm W^{\mathsf H}$, initializes
 $\bm U=\bm Y_{:,1:r}\bm\Sigma_r^{1/2}$ and $[\bm V_1;\bm V_2]=\bm W^{*}_{:,1:r}\bm\Sigma_r^{1/2}$, $\bm\Lambda_g=\bm I$.
-The pooled linear estimate is also kept as a fallback, chosen if it fits the pilots better
-(no ground truth is used).
+An earlier version kept the pooled linear estimate as a fallback whenever it fitted the pilots
+better. The ablation (Section~\ref{sec:res-ablation}) showed that this rule is itself an overfitting trap: the linear
+model has more freedom, fits the pilots better and predicts worse, and on TDL channels at 30\,dB it was chosen in
+30--57\% of channels and increased the gap. On fresh channels (pre-registered), removing it never made the gap worse
+and reduced it by up to $0.25\pm0.17$\,bit/s/Hz; Algorithm~\ref{alg:est} therefore always returns the low-rank
+estimate. The alternating iterations converge within one or two iterations from the SVD initialization, while random
+initializations are 3--5 times worse, so the initialization matters more than the iteration count.
 
 \begin{algorithm}[!htbp]
 \caption{Timing-only low-rank estimation}\label{alg:est}
 \begin{algorithmic}[1]
 \Require pilots $\bm Y,\bm S$; kernels $\{\bm T_{g,s}\}$; DPSS $\bm F,\bm\lambda$; $\sigma^2$; rank $r$; iterations $I$ (20)
 \State $\bm G_{g,s,p}\gets\bm T_{g,s}(\bm s_p\odot\bm F)$ by FFT \Comment{once}
-\State $[\hat{\bm C}_1,\hat{\bm C}_2]\gets$ LMMSE of the pooled linear model, prior $\varsigma(\bm\lambda\otimes\bm\lambda)$; keep $\hat{\bm H}_0$
+\State $[\hat{\bm C}_1,\hat{\bm C}_2]\gets$ LMMSE of the pooled linear model, prior $\varsigma(\bm\lambda\otimes\bm\lambda)$
 \State $\bm U,\bm V_1,\bm V_2\gets$ rank-$r$ SVD of $[\hat{\bm C}_1\;\hat{\bm C}_2]$; $\bm\Lambda_g\gets\bm I$; prior of $\bm U,\bm V_s$ columns $\propto\bm\lambda$
 \For{$i=1,\dots,I$}
   \State $\{\bm\Lambda_g\}\gets$ ridge least squares (convex) \Comment{(linear in $\bm\Lambda$)}
@@ -80,7 +85,7 @@ The pooled linear estimate is also kept as a fallback, chosen if it fits the pil
   \State $[\bm V_1;\bm V_2]\gets$ LMMSE~\eqref{eq:lmmse} \Comment{$2Lr$ unknowns}
 \EndFor
 \State $\hat{\bm H}\gets\sum_{g,s}\bm T_{g,s}\circ((\bm F\bm U)\bm\Lambda_g(\bm F\bm V_s)^{\top})$ (kept factored)
-\State \Return $\hat{\bm H}_0$ if $\|\bm Y-\hat{\bm H}_0\bm S\|<\|\bm Y-\hat{\bm H}\bm S\|$, else $\hat{\bm H}$
+\State \Return $\hat{\bm H}$ \Comment{no pilot-fit fallback, see text}
 \end{algorithmic}
 \end{algorithm}
 
@@ -88,7 +93,13 @@ The pooled linear estimate is also kept as a fallback, chosen if it fits the pil
 observations. Table~\ref{tab:unknowns} gives the counts used in the evaluation and those
 of the baselines. The nominal counts are close to or above the observations at $M=256$;
 the estimator is nevertheless well determined because the DPSS prior concentrates each hop
-on about $M\Delta f\tau_{\max}+1$ effective dimensions. At the full band the low-rank form
+on about $M\Delta f\tau_{\max}+1$ effective dimensions. Quantitatively, the effective number of degrees of freedom of the
+linear first stage, $\mathrm{tr}$ of its LMMSE hat matrix, is only 19, 22, 24 and 27 at 20\,dB (23, 27, 30, 33 at 30\,dB)
+for 1, 2, 4 and 8 pilot symbols, against 256 to 2048 observations and 512 nominal unknowns: this, not the unknown
+count, is why one or two pilot symbols suffice. Under the assumed prior, the Bayesian bound on the coupling-matrix
+error is $-32.4$ and $-39.4$\,dB with two pilot symbols at 20 and 30\,dB; the achieved error is 5--6\,dB higher ($-26.4$,
+$-34.3$\,dB), because real channels (sparse paths, exponential profiles) do not follow the uniform-delay prior. A
+learned prior could close part of this gap. At the full band the low-rank form
 is essential: the linear model has $2L^2=1800$ unknowns and its accuracy degrades with
 bandwidth (Section~\ref{sec:res-full}), while the low-rank model has $3Lr+r^2=784$.
 
