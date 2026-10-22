@@ -87,3 +87,20 @@ W = (Hh'Hh + (s2 + se2) I) \ Hh', se2 = max(||Y - Hh S||^2/(M Np) - s2, 0); robu
 * E2: pilot ratio Np_min(best CE-BEM) / Np_min(ours).
 * C4 / claim: paired difference ours - best baseline (best over harmonic sets and equalisers, i.e. favouring the
   baseline) per Np and SNR, t-CI. The claim "beats CE-BEM" survives only where the CI excludes zero.
+
+## 2026-10-22 | git cdbc657 | Step 4: workstreams C2 (+G3), C3, C5
+30 channels per point, 20/30 dB, pilots only unless stated, paired t-CIs. Frozen hyperparameters as in step 3.
+* C2 ablation (shared-path 30 ns and TDL-C 100 ns; Np in {2, 4, 8}): (a) linear first stage only; (b) ALS low
+  rank r in {2, 4, 6, 8, 16 (= Q)} WITHOUT the fallback; (c) full pipeline (ALS r = 8 / 16 with fallback);
+  (d) full + one DD pass (6 data symbols, 16-QAM at 20 dB, 64-QAM at 30 dB). G3: fraction of channels where the
+  fallback is chosen; pilot residual per ALS iteration; 5 random restarts at r = 8 (spread of final gap).
+  No pass/fail: the ablation reports what each stage buys. If (a) gets most of the gain, the paper says so.
+* C3 parametric element fit: the receiver knows the single-pole family but starts from parameters off by
+  N(0, 10 MHz) in resonance and N(0, 10%) in decay rates; it fits the 6 parameters by maximising the evidence
+  of the model-aware linear LMMSE (fminsearch), then uses that model. Compared with timing-only, oracle model,
+  and unfitted wrong model, on (t1) the exact single-pole truth and (t2) truth with 10 MHz element spread.
+  Reported as is; if the parametric fit beats timing-only, the paper's "no model needed" is reframed as
+  robustness (equal accuracy without assuming a model family), not accuracy.
+* C5 finite rise time rho in {0.01, 0.05, 0.1, 0.3} slot (linear ramp, both truth and our calibrated kernels):
+  energy outside |h| <= 12; banded MMSE (+-4, +-16, +-32) with the TRUE channel; CE-BEM |h| <= 12, 40 with Np = 8;
+  ours (Np = 2). Reported as is; the "banded equalisers fail" claim is restated with its dependence on rho.
