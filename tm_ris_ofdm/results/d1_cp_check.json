@@ -1,0 +1,52 @@
+{
+ "cp_s": 2.34e-06,
+ "element_memory_s": 1.38e-08,
+ "criterion": "cascaded energy beyond CP below -40 dB",
+ "cases": {
+  "TDLA_29ns": {
+   "max_cascade_us": 0.5795159999999999,
+   "energy_beyond_cp_db": null,
+   "valid_below_m40dB": true
+  },
+  "TDLA_100ns": {
+   "max_cascade_us": 1.9317199999999999,
+   "energy_beyond_cp_db": null,
+   "valid_below_m40dB": true
+  },
+  "TDLA_300ns": {
+   "max_cascade_us": 5.79516,
+   "energy_beyond_cp_db": -25.320422646105115,
+   "valid_below_m40dB": false
+  },
+  "TDLC_29ns": {
+   "max_cascade_us": 0.5191379999999999,
+   "energy_beyond_cp_db": null,
+   "valid_below_m40dB": true
+  },
+  "TDLC_100ns": {
+   "max_cascade_us": 1.7304599999999999,
+   "energy_beyond_cp_db": null,
+   "valid_below_m40dB": true
+  },
+  "TDLC_300ns": {
+   "max_cascade_us": 5.1913800000000005,
+   "energy_beyond_cp_db": -23.139138270459654,
+   "valid_below_m40dB": false
+  },
+  "TDLD_29ns": {
+   "max_cascade_us": 0.7515,
+   "energy_beyond_cp_db": null,
+   "valid_below_m40dB": true
+  },
+  "TDLD_100ns": {
+   "max_cascade_us": 2.5050000000000003,
+   "energy_beyond_cp_db": -56.03337763275227,
+   "valid_below_m40dB": true
+  },
+  "TDLD_300ns": {
+   "max_cascade_us": 7.515,
+   "energy_beyond_cp_db": -17.167084127063976,
+   "valid_below_m40dB": false
+  }
+ }
+}

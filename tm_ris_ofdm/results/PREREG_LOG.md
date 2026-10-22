@@ -104,3 +104,18 @@ W = (Hh'Hh + (s2 + se2) I) \ Hh', se2 = max(||Y - Hh S||^2/(M Np) - s2, 0); robu
 * C5 finite rise time rho in {0.01, 0.05, 0.1, 0.3} slot (linear ramp, both truth and our calibrated kernels):
   energy outside |h| <= 12; banded MMSE (+-4, +-16, +-32) with the TRUE channel; CE-BEM |h| <= 12, 40 with Np = 8;
   ours (Np = 2). Reported as is; the "banded equalisers fail" claim is restated with its dependence on rho.
+
+## 2026-10-22 | git 2d53670 | Step 5: workstreams F1, F2, I1-I3, E4 (decided before running)
+* F1 (week11_fullband30): full band M = 3276, 30 fresh channels, same receivers as week4. Report paired SER
+  ratios (ours/true) with clustered bootstrap 95% CIs (resample channels, 10^4 resamples). No pass bar; the
+  paper quotes the ratio and its CI, pilots-only and +1 DD side by side.
+* F2 (week11_coded_stats): 200 channels x 10 blocks = 2000 blocks per SNR in 6..14 dB. Crossing SNR of 10%
+  BLER (log-linear interpolation) with clustered bootstrap CI, for ours, perfect CSI, CE-BEM (12, 40, 40 robust).
+  The paper quotes the gap ours - perfect with its CI.
+* I1-I3 (week11_motivation): reported as is. Pre-stated expectation: an optimised static RIS gives the
+  legitimate user at least as much rate as a TM-RIS; the paper's motivation is then that time modulation is
+  used for security and our receiver reduces its cost to the legitimate user. I2: secrecy rate with
+  eavesdropper without / with the pattern.
+* E4 (week11_overhead_heldout): (N, Np) chosen per method and case by maximum mean net rate on the 20-channel
+  selection set; reported on the 20-channel held-out set: mean net rate, t-CI, ratio to perfect CSI, 20 and
+  30 dB, common-phase metric (main), all CE-BEM with robust equaliser and no harmonic cap.
