@@ -846,6 +846,91 @@ def fig_pilot_overhead(src="week8_pilot_overhead"):
     (RES / "week8_pilot_overhead_table.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
 
+# Fig. 20 - blind timing by Bayesian evidence (week8_timing_evidence.m, week8_timing_guard.m)
+def fig_blind_timing():
+    e = load("week8_timing_evidence"); g = load("week8_timing_guard")
+    slot_ns = 1e9 / 30e3 / 8
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.9), gridspec_kw={"width_ratios": [1.15, 1, 1]})
+    ax = axes[0]; L = np.array(e["loss_db"]); C = np.array(e["loss_ci95"])
+    lab = ["Residual\n(week 7)", "Evidence\n(new)", "Known"]; x = np.arange(3); w = 0.38
+    for i, col in ((0, OURS), (1, C2)):
+        ax.bar(x + (i - 0.5) * w, L[i], w * 0.92, yerr=C[i], color=col,
+               error_kw={"lw": 0.8, "ecolor": MUTED}, label=f"{e['snr_db'][i]} dB")
+        for xi, v in zip(x, L[i]): ax.text(xi + (i - 0.5) * w + 0.03, v + 0.15, f"{v:.2f}", ha="left" if v > 1 else "center", fontsize=6.3, color=INK)
+    ax.set_xticks(x, lab, fontsize=7); ax.set_ylabel("Loss vs perfect channel (dB)"); ax.set_ylim(0, 10)
+    ax.legend(frameon=False, fontsize=7); ax.grid(axis="x", visible=False); _title(ax, "(a) Off-grid offset, 2 pilots")
+    ax = axes[1]; Lt = np.array(e["loss_trials"])           # trial x snr x recv
+    for k, (col, mk, lb) in enumerate([(ONETAP, "D", "residual"), (OURS, "o", "evidence")]):
+        ax.scatter(Lt[:, 1, 2], Lt[:, 1, k], s=18, color=col, marker=mk, edgecolor="white", lw=0.5, label=lb, zorder=3)
+    ax.plot([0, 1.2], [0, 1.2], color=MUTED, lw=0.8, ls=":")
+    ax.set_yscale("log"); ax.set_xlim(0, 1.0); ax.set_xlabel("Loss with known offset (dB), per trial")
+    ax.set_ylabel("Loss, blind (dB)"); ax.legend(frameon=False, fontsize=7, loc="lower right"); _title(ax, "(b) Each trial at 30 dB")
+    ax = axes[2]; keys = [("a_common_83ns", "offset\n≤83 ns"), ("b_common_208ns", "offset\n≤208 ns"), ("c_skew_42ns", "skew\n≤42 ns")]
+    x = np.arange(3); w = 0.27
+    for j, (col, lb) in enumerate([(ONETAP, "ignore"), (BEM, "guard window"), (INK, "known / perfect")]):
+        v = [np.array(g[k]["loss_db"])[1, j] for k, _ in keys]
+        ax.bar(x + (j - 1) * w, v, w * 0.9, color=col, label=lb)
+    ax.set_xticks(x, [l for _, l in keys], fontsize=6.8); ax.set_ylabel("Loss at 30 dB (dB)")
+    ax.legend(frameon=False, fontsize=6.6, loc="upper right"); ax.grid(axis="x", visible=False); _title(ax, "(c) First idea: guard window (failed)")
+    fig.suptitle("The receiver finds the RIS clock offset itself: evidence search loses 0.40 dB vs 0.41 dB with the offset known",
+                 x=0.01, ha="left", fontsize=9.2, color=INK)
+    fig.tight_layout(); save(fig, "fig20_blind_timing")
+
+
+# Fig. 21 - learning the static BS -> RIS hop for long delay spread (week8_twoscale_300ns*.m)
+def fig_two_timescale():
+    c = load("week8_twoscale_300ns_c")
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.9), gridspec_kw={"width_ratios": [1, 1, 0.85]})
+    mods = [("TDLA_ds300ns", "TDL-A"), ("TDLC_ds300ns", "TDL-C"), ("TDLD_ds300ns", "TDL-D")]
+    rec = [("single frame", ONETAP), ("learned, 100 frames", OURS), ("true static hop", INK)]
+    for i_s, ax in enumerate(axes[:2]):
+        x = np.arange(3); w = 0.27
+        for j, (lb, col) in enumerate(rec):
+            v = [np.array(c[k]["gap_bits"])[j, i_s] for k, _ in mods]; e_ = [np.array(c[k]["ci95"])[j, i_s] for k, _ in mods]
+            ax.bar(x + (j - 1) * w, v, w * 0.9, yerr=e_, color=col, error_kw={"lw": 0.7, "ecolor": MUTED}, label=lb)
+        if i_s == 0: ax.axhline(0.3, color=BEM, lw=1, ls="--", label="bar 0.3")
+        ax.set_xticks(x, [l for _, l in mods]); ax.grid(axis="x", visible=False)
+        _title(ax, f"({'ab'[i_s]}) 300 ns, 8 pilots, {c['snr_db'][i_s]} dB")
+    axes[0].set_ylabel("Gap to perfect (bit/s/Hz)"); axes[0].legend(frameon=False, fontsize=6.6, loc="upper left")
+    ax = axes[2]; nf = [1, 10, 30, 100]
+    g20 = [0.40, 0.36, 0.31, 0.23]; g30 = [1.84, 1.08, 0.77, 0.85]       # TDL-A: L1b run (1, 10, 30) and L1c run (100)
+    ax.plot(nf, g20, color=OURS, ls="-", marker="o", ms=4.5, mec="white", label="20 dB")
+    ax.plot(nf, g30, color=OURS, ls="--", marker="o", ms=4.5, mfc="white", label="30 dB")
+    ax.axhline(0.15, color=INK, lw=0.8, ls=":"); ax.text(1.1, 0.04, "true hop, 20 dB", fontsize=6.3, color=INK); ax.set_ylim(0, 2)
+    ax.set_xscale("log"); ax.set_xticks(nf, ["1\n(single)", "10", "30", "100"]); ax.minorticks_off()
+    ax.set_xlabel("Training frames"); ax.legend(frameon=False, fontsize=7, handlelength=3); _title(ax, "(c) TDL-A vs frames (2 runs)")
+    fig.suptitle("Long echoes (300 ns): learning the static BS-RIS hop solves TDL-A/C; TDL-D's taps exceed the cyclic prefix",
+                 x=0.01, ha="left", fontsize=9.2, color=INK)
+    fig.tight_layout(); save(fig, "fig21_two_timescale")
+
+
+# Fig. 22 - measured compute: equaliser and channel updates (week8_eq_walltime*.m, week8_fullband_warm.m)
+def fig_compute_measured():
+    a = load("week8_eq_walltime"); b = load("week8_eq_walltime3"); w = load("week8_fullband_warm")
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.9), gridspec_kw={"width_ratios": [1.4, 1]})
+    ax = axes[0]
+    Ma, da, ca = np.array(a["M"]), np.array(a["dense_s"]), np.array(a["cg_s"])
+    Mb, db, cb = np.array(b["M"]), np.array([np.nan if v is None else v for v in b["dense_s"]], float), np.array(b["cg_s"])
+    ax.plot(Ma, da, color=INK, marker="s", ms=4.5, mec="white", label="Dense MMSE")
+    ax.plot(Mb, db, color=INK, marker="s", ms=4.5, mfc="white", ls="--", label="Dense MMSE (second run)")
+    ax.plot(Ma, ca, color=ONETAP, marker="o", ms=4.5, mec="white", label="CG, per-element FFTs, 25 it (first bar: failed)")
+    ax.plot(Mb, cb, color=OURS, marker="o", ms=4.5, mec="white", label="CG, batched FFTs, stop at 1e-2 (passed)")
+    ax.text(6552, cb[-1] * 1.25, "dense does not\nfit in memory", fontsize=6.3, ha="right", color=INK)
+    ax.set_xscale("log", base=2); ax.set_yscale("log"); ax.set_xticks([512, 1024, 2048, 3276, 6552], ["512", "1024", "2048", "3276", "6552"]); ax.minorticks_off()
+    ax.set_xlabel("Subcarriers M"); ax.set_ylabel("Seconds for 12 symbols (MATLAB)")
+    ax.legend(frameon=False, fontsize=6.3, loc="upper left"); _title(ax, "(a) Equaliser wall-clock")
+    ax = axes[1]
+    v = [w["time_cold_s"], w["time_warm_s"]]
+    ax.bar([0, 1], v, 0.6, color=[ONETAP, OURS])
+    for i, t in enumerate(v): ax.text(i, t + 0.3, f"{t:.1f} s", ha="center", fontsize=7, color=INK)
+    ax.text(1, 7, f"SER {w['ser'][0]:.3f} vs {w['ser'][1]:.3f}\n(same accuracy;\nboth stale, see text)", ha="center", fontsize=6.5, color=INK)
+    ax.set_xticks([0, 1], ["Full re-estimate", "Warm start\n(2 iterations)"]); ax.set_ylabel("Seconds per update")
+    ax.grid(axis="x", visible=False); _title(ax, "(b) Channel update, M = 3276")
+    fig.suptitle("Measured, not extrapolated: CG 2.6x faster than dense at full band; warm-start updates 8.6x faster",
+                 x=0.01, ha="left", fontsize=9.3, color=INK)
+    fig.tight_layout(); save(fig, "fig22_compute_measured")
+
+
 if __name__ == "__main__":
     fig_estimators()
     fig_model_knowledge()
@@ -868,3 +953,6 @@ if __name__ == "__main__":
     fig_directlink()
     fig_complexity_fix()
     fig_pilot_overhead()
+    fig_blind_timing()
+    fig_two_timescale()
+    fig_compute_measured()

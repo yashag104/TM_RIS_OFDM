@@ -412,7 +412,7 @@ flowchart LR
   <tr><td>Exact model</td><td class="num">0.05 / 0.12</td></tr>
   <tr><td>Model with resonance off by 10 MHz</td><td class="num">0.66 / 3.36</td></tr>
   <tr><td>Ideal ±1 switch (what earlier papers assume)</td><td class="num">1.41 / 6.57</td></tr>
-  <tr><td><strong>No model, timing only (Lemma 1)</strong></td><td class="num"><strong>0.08 / 0.11</strong></td></tr>
+  <tr><td><strong>No model, timing only</strong></td><td class="num"><strong>0.08 / 0.11</strong></td></tr>
 </table></div>
 <p>This is the most important practical result: the receiver needs only the switching timing.</p>
 
@@ -437,12 +437,34 @@ flowchart LR
 
 <h3>Supporting results</h3>
 <ul>
-  <li><strong>Exact fast operator.</strong> Matches the full matrix to 7 × 10⁻¹⁶. 20 CG iterations give the same symbol error rate as the direct solve. In MATLAB it is not yet faster in seconds at these sizes; the advantage is in operation count and memory, and the paper will claim only that.</li>
+  <li><strong>Exact fast operator.</strong> Matches the full matrix to 7 × 10⁻¹⁶. 20 CG iterations give the same symbol error rate as the direct solve. Written element by element it was 3.4× <em>slower</em> than the dense solve in MATLAB (week 8, bar failed); written with one shared FFT per state and a stopping rule it is 2.6× <em>faster</em> at the full band, and the dense solve no longer fits in memory at twice that size (Fig. 22).</li>
 </ul>
+
+<h3 id="week8">Week 8: attacking the remaining limitations</h3>
+<p>Each attempt had its pass/fail bar written into the README <em>before</em> running. Failures stay recorded.</p>
+<div class="table-wrap"><table>
+  <tr><th>Limitation</th><th>What we tried</th><th>Result</th></tr>
+  <tr><td>Receiver must be told the RIS timing (~10 ns at 30 dB)</td><td>A wider delay window (failed: worse than nothing). Then: choose the offset by the Bayesian evidence of the first-stage model, not by how well it fits the pilots</td><td><span class="pill pass">removed</span> 0.40 dB loss vs 0.41 dB with the offset known, at 30 dB, from 2 pilots (Fig. 20)</td></tr>
+  <tr><td>Fast equaliser only shown by operation count</td><td>Measured wall-clock; then a batched operator with a stopping rule</td><td><span class="pill pass">passed</span> on the second attempt: 2.6× faster than dense at 3276 subcarriers (Fig. 22)</td></tr>
+  <tr><td>Full-band update cost extrapolated</td><td>Measured warm-start updates at 3276 subcarriers, user at 30 km/h</td><td><span class="pill pass">passed</span> 1.4 s vs 12.5 s per update (8.6×), same accuracy (Fig. 22)</td></tr>
+  <tr><td>300 ns delay spread</td><td>Learn the static base-station→RIS side once from many frames; each new frame then estimates only the user side (a known idea for ordinary RIS, applied here)</td><td><span class="pill open">partly</span> TDL-A and TDL-C pass with 100 training frames (gap 0.23 and 0.26 at 20 dB). TDL-D fails even with the true static side: its echoes are longer than the cyclic prefix (Fig. 21)</td></tr>
+  <tr><td>Fast vehicles (120 km/h)</td><td>Decision-directed tracking, then a proper Kalman filter</td><td><span class="pill fail">failed</span> both: wrong decisions pile up after ~10 symbols, and at 30 dB the Doppler mixing inside each symbol (not in our model) sets a floor. Stays a stated limitation</td></tr>
+</table></div>
+
+<h3 id="coherence">How long do we treat the channel as constant, and why?</h3>
+<p><strong>In the core results (gates 1 to 3, full band, baselines, coded results)</strong> the channel is held fixed over the pilots and the data of one block ("block fading"), exactly as in the anchor paper, which assumes a static geometry. This is deliberate: it isolates the new effect (leakage between subcarriers caused by the switching) from a second, unrelated effect (Doppler). It is justified when the coherence time, the time over which the channel stays roughly the same, is much longer than a block. The switching repeats every 33 μs, one OFDM symbol, while a walking user's channel stays the same for about 42 ms, over 1000 symbols.</p>
+<p><strong>Then we tested the assumption</strong> (week 5, Fig. 11, and week 8, Fig. 19): only the RIS→user hop moves; each path rotates with its own Doppler shift, including the small mixing inside one symbol. The coherence time T<sub>c</sub> ≈ 0.42 / f<sub>D</sub>:</p>
+<div class="table-wrap"><table>
+  <tr><th>Speed</th><th>Doppler f<sub>D</sub></th><th>T<sub>c</sub></th><th>In OFDM symbols</th><th>Best refresh, 3GPP TDL at 20 dB (Fig. 19)</th></tr>
+  <tr><td>3 km/h (walking)</td><td class="num">10 Hz</td><td class="num">42 ms</td><td class="num">~1190</td><td>4 pilot symbols every 60–80 symbols (5–7% overhead)</td></tr>
+  <tr><td>30 km/h (urban car)</td><td class="num">100 Hz</td><td class="num">4.2 ms</td><td class="num">~119</td><td>1 pilot every 10–20 symbols (5–10%)</td></tr>
+  <tr><td>120 km/h (highway)</td><td class="num">400 Hz</td><td class="num">1.1 ms</td><td class="num">~30</td><td>1 pilot every 8 symbols (12%)</td></tr>
+</table></div>
+<p>So the answer is: we hold the channel constant for one block, and the block length the receiver can afford is set by speed. With common-phase tracking (as 5G's phase-tracking pilots do) the refresh interval is a fraction of the coherence time: about 1/15 of it when walking, 1/6 to 1/12 at 30 km/h, and 1/4 at 120 km/h, where every symbol counts. Without that tracking the refresh must be about twice as frequent (Fig. 19, shaded band). The baseline experiments with fixed channels correspond to the walking case. One caution found in week 8: the rate metric used in week 5 quietly assumed the receiver tracks each subcarrier's phase, which is optimistic; week 8 replaced it with the realistic common-phase version, and the table above uses that.</p>
 
 
 <h2 id="figures">Figures, and how to read them</h2>
-<p>All twenty-two figures of the project, in reading order: first the physics, then the system, then the results. Each one comes with what it shows, how to read it, and what to conclude. Every figure is drawn by <code>tm_ris_ofdm/figures/make_figures.py</code> from saved results, so the numbers here are the same as in the README.</p>
+<p>All twenty-six figures of the project, in reading order: first the physics, then the system, then the results. Each one comes with what it shows, how to read it, and what to conclude. Every figure is drawn by <code>tm_ris_ofdm/figures/make_figures.py</code> from saved results, so the numbers here are the same as in the README.</p>
 <div class="callout"><h4>Colours are the same in every figure</h4><p>Blue is always our receiver. Orange is the basis-expansion estimator (CE-BEM) from earlier papers. Green is the Toeplitz model from earlier security papers. Grey is the conventional one-tap receiver. Black dashed is perfect channel knowledge, the best possible.</p></div>
 
 <h3 id="fig-A"><span class="fignum">Fig. A</span>The element is not a perfect switch</h3>
@@ -664,6 +686,46 @@ flowchart LR
   <div><h4>How to read it</h4><ul><li>(a) Gap to perfect, lower is better. The top bar is the reference.</li><li>(b) Operations per update on a log scale; the text gives the saving and the measured MATLAB time at 256 subcarriers.</li></ul></div>
   <div><h4>What to take away</h4><ul><li>Warm start is the safe choice: 12× fewer operations (10× faster in MATLAB) for only 0.03 bit/s/Hz more gap at both SNRs.</li><li>Updating only the user side is about 100× cheaper. It is as good as warm start at 20 dB, but loses 0.23 bit/s/Hz at 30 dB, so the "static" factor is not perfectly static in our factorisation. A practical receiver can use it between occasional warm-start refreshes.</li><li>Dropping the rank from 8 to 6 saves 1.7× at no cost.</li><li>Measured at 256 subcarriers with 8 trials; the full-band saving is expected to be similar (the iterations, not the start-up, are what is cut) but has not been measured.</li></ul></div>
 </div>
+<h3 id="fig-19"><span class="fignum">Fig. 19</span>How many pilots, how often, and what is left for data</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig19_pilot_overhead.png" alt="Twelve panels, four channels by three speeds: net throughput at 20 dB against pilot symbols per refresh for ours (with a shaded range), CE-BEM, one-tap and perfect channel." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Pilots cost time that could carry data. <em>Net</em> throughput is the rate after subtracting that cost: with N symbols per refresh, of which N<sub>p</sub> are pilots, net = (N − N<sub>p</sub>)/N × the average rate over the data symbols. For each point the best refresh interval N is chosen. Rows are channels (our 6-path model and the 3GPP TDL-A, C, D models at 100 ns delay spread), columns are speeds.</p></div>
+  <div><h4>How to read it</h4><ul><li>Higher is better; the black dashed line is perfect knowledge with no pilots at all.</li><li>The solid blue line assumes the receiver corrects one common phase per symbol, as 5G does. The shaded band runs from no correction at all (bottom) to an unrealistic per-subcarrier genie (top).</li><li>The text in each panel gives our best choice: pilots per refresh / symbols per refresh (overhead).</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>After paying for pilots, ours beats the best CE-BEM in every case, typically by 1.5 to 4 bit/s/Hz; one-tap stays near 0.4.</li><li>Overhead needed on the realistic TDL channels at 20 dB: 5–7% walking, 5–10% at 30 km/h, 12% at 120 km/h.</li><li>Slow channels with long echoes like more pilots per refresh (4 when walking on TDL). Fast channels prefer 1 pilot refreshed often over many pilots refreshed rarely.</li><li>CE-BEM needs 16–32 pilots to do its best, so its overhead eats much of its rate.</li></ul></div>
+</div>
+
+<h3 id="fig-20"><span class="fignum">Fig. 20</span>The receiver finds the RIS clock offset by itself</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig20_blind_timing.png" alt="Three panels: loss bars for residual search, evidence search and known offset at 20 and 30 dB; per-trial scatter of blind loss against known-offset loss at 30 dB; loss bars for the failed guard-window idea." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Our estimator needs the switching timing. Here the RIS clock is shifted by an unknown amount and the receiver must find it from 2 pilot symbols. Week 7 picked the shift that best fits the pilots; week 8 picks the shift with the highest <em>Bayesian evidence</em>.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) Loss against perfect knowledge; "Known" is the receiver that is told the shift.</li><li>(b) One dot per trial at 30 dB: on the dotted line means as good as knowing the shift.</li><li>(c) The first idea, a wider delay window, which failed.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>A clock shift is mathematically the same as delaying one hop and advancing the other. A good fit to the pilots is then possible at almost any shift, so fit alone cannot find the true one (week 7 failed at 30 dB).</li><li>The evidence also asks "how plausible is this channel?": a wrong shift needs an implausibly spread-out channel. That pins the shift to about 5 ns.</li><li>Result: 0.40 dB loss vs 0.41 dB when the shift is known. The receiver no longer needs to be told the timing offset. (The evidence tool itself is known in OFDM; the insight and use here are new.)</li></ul></div>
+</div>
+
+<h3 id="fig-21"><span class="fignum">Fig. 21</span>Long echoes: learn the part of the channel that does not move</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig21_two_timescale.png" alt="Three panels: gap to perfect at 20 and 30 dB for TDL-A, C and D at 300 ns for single-frame, learned and true static hop; and gap against number of training frames for TDL-A." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>At 300 ns delay spread the channel has many more unknowns than 8 pilots can pin down. But the base station and the RIS do not move, so their part of the channel can be learned once from many past frames. Each new frame then estimates only the user's part, about a third of the unknowns.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a, b) Lower is better. Grey: one frame alone. Blue: static part learned from 100 frames. Black: the static part known exactly (the best this idea can do).</li><li>(c) How the result improves with more training frames (two runs with different random channels).</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>TDL-A and TDL-C now meet the bar (gap 0.23 and 0.26 at 20 dB, against 0.36 and 0.46 alone), and the 30 dB gap halves.</li><li>TDL-D fails even with the static part known exactly: at 300 ns its echoes last 3.8 μs, longer than the 2.34 μs cyclic prefix. No receiver limited to the cyclic prefix can model that; a real system would use an extended cyclic prefix.</li><li>Learning the static part is a known idea for ordinary RIS; what is new is applying it to the switching-coupled channel.</li></ul></div>
+</div>
+
+<h3 id="fig-22"><span class="fignum">Fig. 22</span>Measured computing time</h3>
+<figure style="margin-bottom:8px">
+  <div class="imgbox"><img src="figures/fig22_compute_measured.png" alt="Two panels: log-log seconds against subcarriers for dense MMSE and two CG versions; bars of seconds per channel update for full re-estimate and warm start at 3276 subcarriers." loading="lazy"></div>
+</figure>
+<div class="figread">
+  <div><h4>What it shows</h4><p>Wall-clock time in MATLAB on this laptop, instead of operation counts. (a) Equalising 12 data symbols. (b) Updating the channel estimate for a moving user at the full band.</p></div>
+  <div><h4>How to read it</h4><ul><li>(a) Lower is better; both axes are logarithmic. Grey: our first, element-by-element version. Blue: the batched version with a stopping rule. Black: the dense solve (two runs; its time varied with machine load, so compare within one run).</li><li>(b) Seconds per update.</li></ul></div>
+  <div><h4>What to take away</h4><ul><li>The first version was 3.4× slower than dense, a failed bar we keep on record. Batched, it is 2.6× faster at 3276 subcarriers and keeps growing slowly, while the dense solve grows with the cube of the size and does not fit in memory at 6552.</li><li>Starting each channel update from the previous estimate is 8.6× faster with the same accuracy.</li><li>Both estimates in (b) are equally out of date 20 symbols after the pilots, which is why their absolute error rate is high; that is the coherence-time effect explained above, not the update method.</li></ul></div>
+</div>
+
 <h2 id="failures">What failed, and why</h2>
 <p>Failures are part of the result. Each one explains a design choice above.</p>
 <div class="table-wrap"><table>
@@ -674,6 +736,9 @@ flowchart LR
   <tr><td>Several refinement passes at 64-QAM</td><td>Full-band error rate rose from 0.057 to 0.24</td><td>Wrong decisions used as pilots bias the estimate. One pass at most.</td></tr>
   <tr><td>Per-element patterns at the full band (first attempt)</td><td>Estimate stalled at −24 to −27 dB, even at 60 dB SNR</td><td>The four-block alternating search landed in local minima. Fixed by noticing that a shifted pattern is just a known modulation on both sides, which leaves 8 small unknowns with a convex step: −34 dB.</td></tr>
   <tr><td>Full two-hop matrix at the full band</td><td>Error stuck near −23 to −29 dB at 28 dB</td><td>Its unknowns grow with bandwidth squared. Physical channels are low-rank; exploit it.</td></tr>
+  <tr><td>Wider delay window to absorb a timing offset (week 8)</td><td>Worse than doing nothing (2.3 vs 1.8 dB loss at 30 dB)</td><td>The shifted channel was representable all along; the prior, not the window, was the issue. Led to the evidence search.</td></tr>
+  <tr><td>Decision-directed and Kalman tracking at 120 km/h (week 8)</td><td>Worse than simply reusing the pilot estimate</td><td>Wrong decisions accumulate after ~10 symbols, and Doppler mixing inside a symbol is not in our model. Fast users need pilots every ~8 symbols.</td></tr>
+  <tr><td>Equaliser speed, first version (week 8)</td><td>3.4× slower than the dense solve in MATLAB</td><td>Many small FFT calls are slow; one shared FFT per state fixes it.</td></tr>
 </table></div>
 
 <h2 id="code">Code map</h2>
@@ -726,23 +791,25 @@ flowchart TB
 <ul>
   <li><span class="pill pass">done</span> Per-element patterns at the full band now pass, using the cyclic-shift structure (operator error −34.4 dB at 28 dB; error rate 1.10× perfect at 20 dB). The first attempt, below, failed. <span class="pill fail">first attempt</span> Bar set in advance: operator error at most −30 dB at 28 dB, and error rate at most 1.5× the perfect-channel rate at 20 dB. The error-rate part passed (1.3 to 1.4×), but the estimate stalls near −24 to −27 dB. A follow-up test showed it is not noise (no change from 28 to 60 dB) and not the model (some starting points reach −30 dB): the alternating search gets stuck in local minima. It is now a stated limitation: per-element patterns work at 256 subcarriers, not yet at the full band.</li>
   <li><span class="pill pass">done</span> Comparison with the literature's estimators, and 10 full-band trials with confidence intervals.</li>
-  <li><span class="pill open">to do</span> Write the letter: figures from the JSON results, related work (time-modulated arrays, basis-expansion estimation, power-line channels), and the operation-count table.</li>
-  <li><span class="pill open">yours</span> Read the anchor paper's sections II to III, show the README to your supervisor, choose the venue, commit the work to git.</li>
+  <li><span class="pill pass">done</span> Week 8: five limitations attacked with bars set in advance; pilot-overhead study on 3GPP channels; fourth novelty check (no competing receiver paper, five weeks after the anchor paper).</li>
+  <li><span class="pill open">to do</span> Write the letter: four figures chosen from these, related work (time-modulated arrays, basis-expansion estimation, two-timescale RIS estimation, evidence-based timing), and the limitations below.</li>
+  <li><span class="pill open">yours</span> Show the README and this guide to your supervisor, choose the venue, and push the repository to GitHub.</li>
 </ul>
 <div class="callout warn">
   <h4>Limits to state openly in the paper</h4>
   <ul>
     <li>Simulation only; the element model is one published cell, and mutual coupling between elements is ignored (as in the anchor paper).</li>
-    <li>16 elements is a small surface; larger surfaces mostly add parameters to the low-rank estimator.</li>
-    <li>The receiver must be told the switching timing; it does not need the element model.</li>
+    <li>Larger surfaces (up to 1024 elements) and near-field users were tested and are fine (Fig. 14).</li>
+    <li>The receiver needs the switching pattern, not the element model; a constant clock offset is now found blindly (Fig. 20).</li>
     <li>When many elements use different random patterns, 4 pilot symbols are needed instead of 2 (Fig. 10).</li>
-    <li>Standard 3GPP channels with realistic delay spread need more pilots: 8 pilot symbols at 100 ns; 300 ns is not yet solved.</li>
-    <li>Timing: a constant clock offset is recovered blindly up to about 20 dB; at 30 dB the RIS and receiver need timing alignment within about 10 ns, and switching jitter must stay below about 4 ns (20 ns at 20 dB).</li>
+    <li>Standard 3GPP channels with longer delay spread need more pilots: 8 pilot symbols at 100 ns; at 300 ns the static base-station→RIS part must be learned over ~100 frames (TDL-A, C), and channels whose echoes exceed the cyclic prefix (TDL-D at 300 ns) are out of scope.</li>
+    <li>Timing: random jitter of individual switching edges cannot be estimated and must stay below about 4 ns at 30 dB (20 ns at 20 dB); ordinary clocks have picosecond jitter.</li>
     <li>Hardware: switching transients are handled by estimating the rise time; residual carrier-frequency offset must stay below about 1% of the subcarrier spacing; oscillator phase noise must be low (linewidth below about 100 Hz) or tracked, as 5G does.</li>
-    <li>Fast vehicles (120 km/h) at high SNR outdate the estimate within a few symbols; this needs a tracking receiver (planned).</li>
-    <li>The estimator, not the equaliser, is the expensive part (about 4×10<sup>10</sup> operations per full-band estimate from scratch). Starting each update from the previous estimate cuts this 12× for a moving user at almost no accuracy cost (Fig. 18); the saving is measured at 256 subcarriers, not yet at the full band.</li>
+    <li>Fast vehicles (120 km/h) need a pilot every ~8 symbols (12% overhead on TDL channels at 20 dB, Fig. 19); two tracking receivers failed to do better, and at 30 dB the Doppler mixing inside each symbol, not in our model, limits every receiver.</li>
+    <li>Every mobility number assumes the receiver tracks the common phase drift, as 5G's phase-tracking pilots do; without it, pilots are needed about twice as often.</li>
+    <li>The estimator is the expensive part; warm-start updates are measured 8.6× faster at the full band (Fig. 22).</li>
     <li>At 10 dB SNR the gain over the conventional receiver is modest (about 2 dB).</li>
-    <li>The fast equaliser's advantage is asymptotic, not measured wall-clock time in MATLAB.</li>
+    <li>The fast equaliser is 2.6× faster than the dense solve in MATLAB at the full band only in its batched form; its CG iteration count must grow with bandwidth.</li>
   </ul>
 </div>
 
