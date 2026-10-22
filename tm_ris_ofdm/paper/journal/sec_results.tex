@@ -99,8 +99,10 @@ Perfect knowledge & 6.61 & 6.61 & 9.92 & 9.92 \\\bottomrule
 truncated. Table~\ref{tab:bem} gives CE-BEM with up to all 255 harmonics and up to 32 pilot
 symbols (20 channels; all harmonics on 4 channels because of its 8687 unknowns). Full-harmonic
 CE-BEM does approach our result, but only with 32 pilot symbols (6.18/9.37\,bit/s/Hz): the
-proposed estimator with two pilot symbols (6.51/9.69) is better than full CE-BEM with 32, a
-16-fold pilot saving. At equal overhead ($N_p=2$) full CE-BEM collapses to 0.13/0.08, because its
+proposed estimator with two pilot symbols (6.51/9.69) is better than full CE-BEM with 32, which
+still falls 0.41/0.52\,bit/s/Hz short of perfect knowledge. The correct statement is therefore that
+ours with two pilot symbols exceeds full CE-BEM with 16 times more pilots; CE-BEM did not reach
+within 0.3\,bit/s/Hz of perfect knowledge at any pilot count tested. At equal overhead ($N_p=2$) full CE-BEM collapses to 0.13/0.08, because its
 8687 unknowns cannot be determined from 512 observations. Sparse recovery (OMP) behaves like
 truncated CE-BEM (2.32/1.19), and unstructured banded least squares is worst even with 32 orthogonal
 pilot symbols (0.85/0.54).
@@ -151,7 +153,7 @@ harmonic at the user. Even then the one-tap receiver saturates at its interferen
 receiver continues to 9.37. At 10\,dB the gain is modest (+0.6\,bit/s/Hz, about 2\,dB).
 
 \begin{table}[!htbp]\centering
-\caption{User the pattern is designed for: one-tap versus proposed (estimated, $N_p=2$), bit/s/Hz at 10/20/30\,dB.}\label{tab:designed}
+\caption{User the pattern is designed for: one-tap versus joint MMSE with the \emph{model-aware} rank-1 estimator (exact element model, $N_p=2$), bit/s/Hz at 10/20/30\,dB. This experiment predates the timing-only estimator and has not yet been rerun with it.}\label{tab:designed}
 \begin{tabular}{lccc}\toprule
 Duty, user & one-tap SIR & one-tap & proposed \\\midrule
 0.875, designed & $+10.0$\,dB & 2.51 / 3.34 / 3.47 & 3.13 / 6.18 / 9.37 \\
@@ -196,7 +198,9 @@ code (30 channels $\times$ 4 blocks per point). The one-tap receiver never decod
 reaches at best 0.31 near 12--14\,dB and then degrades to 0.97 at 24\,dB, again the overconfident
 wrong model. The proposed receiver reaches 0.025 at 10\,dB and no errors from 12\,dB; interpolating
 in the logarithm of BLER, it crosses 10\% at 8.84\,dB against 8.46\,dB with perfect knowledge, a gap
-of 0.4\,dB. Goodput saturates at the code limit of 1.98\,bit per subcarrier from 12\,dB.
+of 0.4\,dB. \textbf{Caveat:} with 120 blocks per point the crossing rests on few block errors
+(3 vs 1 at 10\,dB); it is an indication, not a measurement, and is being re-measured with
+$\ge2000$ blocks near the waterfall. Goodput saturates at the code limit of 1.98\,bit per subcarrier from 12\,dB.
 
 \begin{table}[!htbp]\centering
 \caption{Coded block error rate (rate-1/2 convolutional code, 16-QAM).}\label{tab:coded}

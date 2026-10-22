@@ -26,7 +26,16 @@ with $Q$ (Corollary~\ref{cor:lowrank}). With $Q=1024$ (1.3\,m aperture, Fraunhof
 and the TDL-D line-of-sight path computed from exact element distances, a user at 3, 10 and 30\,m
 sees a gap of 0.09--0.18 / 0.38--0.60 (Fig.~\ref{fig:tdl}).
 
-\emph{300\,ns: learning the static side.} At 300\,ns, eight pilot symbols are not enough. With
+\textbf{Validity warning for 300\,ns.} The cyclic-prefix condition (A2) applies to the \emph{cascade}
+of both hops, and our generator gives each hop the full TDL profile. The maximum cascaded delay is
+$2\times9.66$, $2\times8.65$ and $2\times12.5$ times the delay spread for TDL-A, C and D: 5.8, 5.2 and
+7.5\,$\mu$s at 300\,ns, all beyond the 2.34\,$\mu$s prefix (and 2.5\,$\mu$s for TDL-D at 100\,ns, a weak
+violation through taps below $-27$\,dB). The ground truth~\eqref{eq:io} assumes the prefix condition and
+omits the resulting inter-symbol interference, so \emph{all 300\,ns results below are physically invalid}
+and are kept only as a record; they are not claims of this paper. A valid long-delay test needs
+a realistic split (e.g. a short line-of-sight BS--RIS hop) and is future work.
+
+\emph{300\,ns (invalid, see above): learning the static side.} At 300\,ns, eight pilot symbols are not enough. With
 Algorithm~\ref{alg:learn} (input side learned from 100 frames of other users or earlier positions,
 $r=Q=16$), TDL-A and TDL-C reach a gap of 0.23 and 0.26\,bit/s/Hz at 20\,dB, against 0.36 and 0.46 from
 one frame, and the gap at 30\,dB halves (Table~\ref{tab:300}, Fig.~\ref{fig:300}). The pre-registered
@@ -79,7 +88,8 @@ improbable shifted responses, and a wider window spreads the prior over more dim
 
 \emph{Evidence-based recovery} (Algorithm~\ref{alg:offset}) uses exactly that prior. On the same
 channels and offsets as the residual search, it gives an rms error of 0.0012 slot (5\,ns) at both
-20 and 30\,dB, and losses of 0.25 and 0.40\,dB against 0.25 and 0.41\,dB with the offset known
+20 and 30\,dB (measured against the generator's offset, which shares the delay reference of the
+prior; by Proposition~\ref{prop:offset} only the rate loss is reference-free), and losses of 0.25 and 0.40\,dB against 0.25 and 0.41\,dB with the offset known
 (Table~\ref{tab:timing}, Fig.~\ref{fig:blind}); the pre-registered criterion (within 1\,dB of known at
 30\,dB) passed. Every one of the 12 channels at 30\,dB lies on the known-timing line, including the
 three where the residual search lost more than 10\,dB.

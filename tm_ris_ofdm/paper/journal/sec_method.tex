@@ -75,6 +75,15 @@ and all 255 harmonics; $N_p$ up to 32.
 Deep-learning estimators were not included: they require training data matched to the
 switching pattern and element, and the question studied here is the value of model structure.
 
+\subsection{Pilots only versus decision-directed passes}
+Results are \emph{pilots only} unless stated. The exceptions are: the element-knowledge comparison
+(Table~\ref{tab:model}), the delay-spread check and the uncoded BER experiment, which used two pilot
+symbols plus \emph{two} decision-directed iterations on six data symbols (16-QAM at 20\,dB, 64-QAM at
+30\,dB); and the full-band results (Table~\ref{tab:full}), which report pilots only and one DD pass side
+by side. The recommendation of at most one DD pass comes from the full band with 64-QAM, where a second
+pass increased the error rate. Pilots-only versions of the two-iteration experiments have not yet been
+run and are listed in the claims ledger.
+
 \subsection{Protocol}
 Each point averages 6--30 independent channel draws (stated per experiment), with 95\%
 confidence intervals. Calibration (DPSS window and regularization) was done once on a

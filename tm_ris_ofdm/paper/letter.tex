@@ -31,7 +31,7 @@ low-rank estimator that needs no element model, only the control timing;
 (ii) blind recovery of an unknown RIS clock offset from the Bayesian evidence of
 the estimator; and (iii) exact matrix-free equalization. With two pilot symbols
 the receiver is within 0.1\,bit/s/Hz of perfect channel knowledge at 20--30\,dB,
-needs 16 times fewer pilots than a full basis-expansion estimator, decodes
+exceeds a full basis-expansion estimator given 16 times more pilots, decodes
 coded packets within 0.5\,dB of perfect knowledge where the conventional
 receiver never decodes, and keeps 4--6\,bit/s/Hz net of pilot overhead on 3GPP
 TDL channels up to 120\,km/h.
@@ -166,7 +166,7 @@ timing-only estimator loses 0.08/0.11\,dB. % week3_modelfree.m
 20/30\,dB against 6.61/9.92 with perfect knowledge, while a 25-harmonic
 basis-expansion estimator reaches 2.20/1.08 and the one-tap receiver 0.42/0.43
 (Fig.~\ref{fig:est}). Keeping all 511 harmonics, the basis expansion needs 32
-pilot symbols to reach 6.18/9.37: a 16-fold pilot saving. Banded equalizers
+pilot symbols to reach 6.18/9.37, still 0.41/0.52 short of perfect knowledge; ours with two pilots exceeds it. Banded equalizers
 fail even with the true channel (6.2 vs 9.9\,bit/s/Hz at 30\,dB with a $\pm32$ band),
 because of the $1/h$ tail; ten LSQR iterations match the full MMSE.
 % week4_bem_compare.m, week7_strong_baselines.m
@@ -182,7 +182,7 @@ rate 0.025 at 10\,dB and none from 12\,dB, within 0.5\,dB of perfect knowledge;
 the one-tap receiver never decodes and the basis expansion floors at 0.31
 (Fig.~\ref{fig:coded}). % week6_coded.m
 
-\emph{Timing.} An unknown off-grid clock offset is found to 5\,ns rms from two
+\emph{Timing.} An unknown off-grid clock offset is absorbed blindly from two
 pilot symbols; at 30\,dB the loss is 0.40\,dB against 0.41\,dB with the offset
 known, while a residual search loses 4.8\,dB (Fig.~\ref{fig:timing}). Random
 per-edge jitter is not absorbed and must stay below about 4\,ns at 30\,dB.

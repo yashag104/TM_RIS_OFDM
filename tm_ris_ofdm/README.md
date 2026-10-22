@@ -457,7 +457,8 @@ Fix under test (`week6_channels_fix.m`): window = min(CP, 10 x DS), rank 8/16/32
 * ours, Np = 2: 6.51 | 9.69; perfect 6.59 | 9.89
 **Correction:** the earlier statement "BEM does not improve with more pilots" holds only for the
 truncated BEM. Full-harmonic BEM with 32 pilot symbols reaches 6.18 / 9.37, close to ours.
-**Correct claim:** ours with 2 pilots beats full-harmonic BEM with 32 (a 16x pilot saving); at equal
+**Correct claim (revised 2026-10-22):** ours with 2 pilots exceeds full-harmonic BEM with 32 (16x more pilots), and
+full BEM with 32 still misses perfect CSI by 0.41/0.52, i.e. it never meets a 0.3 bit/s/Hz criterion here; at equal
 overhead (Np = 2) full BEM collapses to 0.13.
 **2c, ICI equalisers from the high-mobility OFDM literature**, on our estimate (oracle H in brackets):
 banded MMSE (Schniter/Rugini-style) window 4 / 16 / 32: 3.23 (3.24) / 4.82 (4.83) / 5.45 (5.47) at 20 dB,
@@ -668,6 +669,25 @@ Findings:
   pilots); when it moves, 1 pilot refreshed often beats many pilots refreshed rarely.
 * Without any phase tracking the 120 km/h overhead rises to ~25% (1 pilot every 4 symbols).
 * Replaces the earlier rough estimate ("~3% walking, ~20% urban"): walking 2-7%, 30 km/h 2-10%.
+
+## Review corrections (2026-10-22), from the external review plan (workstreams A-K)
+Errors found in the paper/README before any new experiment (step 0):
+1. Table I listed CE-BEM "32 pilots" to reach within 0.3 bit/s/Hz; full BEM with 32 has gap 0.41 (20 dB).
+   Corrected to ">32"; "16x pilot saving" replaced by "ours with 2 pilots exceeds full BEM with 32".
+2. Decision-directed usage was inconsistent: week3_mismatch / week3_modelfree(_confirm) / week3_delayspread /
+   week3_banded_ber use Np = 2 + TWO DD iterations; the "at most one DD pass" rule comes from the full band.
+   Pilots-only reruns of those experiments are pending (ledger).
+3. **300 ns results are physically invalid.** The CP condition applies to the cascade of both hops; the
+   generator gives each hop the full TDL profile, so the max cascaded delay is 2 x 9.66 / 8.65 / 12.5 x DS
+   (TDL-A/C/D): 5.8 / 5.2 / 7.5 us at 300 ns, beyond the 2.34 us CP; TDL-D at 100 ns reaches 2.5 us (weak
+   violation, taps below -27 dB). The ground truth ignores the resulting ISI. L1c's TDL-A/C "pass" is
+   withdrawn; the 300 ns rows are a record only.
+4. "Offset recovered to ~5 ns" is reference-dependent (Prop. 2: offset == opposite hop delays); the claim is
+   now "absorbed blindly with no rate loss vs known timing".
+5. Coded BLER crossing (0.4 dB) rests on 3 vs 1 block errors in 120; flagged, re-measurement pending.
+6. The "designed user" table (week3_designed_user) used the MODEL-AWARE rank-1 estimator (exact element
+   model), not the timing-only one; relabelled, rerun pending.
+See results/CLAIMS_LEDGER.md and results/PREREG_LOG.md.
 
 ## Run
 ```

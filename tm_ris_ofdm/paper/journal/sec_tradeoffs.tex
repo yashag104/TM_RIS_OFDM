@@ -16,8 +16,8 @@ Rank $r$ & Captures more paths & Little effect between 8 and 32 on TDL; $r=6$ in
 Distinct patterns $G$ (security, scrambling) & Stronger scrambling for others & Unknowns $+Gr^2$: gap 0.10 $\to$ 1.03 at 30\,dB for $G=1\to16$ with 2 pilots; 4 pilots restore 0.38 \\
 Duty cycle $D$ & Away from 0.5: more energy on $h=0$, better one-tap & Our receiver is indifferent (gap 0.05--0.23 for $D=1/8..7/8$); the one-tap ceiling $(2D-1)^2/(1-(2D-1)^2)$ changes \\
 Decision-directed passes & 28\,dB/64-QAM: SER ratio 1.54 $\to$ 1.14 with one pass & A second pass with 64-QAM raised SER to 0.24 (error propagation); we use at most one \\
-Evidence timing search & Removes the timing requirement; 5\,ns accuracy & 55 first-stage evaluations per search; needed only when the offset changes \\
-Two-timescale learning & 300\,ns: gap 0.36 $\to$ 0.23 (TDL-A) & Needs $\sim$100 frames sharing the BS--RIS hop; stale if the BS or RIS moves \\
+Evidence timing search & Removes the timing requirement; no rate loss vs known timing & 55 first-stage evaluations per search, about $1.2\cdot10^{12}$ operations at $M=3276$ (computed, not yet measured); needed only when the offset changes \\
+Two-timescale learning & fewer per-frame unknowns (gain shown only at 300\,ns, a CP-violating case) & Needs $\sim$100 frames sharing the BS--RIS hop; stale if the BS or RIS moves \\
 Warm start & 12$\times$ fewer operations (8.6$\times$ faster at full band) & +0.03\,bit/s/Hz gap \\
 Freezing $\bm V$ in updates & $\sim$100$\times$ fewer operations & +0.23\,bit/s/Hz at 30\,dB unless the input side is learned with $r=Q$ \\
 CG tolerance / iterations & Linear cost in $M$; fits where dense does not & Loose tolerance ($10^{-2}$) left SER 1.18$\times$ dense at $M=2048$; iterations grow with bandwidth \\
@@ -45,6 +45,14 @@ about 1\% of the spacing, and oscillator linewidth near 100\,Hz or tracked; tran
 fitting the rise time.
 \item \emph{Low SNR.} At 10\,dB the gain over the one-tap receiver for a user the pattern is designed
 for is modest (+0.6\,bit/s/Hz, about 2\,dB): noise, not coupling, dominates there.
+\item \emph{Pattern secrecy.} If the switching pattern is control information available to the user
+(A1), an eavesdropper that learns it can run the same receiver; the security benefit that motivates
+time modulation then depends on keeping the pattern secret. Not yet evaluated.
+\item \emph{Rank.} With $Q=16$ and $r=8$ (or $r=Q$ in Algorithm~\ref{alg:learn}) the low-rank property
+is weak; it matters for large surfaces, where it is tested only up to $Q=1024$ with narrowband array phases.
+\item \emph{Equalizer speed.} The measured CG advantage counts the dense factorization against 12
+symbols; with more symbols per estimate the dense factorization is amortized, and the break-even
+number of symbols has not been measured.
 \item \emph{Statistics.} Some points use 4--8 channels (300\,ns, TDL overhead) and the full-band
 28\,dB result 10 channels; their confidence intervals are wider than those of the 20--30-channel results.
 \item \emph{Learning-based estimators} were not compared (Section~\ref{sec:method}).

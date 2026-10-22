@@ -98,8 +98,9 @@ and a low-rank shared-subspace estimator that covers identical, cyclically shift
 arbitrary per-element switching patterns in one form.
 \item \textbf{C3, blind clock-offset recovery.} The opposite-delay identity for a
 TM-RIS clock offset, the resulting explanation of why residual-based timing fails at
-high SNR, and an evidence-based estimator that recovers the offset to about 5\,ns from
-two pilot symbols with no loss against known timing.
+high SNR, and an evidence-based estimator that absorbs the offset from two pilot symbols
+with no rate loss against known timing. (Because of the identity, the offset is defined only
+relative to the reference of the delay prior; the meaningful metric is the rate loss.)
 \item \textbf{C4, exhaustive evaluation.} An evaluation against the strongest
 baselines we could build (full-harmonic basis expansion given 16$\times$ more pilots,
 sparse recovery, unstructured least squares, literature equalizers given the true

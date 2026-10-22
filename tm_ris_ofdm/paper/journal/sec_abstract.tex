@@ -19,10 +19,10 @@ that learns the static base-station--RIS side once; warm-started updates; and an
 exact matrix-free equalizer. In an extensive evaluation with the published cell of
 the anchor model, physical and 3GPP channels, mobility, hardware impairments and
 coding, the receiver is within 0.1\,bit/s/Hz of perfect channel knowledge with two
-pilot symbols, needs 16 times fewer pilots than a full-harmonic basis-expansion
-estimator, decodes within 0.5\,dB of perfect knowledge where the conventional
-receiver never decodes, recovers an unknown clock offset to about 5\,ns with no
-loss, and keeps 3.9--5.7\,bit/s/Hz net of pilot overhead on 3GPP TDL channels from
+pilot symbols, exceeds a full-harmonic basis-expansion estimator given 16 times
+more pilots (which still falls 0.4--0.5\,bit/s/Hz short of perfect knowledge),
+decodes coded blocks where the conventional receiver never decodes, absorbs an
+unknown clock offset blindly with no rate loss against known timing, and keeps 3.9--5.7\,bit/s/Hz net of pilot overhead on 3GPP TDL channels from
 walking speed to 120\,km/h. All limits found, including failed attempts, are reported.
 \end{abstract}
 
