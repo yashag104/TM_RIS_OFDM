@@ -147,3 +147,9 @@ The first week11_eq_amortised run started while week11_overhead_heldout was stil
 idle_run.sh failed silently). Its output is kept as week11_eq_amortised_loaded.json and is NOT used for wall-clock
 claims (H2). Iteration counts, residuals and SER (H3) do not depend on load and are reported from it. The identical
 script is rerun unchanged on an idle machine (idle_run2.sh) for H2. Git 6dbd32e.
+
+## 2026-10-23 — E4 parallelisation (no change to the test)
+week11_overhead_heldout seeds every (channel, set) separately (rng(11400 + 100*ic + 10*iset)), so channels can be run
+in separate processes with identical draws. TDL-C (ic 3) and TDL-D (ic 4) are run by week11_overhead_heldout_part.m
+into week11_overhead_heldout_TDLC100.json / _TDLD100.json; the sequential job is stopped (by PID) after it writes
+TDL-A. Shared-path and TDL-A come from week11_overhead_heldout.json. Selection rule unchanged (figures/, Python).
