@@ -119,6 +119,26 @@ def main():
            "Channel & km/h & SNR & ours & best CE-BEM & ours $-$ CE-BEM (paired) & one-tap & perfect\\\\\\midrule\n"
            + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}}\n\\end{table}\n")
     open(os.path.join(HERE, "..", "paper", "journal", "tab_overhead_heldout.tex"), "w").write(tex)
+    # compact table for the short IEEE paper: per channel and speed, 20 dB and 30 dB side by side
+    ieee = []
+    short = {"phys30": "Shared", "TDLA100": "TDL-A", "TDLC100": "TDL-C", "TDLD100": "TDL-D"}
+    for ch, _ in CHANS:
+        if ch not in out:
+            continue
+        for v in d["speeds_kmh"]:
+            cells = []
+            for snr in d["snr_db"]:
+                r = out[ch][f"{v}kmh_{snr}dB"]
+                cells.append(f"{r['ours']['heldout'][0]:.2f} & {r['bem']['heldout'][0]:.2f} & "
+                             f"${r['ours_minus_bem'][0]:.2f}\\pm{r['ours_minus_bem'][1]:.2f}$")
+            ieee.append(f"{short[ch]} & {v} & " + " & ".join(cells) + "\\\\")
+        ieee.append("\\midrule")
+    open(os.path.join(HERE, "..", "paper", "ieee", "tab_overhead_rows.tex"), "w").write("\n".join(ieee[:-1]) + "\n")
+    mp = os.path.join(HERE, "..", "paper", "ieee", "main.tex")
+    if os.path.exists(mp):
+        m = open(mp).read()
+        i0 = m.index("%ROWS-BEGIN"); i0 = m.index("\n", i0) + 1; i1 = m.index("%ROWS-END")
+        open(mp, "w").write(m[:i0] + "\n".join(ieee[:-1]) + "\n" + m[i1:])
     for ch in out:
         for k, r in out[ch].items():
             print(f"{ch:8s} {k:12s} ours {r['ours']['heldout'][0]:.2f}+-{r['ours']['heldout'][1]:.2f} cfg {r['ours']['cfg']} "
