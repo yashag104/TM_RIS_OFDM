@@ -140,7 +140,104 @@ def fig_bler():
     save(fig, "fig_bler")
 
 
+# ---------------------------------------------------------------------------
+# Standard-format results (week12_standard_curves.m): families share a hue, variants differ by dash/marker
+#   element-model LMMSE family (green): ideal +-1 (solid), exact element (dashed), 20 MHz off (dotted)
+#   CE-BEM family (orange): all harmonics with Np = 32 (solid), |h|<=128 with ours' Np (dotted)
+# ---------------------------------------------------------------------------
+STD = [("ours", "Proposed (timing only)", C1, "o", "-", None),
+       ("genie", "Exact-element LMMSE", C3, "^", "--", "white"),
+       ("mm20", "Element model 20 MHz off", C3, "v", ":", None),
+       ("ideal", "Ideal-element LMMSE", C3, "^", "-", None),
+       ("bemall_Np32", r"CE-BEM, all $h$, $N_p=32$", C2, "s", "-", None),
+       ("bem128", r"CE-BEM, $|h|\leq128$", C2, "s", ":", "white"),
+       ("omp", "OMP", C4, "D", "-", None),
+       ("onetap", "One-tap", NEUTRAL, "x", "-", None)]
+
+
+def _std_plot(ax, x, ys, key, lab, col, mk, ls, mfc, logy=True):
+    kw = dict(color=col, marker=mk, ls=ls, label=lab, mec=col if mfc == "white" else "white", mew=0.7)
+    if mfc == "white":
+        kw["mfc"] = "white"
+    ax.plot(x, ys, **kw)
+
+
+def fig_std_snr():
+    s = load("week12_standard_curves")["S1"]["phys30"]; e = s["estimators"]; snr = np.array(s["snr_db"])
+    nm = np.array(s["nmse"], float); rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
+    be = np.array(s["ber"], float); bp = np.array(s["ber_perfect"], float)
+    fig, axes = plt.subplots(1, 3, figsize=(7.16, 1.95))
+    for key, lab, col, mk, ls, mfc in STD:
+        i = e.index(key)
+        if key != "onetap":
+            _std_plot(axes[0], snr, 10 * np.log10(np.nanmean(nm[:, i, :], 0)), key, lab, col, mk, ls, mfc)
+        _std_plot(axes[1], snr, np.maximum(np.nanmean(rp - rt[:, i, :], 0), 3e-3), key, lab, col, mk, ls, mfc)
+        y = np.nanmean(be[:, i, :], 0); ok = y > 0
+        if key not in ("bem128", "onetap"):
+            _std_plot(axes[2], snr[ok], y[ok], key, lab, col, mk, ls, mfc)
+    y = np.nanmean(bp, 0); ok = y > 0
+    axes[2].plot(snr[ok], y[ok], color=INK, ls="--", lw=1.0, label="Perfect CSI")
+    axes[0].set_ylabel("NMSE (dB)"); axes[0].set_title("(a) channel estimate", loc="left")
+    axes[1].set_yscale("log"); axes[1].set_ylim(5e-3, 15); axes[1].axhline(0.3, color=MUTED, lw=0.7, ls="--")
+    axes[1].set_ylabel("loss to perfect CSI\n(bit/s/Hz)"); axes[1].set_title("(b) robust-MMSE rate loss", loc="left")
+    axes[2].set_yscale("log"); axes[2].set_ylim(1e-5, 0.6)
+    axes[2].set_ylabel("uncoded 16-QAM BER"); axes[2].set_title("(c) detection", loc="left")
+    for ax in axes:
+        ax.set_xlabel("SNR (dB)"); ax.set_xticks(snr)
+    h, l = axes[1].get_legend_handles_labels(); h2, l2 = axes[2].get_legend_handles_labels()
+    fig.legend(h + h2[-1:], l + l2[-1:], loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.04),
+               fontsize=6.5)
+    fig.tight_layout(rect=(0, 0.13, 1, 1), w_pad=0.5)
+    save(fig, "fig_std_snr")
+
+
+def fig_std_alpha():
+    s = load("week12_standard_curves")["S2"]; e = s["estimators"]; a = np.array(s["alpha"])
+    rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.75), sharey=True)
+    for k, ax in enumerate(axes):
+        for key, lab, col, mk, ls, mfc in STD:
+            if key not in e or key in ("bem128", "onetap"):
+                continue
+            g = rp[:, :, k] - rt[:, e.index(key), :, k]
+            m = g.mean(0); h = 1.96 * g.std(0, ddof=1) / np.sqrt(g.shape[0])
+            kw = dict(color=col, marker=mk, ls=ls, label=lab, mec="white", mew=0.5, capsize=1.5, elinewidth=0.7)
+            if mfc == "white":
+                kw.update(mfc="white", mec=col)
+            ax.errorbar(a, np.maximum(m, 1e-3), yerr=h, **kw)
+        ax.axhline(0.3, color=MUTED, lw=0.7, ls="--")
+        ax.set_yscale("log"); ax.set_ylim(0.02, 4); ax.set_xticks([0, 0.25, 0.5, 0.75, 1], ["0", ".25", ".5", ".75", "1"])
+        ax.set_xlabel(r"element non-ideality $\alpha$"); ax.set_title(f"({'ab'[k]}) {s['snr_db'][k]} dB", loc="left")
+    axes[0].set_ylabel("loss to perfect CSI\n(bit/s/Hz)")
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.04), fontsize=6.3)
+    fig.tight_layout(rect=(0, 0.13, 1, 1), w_pad=0.4)
+    save(fig, "fig_std_alpha")
+
+
+def fig_std_pilots():
+    s = load("week12_standard_curves")["S3"]; e = s["estimators"]; nps = np.array(s["Np"])
+    nm = np.array(s["nmse"], float)
+    fig, ax = plt.subplots(figsize=(3.5, 1.9))
+    rows = [r for r in STD if r[0] in e] + [("bemall", r"CE-BEM, all $h$", C2, "s", "-", None)]
+    rows = [r for r in rows if r[0] != "bemall_Np32"]
+    for key, lab, col, mk, ls, mfc in rows:
+        if key not in e:
+            continue
+        y = 10 * np.log10(np.nanmean(nm[:, e.index(key), :], 0)); ok = np.isfinite(y)
+        _std_plot(ax, nps[ok], y[ok], key, lab, col, mk, ls, mfc)
+    ax.set_xscale("log", base=2); ax.set_xticks(nps, [str(n) for n in nps])
+    ax.set_xlabel("pilot symbols $N_p$"); ax.set_ylabel("NMSE (dB)")
+    fig.legend(*ax.get_legend_handles_labels(), loc="lower center", ncol=3, frameon=False, fontsize=6.3,
+               bbox_to_anchor=(0.5, -0.04))
+    fig.tight_layout(rect=(0, 0.2, 1, 1))
+    save(fig, "fig_std_pilots")
+
+
 if __name__ == "__main__":
+    import sys
+    if "std" in sys.argv:
+        fig_std_snr(); fig_std_alpha(); fig_std_pilots(); sys.exit()
     fig_mechanism()
     fig_fair()
     fig_bler()
