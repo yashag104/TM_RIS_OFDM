@@ -507,10 +507,14 @@ also mixes subcarriers within a symbol. That mixing is $-60$, $-47$ and $-34$\,d
 120\,km/h, so the main effect is the ageing of the estimate. With $N_p$ pilot symbols every $N$ symbols, the net rate is
 $R_{\rm net}=\frac{1}{N}\sum_{n=N_p}^{N-1}R(n)$, where $R(n)$ uses the estimate on symbol $n$ with one common phase
 corrected per symbol, as 5G phase-tracking pilots do. Table~\ref{tab:overhead} selects $(N_p,N)$ and, for CE-BEM,
-the harmonic range on 20 channels, and reports them on 20 \emph{other} channels. Ours keeps 75--93\% of the
-perfect-CSI rate after paying for its pilots, and it beats the best CE-BEM in every case, with every interval above
-zero. Selecting on the reported channels instead changes the numbers by at most 0.04. Slow channels prefer two pilot
-symbols every 60--120 symbols; at 120\,km/h, one pilot symbol every 10--15 symbols. Two decision-directed trackers
+the harmonic range on 20 channels, and reports them on 20 \emph{other} channels. Ours beats the best CE-BEM in all 24
+cases, by 1.0--3.9\,bit/s/Hz, with every interval above zero; CE-BEM needs 16--32 pilot symbols and so pays far more
+overhead. Selecting on the reported channels instead changes the numbers by at most 0.13. After paying for its
+pilots, ours keeps 75--93\% of the perfect-CSI rate on the shared path and 73--88\% on TDL at 3\,km/h. On TDL at
+120\,km/h it keeps only 46--66\%: the coherence time is 30 symbols, so the selected design refreshes every 6 symbols
+with one pilot symbol, and the overhead and the ageing estimate both cost rate. Slow channels prefer two (shared path)
+or four (TDL) pilot symbols every 40--120 symbols; at 30 and 120\,km/h one or two pilot symbols every 6--30 symbols.
+High mobility is therefore a limit of this pilot-based design, not of the coupling model. Two decision-directed trackers
 (LMMSE and Kalman) were worse than reusing the pilot estimate, because wrong decisions accumulate after about ten
 symbols.
 
@@ -524,6 +528,18 @@ Channel & km/h & ours & BEM & diff. & ours & BEM & diff.\\\midrule
 Shared & 3 & 6.24 & 5.24 & $1.01\pm0.14$ & 8.99 & 7.34 & $1.65\pm0.34$\\
 Shared & 30 & 5.97 & 4.40 & $1.57\pm0.30$ & 8.56 & 5.42 & $3.14\pm0.40$\\
 Shared & 120 & 5.26 & 3.15 & $2.11\pm0.30$ & 7.30 & 3.38 & $3.92\pm0.53$\\
+\midrule
+TDL-A & 3 & 5.38 & 3.71 & $1.67\pm0.17$ & 7.37 & 4.88 & $2.49\pm0.21$\\
+TDL-A & 30 & 4.56 & 1.60 & $2.97\pm0.13$ & 5.51 & 1.68 & $3.84\pm0.27$\\
+TDL-A & 120 & 3.81 & 1.08 & $2.73\pm0.28$ & 4.35 & 1.07 & $3.27\pm0.58$\\
+\midrule
+TDL-C & 3 & 5.34 & 3.61 & $1.74\pm0.16$ & 7.23 & 4.81 & $2.41\pm0.27$\\
+TDL-C & 30 & 4.53 & 1.65 & $2.88\pm0.29$ & 5.53 & 1.81 & $3.72\pm0.42$\\
+TDL-C & 120 & 3.88 & 0.75 & $3.13\pm0.31$ & 4.61 & 0.74 & $3.88\pm0.54$\\
+\midrule
+TDL-D & 3 & 5.17 & 3.61 & $1.56\pm0.17$ & 6.80 & 4.75 & $2.05\pm0.41$\\
+TDL-D & 30 & 4.65 & 2.17 & $2.48\pm0.25$ & 5.85 & 2.39 & $3.46\pm0.42$\\
+TDL-D & 120 & 3.92 & 1.15 & $2.77\pm0.31$ & 4.68 & 1.15 & $3.53\pm0.69$\\
 %ROWS-END
 \bottomrule
 \end{tabular}
@@ -558,7 +574,8 @@ receiver built on this separation needs no element model. It estimates the coupl
 finds the RIS clock offset by itself, and equalizes without forming the coupling matrix. In pre-registered tests it beats
 every baseline we could build on every channel and pilot count, and it decodes within 0.14\,dB of perfect CSI. Its
 limits are stated above: the receiver must know every panel's pattern (A1); delay spreads whose cascade exceeds the CP
-are out of scope (A2); the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
+are out of scope (A2); at 120\,km/h on TDL channels pilot overhead and estimate ageing leave 46--66\% of the
+perfect-CSI rate; the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
 simulation with one published cell and no mutual coupling. Over-the-air validation with a real time-modulated surface is
 the next step.
 

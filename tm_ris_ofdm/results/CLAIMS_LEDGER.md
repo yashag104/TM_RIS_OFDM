@@ -13,8 +13,8 @@ corrected; WITHDRAWN = no longer claimed; OPEN = test pending (workstream in bra
 | C-D3 | CG faster than dense | 2.6x at M=3276 | week8_eq_walltime3 | WEAK | 12 symbols incl. factorisation; amortisation untested [H2]; tolerance issue at M=2048 [H3] |
 | C-E1 | Pilot saving vs CE-BEM | "16x" | week7_strong_baselines; week10_fair_baselines | OK | Fair rerun: uncapped CE-BEM with 32 pilots loses 0.43 (shared path) / 1.17 (TDL-C) @20 dB vs ours with 2: 0.07 / 0.52. Nothing but ours reaches 0.3 with <= 32 pilots (ours: 2 / 4). |
 | C-E2 | Coded within ~0.5 dB | 0.4 dB crossing | week6_coded, 120 blocks/pt | WEAK | 3 vs 1 block errors; re-measure with >= 2000 blocks [F2] |
-| C-E3 | Net 3.9-5.7 bit/s/Hz on TDL | TDL 100 ns, 4 ch | week8_pilot_overhead | WEAK | n = 4; (N, Np) chosen on the test channels; TDL-D 100 ns weakly violates CP [E4, D1] |
-| C-E4 | Beats best CE-BEM in all 24 overhead cases | margin 1.1-4.8 | same | WEAK | BEM capped at |h|<=40 on TDL; unfair equaliser [C1, C4] |
+| C-E3 | Net 3.8-7.4 bit/s/Hz on TDL A/C/D 100 ns (3-120 km/h, 20/30 dB); shared path 5.3-9.0 | 20 selection + 20 held-out channels per model | week11_overhead_heldout (+_TDL*.json), analyse_heldout.py | SUPPORTED | (N, Np[, hmax]) chosen on selection channels; in-sample on held-out differs <= 0.13. Ours keeps 73-93% of perfect CSI at 3 km/h but only 46-66% on TDL at 120 km/h (stated limit) [E4 done] |
+| C-E4 | Beats best CE-BEM in all 24 overhead cases | paired held-out margin 1.01-3.92 bit/s/Hz, every 95% CI > 0 | same | SUPPORTED | CE-BEM up to all harmonics, robust MMSE for all receivers, held-out protocol [C1, C4, E4 done] |
 | T-X | Designed-user table "proposed" | 9.37 @30 dB | week3_designed_user | FIXED label | model-aware rank-1 estimator, not timing-only; rerun pending |
 | T-VI | Element-knowledge table | | week3_mismatch | FIXED label | 2 DD iterations; pilots-only pending |
 
