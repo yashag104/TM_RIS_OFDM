@@ -153,3 +153,29 @@ week11_overhead_heldout seeds every (channel, set) separately (rng(11400 + 100*i
 in separate processes with identical draws. TDL-C (ic 3) and TDL-D (ic 4) are run by week11_overhead_heldout_part.m
 into week11_overhead_heldout_TDLC100.json / _TDLD100.json; the sequential job is stopped (by PID) after it writes
 TDL-A. Shared-path and TDL-A come from week11_overhead_heldout.json. Selection rule unchanged (figures/, Python).
+
+## 2026-10-24 | git 1b0f4eb | Step 8: standard-format curves with intermediate references (week12_standard_curves)
+**Motivation.** The paper's figures show ours next to perfect CSI and every baseline at an error floor, with nothing in between. That is hard for a reader to compare with the literature, and it invites the question whether the baselines are weak. This step adds the formats used by RIS and doubly-selective channel-estimation papers, plus references that fill the middle.
+
+**Fixed settings.** All hyperparameters are frozen as in week10_fair_baselines:
+- channels: shared path 30 ns and TDL-C 100 ns;
+- M = 256 and Q = 16;
+- identical patterns, K = 8, D = 0.75;
+- robust MMSE with the error power estimated from the residual;
+- 30 new channels per point, with new seeds (rng 12100 + 100*part + channel).
+
+**New references:**
+- **genie:** a model-aware LMMSE that knows the true element responses Γ_s(f) exactly. H = (T1 diag Γ1 + T2 diag Γ2) ∘ (F C Fᵀ).
+- **mmδ:** the same estimator with both resonances shifted by δ = 5, 10 or 20 MHz, a mismatched element model.
+- **CE-BEM, all harmonics, Np = 32:** 16 times the pilots of ours, as a reference.
+
+**Parts:**
+- **S1:** NMSE, robust-MMSE rate and uncoded 16-QAM BER versus SNR from 0 to 30 dB in 5 dB steps. Np = 2 on the shared path and Np = 4 on TDL-C. Uncoded BER uses 20 data symbols per channel, sliced after unbiased MMSE.
+- **S2:** element non-ideality continuum, H_α = (1−α)H_ideal + αH_OpenRIS, with α in {0, 0.1, 0.25, 0.5, 0.75, 1}, at 20 and 30 dB. Shared path, Np = 2.
+- **S3:** NMSE versus Np in {1, 2, 4, 8, 16, 32} at 20 dB, shared path.
+
+**Pre-registered checks.** None of these change existing claims. Each is reported whichever way it goes:
+- **(a) Baseline sanity:** at α = 0 the ideal-element LMMSE rate gap is within 0.05 bit/s/Hz of genie. If it fails, the baseline implementation is suspect, and that is reported.
+- **(b) Ours versus genie:** ours is within 0.1 bit/s/Hz of genie at α = 1, Np = 2 and 20 dB.
+- **(c) Crossover:** report the smallest α at which the ideal-element LMMSE gap exceeds 0.3 bit/s/Hz at 20 dB.
+- **(d) Mismatch ordering:** at 20 dB the mismatched models order as genie ≤ mm5 ≤ mm10 ≤ mm20 in NMSE. Report the observed order.
