@@ -379,8 +379,15 @@ and 20 iterations this totals $5.7\cdot10^8$ at $M=256$ and $3.9\cdot10^{10}$ at
 costs two products of $\mathcal O(rM\log M)$, together about $1.7\cdot10^7$ operations at $M=3276$, so a symbol costs at most
 $3.4\cdot10^8$ with 20 iterations. The dense alternative forms $\hat{\bm H}$ (172\,MB at $M=3276$, 687\,MB at $M=6552$) and
 factors $\hat{\bm H}^{\Hm}\hat{\bm H}+\sigma^2\bm I$ once per estimate ($4.7\cdot10^{10}$ operations), after which each symbol
-costs $\mathcal O(M^2)$. By operation count CG is therefore cheaper for blocks of up to about 140 symbols per estimate,
-and it needs memory linear in $M$. %H2-MEASURED
+costs $\mathcal O(M^2)$. By operation count CG would be cheaper for blocks of up to about 140 symbols per estimate.
+Measured wall-clock time is less favourable, because the dense factorization runs as optimized level-3 BLAS while CG
+is memory-bound. On an otherwise idle 4-thread CPU (MATLAB R2026a, $\epsilon=3\cdot10^{-3}$, $M=3276$, 20\,dB), dense
+equalization of $N=1$, 12, 40 and 120 symbols per estimate took 2.51, 2.54, 2.58 and 2.78\,s including the factorization,
+and CG took 0.23, 2.51, 8.2 and 23.8\,s; the symbol error rate of CG was within 2\% of dense. The measured break-even is
+therefore about 12 symbols per estimate (6 at $M=2048$). That is the refresh interval selected at 30 and 120\,km/h
+(Sec.~\ref{sec:res-mob}), where CG is the faster choice. For slow channels with 40--120 symbols per estimate, dense
+equalization is 3--9$\times$ faster when its memory is available. CG's lasting advantage is memory linear in $M$: at
+$M=6552$ it equalized 120 symbols in 51\,s without forming the 687\,MB matrix.
 Warm-starting a refresh from
 the previous factors (two ALS iterations, no linear stage) took 1.4\,s against 12.5\,s from scratch, with the same SER.
 
