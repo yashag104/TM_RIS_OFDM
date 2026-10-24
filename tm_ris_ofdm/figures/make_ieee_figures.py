@@ -166,7 +166,7 @@ def fig_std_snr():
     s = load("week12_standard_curves")["S1"]["phys30"]; e = s["estimators"]; snr = np.array(s["snr_db"])
     nm = np.array(s["nmse"], float); rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
     be = np.array(s["ber"], float); bp = np.array(s["ber_perfect"], float)
-    fig, axes = plt.subplots(1, 3, figsize=(7.16, 1.95))
+    fig, axes = plt.subplots(1, 3, figsize=(7.16, 1.7))
     for key, lab, col, mk, ls, mfc in STD:
         i = e.index(key)
         if key != "onetap":
@@ -187,14 +187,14 @@ def fig_std_snr():
     h, l = axes[1].get_legend_handles_labels(); h2, l2 = axes[2].get_legend_handles_labels()
     fig.legend(h + h2[-1:], l + l2[-1:], loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.04),
                fontsize=6.5)
-    fig.tight_layout(rect=(0, 0.13, 1, 1), w_pad=0.5)
+    fig.tight_layout(rect=(0, 0.15, 1, 1), w_pad=0.5)
     save(fig, "fig_std_snr")
 
 
 def fig_std_alpha():
     s = load("week12_standard_curves")["S2"]; e = s["estimators"]; a = np.array(s["alpha"])
     rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
-    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.75), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.85), sharey=True)
     for k, ax in enumerate(axes):
         for key, lab, col, mk, ls, mfc in STD:
             if key not in e or key in ("bem128", "onetap"):
@@ -210,8 +210,8 @@ def fig_std_alpha():
         ax.set_xlabel(r"element non-ideality $\alpha$"); ax.set_title(f"({'ab'[k]}) {s['snr_db'][k]} dB", loc="left")
     axes[0].set_ylabel("loss to perfect CSI\n(bit/s/Hz)")
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.04), fontsize=6.3)
-    fig.tight_layout(rect=(0, 0.13, 1, 1), w_pad=0.4)
+    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.03), fontsize=6.0)
+    fig.tight_layout(rect=(0, 0.12, 1, 1), w_pad=0.4)
     save(fig, "fig_std_alpha")
 
 
