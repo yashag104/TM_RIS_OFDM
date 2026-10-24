@@ -62,8 +62,8 @@ waveform security and directional modulation~\cite{xu2023tmirs,tao2025gflownet}.
 the same harmonics move energy from transmitted subcarrier $m$ to received subcarrier $m+h$, so the channel matrix is
 not diagonal. Iudice \emph{et al.}~\cite{iudice2026} recently derived a physically consistent model of this channel
 with frequency-dispersive (finite-memory) elements, as real varactor cells are. They showed that the coupling survives
-any cyclic prefix, that with dispersive elements the coupling matrix is not even Toeplitz, and they left the receiver
-open. Prior TM-RIS designs keep a one-tap receiver for the legitimate user and treat the coupling as
+any cyclic prefix, that with dispersive elements the coupling matrix is not even Toeplitz. They assume the channel known
+and name joint subcarrier equalization as future work~\cite[Sec.~V]{iudice2026}; channel estimation is not treated. Prior TM-RIS designs keep a one-tap receiver for the legitimate user and treat the coupling as
 interference~\cite{xu2023tmirs,tao2025gflownet}. A blind eavesdropper attack~\cite{tao2025secure} relies on the
 Toeplitz structure of ideal, frequency-flat switching, which dispersion breaks. Generic estimators of doubly selective
 OFDM channels, such as the basis-expansion model (CE-BEM)~\cite{tang2007}, do not know where the coupling comes from:
