@@ -379,15 +379,12 @@ and 20 iterations this totals $5.7\cdot10^8$ at $M=256$ and $3.9\cdot10^{10}$ at
 costs two products of $\mathcal O(rM\log M)$, together about $1.7\cdot10^7$ operations at $M=3276$, so a symbol costs at most
 $3.4\cdot10^8$ with 20 iterations. The dense alternative forms $\hat{\bm H}$ (172\,MB at $M=3276$, 687\,MB at $M=6552$) and
 factors $\hat{\bm H}^{\Hm}\hat{\bm H}+\sigma^2\bm I$ once per estimate ($4.7\cdot10^{10}$ operations), after which each symbol
-costs $\mathcal O(M^2)$. By operation count CG would be cheaper for blocks of up to about 140 symbols per estimate.
-Measured wall-clock time is less favourable, because the dense factorization runs as optimized level-3 BLAS while CG
-is memory-bound. On an otherwise idle 4-thread CPU (MATLAB R2026a, $\epsilon=3\cdot10^{-3}$, $M=3276$, 20\,dB), dense
-equalization of $N=1$, 12, 40 and 120 symbols per estimate took 2.51, 2.54, 2.58 and 2.78\,s including the factorization,
-and CG took 0.23, 2.51, 8.2 and 23.8\,s; the symbol error rate of CG was within 2\% of dense. The measured break-even is
-therefore about 12 symbols per estimate (6 at $M=2048$). That is the refresh interval selected at 30 and 120\,km/h
-(Sec.~\ref{sec:res-mob}), where CG is the faster choice. For slow channels with 40--120 symbols per estimate, dense
-equalization is 3--9$\times$ faster when its memory is available. CG's lasting advantage is memory linear in $M$: at
-$M=6552$ it equalized 120 symbols in 51\,s without forming the 687\,MB matrix.
+costs $\mathcal O(M^2)$. Measured on an idle 4-thread CPU ($\epsilon=3\cdot10^{-3}$, $M=3276$), dense equalization of
+1, 12, 40 and 120 symbols per estimate took 2.51, 2.54, 2.58 and 2.78\,s and CG 0.23, 2.51, 8.2 and 23.8\,s, with CG's
+SER within 2\% of dense. The break-even is thus about 12 symbols, not the 140 the operation count suggests, because
+the dense factorization runs as level-3 BLAS. CG is the faster choice for the 6--15-symbol blocks selected at 30 and
+120\,km/h (Sec.~\ref{sec:res-mob}); dense is 3--9$\times$ faster for slow channels. CG's memory is linear in $M$: at
+$M=6552$ it equalized 120 symbols in 51\,s without the 687\,MB matrix.
 Warm-starting a refresh from
 the previous factors (two ALS iterations, no linear stage) took 1.4\,s against 12.5\,s from scratch, with the same SER.
 
@@ -515,13 +512,11 @@ also mixes subcarriers within a symbol. That mixing is $-60$, $-47$ and $-34$\,d
 $R_{\rm net}=\frac{1}{N}\sum_{n=N_p}^{N-1}R(n)$, where $R(n)$ uses the estimate on symbol $n$ with one common phase
 corrected per symbol, as 5G phase-tracking pilots do. Table~\ref{tab:overhead} selects $(N_p,N)$ and, for CE-BEM,
 the harmonic range on 20 channels, and reports them on 20 \emph{other} channels. Ours beats the best CE-BEM in all 24
-cases, by 1.0--3.9\,bit/s/Hz, with every interval above zero; CE-BEM needs 16--32 pilot symbols and so pays far more
-overhead. Selecting on the reported channels instead changes the numbers by at most 0.13. After paying for its
-pilots, ours keeps 75--93\% of the perfect-CSI rate on the shared path and 73--88\% on TDL at 3\,km/h. On TDL at
-120\,km/h it keeps only 46--66\%: the coherence time is 30 symbols, so the selected design refreshes every 6 symbols
-with one pilot symbol, and the overhead and the ageing estimate both cost rate. Slow channels prefer two (shared path)
-or four (TDL) pilot symbols every 40--120 symbols; at 30 and 120\,km/h one or two pilot symbols every 6--30 symbols.
-High mobility is therefore a limit of this pilot-based design, not of the coupling model. Two decision-directed trackers
+cases, by 1.0--3.9\,bit/s/Hz, every interval above zero (CE-BEM selects 16--32 pilot symbols). Selecting on the
+reported channels changes the numbers by at most 0.13. Net of pilots, ours keeps 75--93\% of the perfect-CSI rate on
+the shared path and 73--88\% on TDL at 3\,km/h, but only 46--66\% on TDL at 120\,km/h: with a 30-symbol coherence
+time the selected design spends one pilot symbol in every 6. Slow channels select two (shared) or four (TDL) pilot
+symbols per 40--120 symbols. High mobility is thus a limit of pilot-based estimation, not of the coupling model. Two decision-directed trackers
 (LMMSE and Kalman) were worse than reusing the pilot estimate, because wrong decisions accumulate after about ten
 symbols.
 
