@@ -201,3 +201,35 @@ The baseline therefore learns the element dispersion from data. It is the Bayes-
 - **Selection rule A:** pick r*(SNR) by maximum mean rate on 20 selection channels (rng 13100+), and report on 30 held-out channels (rng 13200+). The frozen rank is 8 on the shared path and 16 on TDL-C.
 - **Selection rule B (pilots only, per channel):** BIC = ‖Y − ĤS‖²/σ² + 3Lr·ln(M·Np). This is reported on the held-out channels.
 - **PASS:** the adopted rule (A, or B if B is no worse than A within 0.01) improves on the frozen rank at 0–15 dB by at least 0.01 bit/s/Hz with the paired CI above zero at one or more SNR points, AND is never worse by more than 0.01 at any SNR. Otherwise the frozen rank stays and the low-SNR crossover stands as reported.
+
+### Step 9 outcome (recorded before Step 10 runs)
+- **Low-SNR rank: FAIL.** Rule A improves 0–15 dB (shared path +0.008–0.015, TDL-C +0.034–0.050, CIs above zero). It is worse by 0.034 at 20 dB on TDL-C, which breaks the "never worse by > 0.01" condition. Rule B (BIC) always picks rank 1 and is far worse at high SNR. The frozen rank stays.
+- **C6: learned-prior LMMSE beats ours** at every SNR and Np, on both channels, from N_train = 100.
+  - At 20 dB the learned LMMSE loses 0.006 against ours 0.070 on the shared path, and 0.074 against 0.285 on TDL-C.
+  - The test families are low-dimensional: 6 PCA components on the shared path and 52 on TDL-C.
+
+## 2026-10-25 | git afe82e1 | Step 10: C6 under distribution shift, and a self-trained prior (week12_c6b)
+**Training sets.** N_train = 300 for each set, 30 test channels per point, SNR {0, 10, 20, 30}. Np = 2 on the shared path and 4 on TDL; ours frozen as before.
+
+| Family | Training sets |
+|---|---|
+| Shared path | true H from phys30 (rms 30 ns, K = 10 dB); true H from phys100K3 (rms 100 ns, K = 3 dB); and the self-trained set |
+| TDL (100 ns) | true H from TDL-C, TDL-A and TDL-D; and the self-trained set |
+
+The **self-trained** set uses ours' estimates of the training channels (phys30 and TDL-C respectively) from 8 pilot symbols at 20 dB. It needs no true channels and no element model.
+
+**Tests:**
+
+| Test family | Matched learned prior | Shifted learned prior | Self-trained |
+|---|---|---|---|
+| phys30 | phys30 | phys100K3 is not used here | yes |
+| phys100K3 | phys100K3 | phys30 | no |
+| TDL-C | TDL-C | none | yes |
+| TDL-A | TDL-A | TDL-C | no |
+| TDL-D | TDL-D | TDL-C | no |
+
+Ours runs on every test.
+
+**Pre-registered readouts.** Paired t-intervals, reported whichever way they go.
+- **(a) Shift:** for each shifted pair, is ours ≤ the shifted learned prior at 20 dB?
+- **(b) Self-trained:** the self-trained prior beats ours at 20 dB with the paired CI above zero, on both phys30 and TDL-C. If so, it is ADOPTED as an optional receiver mode ("ours + self-trained prior"), with the cost stated: N_train channels measured with 8 pilot symbols.
