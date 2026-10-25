@@ -179,3 +179,25 @@ TDL-A. Shared-path and TDL-A come from week11_overhead_heldout.json. Selection r
 - **(b) Ours versus genie:** ours is within 0.1 bit/s/Hz of genie at α = 1, Np = 2 and 20 dB.
 - **(c) Crossover:** report the smallest α at which the ideal-element LMMSE gap exceeds 0.3 bit/s/Hz at 20 dB.
 - **(d) Mismatch ordering:** at 20 dB the mismatched models order as genie ≤ mm5 ≤ mm10 ≤ mm20 in NMSE. Report the observed order.
+
+## 2026-10-25 | git ffc462b | Step 9: learning-based baseline (C6) and low-SNR rank selection (week12_c6_lowsnr)
+
+**C6, learned-prior LMMSE.** Training channels come from the same generator as the test channels: the physical OpenRIS element, the shared path and TDL-C, with separate seeds (rng 13000+). The steps are:
+1. Form the PCA basis B of vec(H) from N_train channels, with N_train in {100, 300, 1000}.
+2. Keep the components with eigenvalue at least 1e-6 of the largest.
+3. Use a zero-mean Gaussian prior with the sample eigenvalues.
+4. Estimate the channel as the LMMSE from the pilots: y = (Sᵀ ⊗ I) B c + n.
+
+The baseline therefore learns the element dispersion from data. It is the Bayes-optimal linear estimator for the learned statistics, which an MSE-trained network approaches for near-Gaussian channels.
+
+- **Test channels:** 30 new channels (rng 13300+).
+- **Parts:** SNR 0–30 dB with Np = 2 on the shared path and Np = 4 on TDL-C; and Np in {1, 2, 4, 8, 16, 32} at 20 dB on the shared path.
+- **Comparison:** ours on the same channels, with paired t-intervals.
+- **Reporting:** whichever way it goes. If the learned LMMSE beats ours, that is reported, together with its cost: N_train recorded channels from the deployed surface.
+
+**Low-SNR rank.** The receiver knows σ² (A6), so a rank chosen per SNR is legitimate when selected on separate channels.
+- **Candidate ranks:** {1, 2, 4, 8} on the shared path and {2, 4, 8, 16} on TDL-C.
+- **Grid:** SNR 0:5:30, with Np = 2 on the shared path and Np = 4 on TDL-C.
+- **Selection rule A:** pick r*(SNR) by maximum mean rate on 20 selection channels (rng 13100+), and report on 30 held-out channels (rng 13200+). The frozen rank is 8 on the shared path and 16 on TDL-C.
+- **Selection rule B (pilots only, per channel):** BIC = ‖Y − ĤS‖²/σ² + 3Lr·ln(M·Np). This is reported on the held-out channels.
+- **PASS:** the adopted rule (A, or B if B is no worse than A within 0.01) improves on the frozen rank at 0–15 dB by at least 0.01 bit/s/Hz with the paired CI above zero at one or more SNR points, AND is never worse by more than 0.01 at any SNR. Otherwise the frozen rank stays and the low-SNR crossover stands as reported.
