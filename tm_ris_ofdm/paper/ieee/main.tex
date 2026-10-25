@@ -45,11 +45,13 @@ From this separation we build, to our knowledge, the first pilot-based receiver 
 estimator that needs no element model, a blind estimator of the RIS clock offset that rests on the fact that an
 offset is exactly an opposite delay of the two hops, and an exact matrix-free equalizer. In pre-registered tests
 with 30 channels per point, the receiver comes within 0.1\,bit/s/Hz of perfect channel knowledge with two pilot
-symbols on a shared-path channel and needs four to eight on 3GPP TDL-C. At 20 and 30\,dB it beats every baseline we
-could build on every channel and pilot count, including an ideal-element estimator with the same prior and
-basis-expansion estimators with up to all harmonics and 32 pilot symbols; below 15\,dB, receivers given the element
-model are marginally better. The ideal-element estimator matches ours when the elements are ideal and degrades
-steadily as their dispersion grows, while ours does not. Our receiver decodes coded blocks within 0.14\,dB of perfect
+symbols on a shared-path channel and needs four to eight on 3GPP TDL-C. At 20 and 30\,dB it beats every estimator
+that, like it, needs no training data, on every channel and pilot count: an ideal-element estimator with the same prior
+and basis-expansion estimators with up to all harmonics and 32 pilot symbols. The ideal-element estimator matches ours
+when the elements are ideal and degrades as they become less ideal, while ours does not. An LMMSE whose prior is learned
+from 300 channels of the test distribution is better than ours, but trained on a different delay spread it is worse by
+up to 0.95\,bit/s/Hz; a prior learned from our own 8-pilot estimates, with no true channels and no element model, keeps
+most of the learned gain. Our receiver decodes coded blocks within 0.14\,dB of perfect
 knowledge, and it absorbs physical clock offsets with no significant rate loss.
 \end{abstract}
 
@@ -89,8 +91,8 @@ opposite delay of the two hops (Proposition~\ref{prop:offset}), and we identify 
 (Proposition~\ref{prop:phys}). This explains why a wrong offset overfits the pilots, and it leads to an estimator of the
 offset and the delay reference by Bayesian evidence (Algorithm~\ref{alg:offset}).
 \item \emph{A pre-registered evaluation}: pass/fail criteria fixed before each run, 30 channels per point, paired
-confidence intervals, settings chosen on channels disjoint from the reported ones, the strongest baselines we could
-build, and failures reported.
+confidence intervals, settings chosen on channels disjoint from the reported ones, the strongest model-based and
+learned baselines we could build, and failures reported, including where a learned prior beats ours.
 \end{enumerate}
 We adopt and do not claim: the DPSS delay basis~\cite{slepian1978,zemen2005}, low-rank RIS channel
 models~\cite{wang2020compressed}, matrix-free iterative equalization~\cite{hrycak2010} (exact here rather than a BEM
@@ -418,7 +420,12 @@ take, per channel, the best over all baselines and all three equalizers.
 harmonics, solved matrix-free (equal to the dense solver to $7\cdot10^{-9}$); with all harmonics it is run from eight
 pilot symbols.
 \item \emph{OMP}~\cite{tropp2007} over a harmonic$\times$delay dictionary.
+\item \emph{Learned-prior LMMSE}, the learning-based baseline: a principal-component basis of $\mathrm{vec}(\bm H)$ and its
+eigenvalues learned from $N_{\rm tr}$ true channels form a Gaussian prior, and the LMMSE estimate follows from the pilots.
+It is the Bayes-optimal linear estimator for the learned statistics, which a network trained for minimum mean squared
+error approaches for near-Gaussian channels, and it learns the element non-ideality from data (Sec.~\ref{sec:res-learn}).
 \end{itemize}
+\vspace{-1ex}
 Two references are not practical receivers but locate the methods between the extremes: the \emph{exact-element
 LMMSE}, which is the ideal-element LMMSE given the true responses, $\bm H=(\bm T_1\diag\bm\Gamma_1+\bm T_2\diag\bm\Gamma_2)
 \circ(\bm F\bm C\bm F^{\T})$, and the same estimator with both resonances shifted by 5--20\,MHz (a mismatched model).
@@ -445,7 +452,7 @@ $N_p=2$, 30 channels, 95\% intervals). CE-BEM ($|h|\le128$) and one-tap lose mor
 Fig.~\ref{fig:alpha} shows that the literature's estimator is not a weak baseline. As $\bm H$ is linear in $\Gamma_s$,
 the ideal and the physical element can be blended. With ideal elements ($\alpha=0$) the
 ideal-element LMMSE is the exact model and matches ours (0.053 against 0.078 at 20\,dB, within the intervals). As the
-dispersion grows, its loss rises past 0.3\,bit/s/Hz at $\alpha=0.5$ (20\,dB) and $\alpha=0.25$ (30\,dB), while ours stays at
+non-ideality grows, its loss rises past 0.3\,bit/s/Hz at $\alpha=0.5$ (20\,dB) and $\alpha=0.25$ (30\,dB), while ours stays at
 0.07--0.08 (0.15--0.18 at 30\,dB). An approximate element model is nearly as good as the exact one (the 5--20\,MHz
 mismatch costs $\le0.4$\,dB of NMSE at 20\,dB); assuming the ideal switch is what fails (Corollary~\ref{cor:nomodel}).
 
@@ -457,11 +464,39 @@ $N_p=8$.}\label{fig:pilots}
 Ours (Fig.~\ref{fig:pilots}) is the only estimator within 0.3\,bit/s/Hz with at most 32 pilot symbols: two on the shared-path channel
 ($0.07\pm0.02$ / $0.11\pm0.03$ at 20/30\,dB), four on TDL-C. Its NMSE falls about 3\,dB per doubling of $N_p$ ($-29.3$ to
 $-45.4$\,dB, $N_p=1$--32, 20\,dB); the ideal-element LMMSE saturates at $-24.6$\,dB and CE-BEM needs $N_p\ge8$.
-Paired per channel against the best baseline on that channel (minimum over all baselines and equalizers), ours gains
+Paired per channel against the best model-based baseline on that channel (minimum over those baselines and all equalizers), ours gains
 $0.41\pm0.02$ / $2.16\pm0.04$\,bit/s/Hz at $N_p=2$ on the shared-path channel and $0.30\pm0.06$ / $1.14\pm0.25$ on TDL-C;
 at every $N_p$ from 2 to 32 the gain is 0.3--0.4 at 20\,dB and 0.5--2.2 at 30\,dB, with every interval above zero. A
 detector that estimates $G_{mm}$ adds at most 0.15 to any loss. One pre-registered sanity check failed: truncated CE-BEM
 loses rate from 20 to 30\,dB even with the oracle robust equalizer (its error sits on the missing harmonics).
+
+\subsection{Learning-based baseline and a self-trained prior}\label{sec:res-learn}
+\begin{table}[t]\centering\footnotesize
+\caption{Loss to perfect CSI (bit/s/Hz) at 20/30\,dB against the learned-prior LMMSE ($N_{\rm tr}=300$, 30 test channels;
+$N_p=2$ shared path, 4 TDL). Shifted: trained on the family in brackets. Self-trained: prior learned from our own
+estimates of 300 channels with 8 pilot symbols at 20\,dB.}\label{tab:learn}
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}lcccc@{}}\toprule
+Test channels & Ours & Learned & Learned, shifted & Self-trained\\\midrule
+Shared, 30\,ns, $K$ 10\,dB & .071/.143 & .007/.031 & -- & .029/.118\\
+Shared, 100\,ns, $K$ 3\,dB & .124/.468 & .054/.247 & .346/1.42 (30\,ns) & --\\
+TDL-C & .185/.668 & .058/.213 & -- & .078/.362\\
+TDL-A & .178/.726 & .047/.184 & .121/.611 (C) & --\\
+TDL-D & .483/1.68 & .043/.204 & .445/2.05 (C) & --\\\bottomrule
+\end{tabular}
+\end{table}
+Table~\ref{tab:learn} answers whether learning would do better. It would, if trained on the right channels: the
+learned-prior LMMSE beats ours on every family when trained on the same distribution, already with $N_{\rm tr}=100$
+(0.006 against 0.070 at 20\,dB on the shared path with $N_{\rm tr}=1000$). The reason is that our simulated families
+are low-dimensional. At $M=256$ the band is 7.7\,MHz, so a 30\,ns channel with a strong line of sight is nearly flat
+(the 1000 shared-path channels span 6 principal components, with mean correlation 0.92), and TDL has fixed tap delays
+(50 components). A prior learned on one family transfers poorly to a different delay spread or Rician factor: trained
+on the 30\,ns family and tested at 100\,ns it is worse than ours by $0.22\pm0.17$ / $0.95\pm0.46$\,bit/s/Hz, and trained on
+TDL-C it ties ours on TDL-D at 20\,dB and is worse by $0.37\pm0.20$ at 30\,dB; between the similar TDL-A and TDL-C it
+still gains $0.06\pm0.03$ at 20\,dB. Our estimator needs neither training channels nor an element model, and it can
+supply the training data itself: a prior learned from its 8-pilot estimates of 300 channels beats it by
+$0.042\pm0.012$ (shared path) and $0.107\pm0.027$\,bit/s/Hz (TDL-C) at 20\,dB. Because such a prior is collected in place,
+it matches the deployment distribution by construction; we offer it as an optional second stage.
 
 \subsection{No element model: robustness beyond the generating model}\label{sec:res-model}
 A receiver tested on data from its own model can look better than it is. Table~\ref{tab:robust} runs the estimator
@@ -594,7 +629,10 @@ Grouping the harmonic expansion of a dispersive TM-RIS by element state separate
 receiver knows, the switching timing, and a part it learns, the propagation together with the element dispersion. A
 receiver built on this separation needs no element model. It estimates the coupling from two to eight pilot symbols,
 finds the RIS clock offset by itself, and equalizes without forming the coupling matrix. In pre-registered tests at 20--30\,dB it beats
-every baseline we could build on every channel and pilot count; with ideal elements the literature's estimator matches it and falls behind only as the dispersion grows. It decodes within 0.14\,dB of perfect CSI. Its
+every estimator that needs no training data, on every channel and pilot count; with ideal elements the literature's
+estimator matches it and falls behind only as the elements become less ideal. A prior learned from channels of the
+deployment distribution is better, a prior learned elsewhere can be much worse, and a prior learned from our own
+estimates keeps most of the gain without ground truth. It decodes within 0.14\,dB of perfect CSI. Its
 limits are stated above: the receiver must know every panel's pattern (A1); delay spreads whose cascade exceeds the CP
 are out of scope (A2); at 120\,km/h on TDL channels pilot overhead and estimate ageing leave 46--66\% of the
 perfect-CSI rate; below about 15\,dB a receiver given the element model is marginally better (by $\le0.06$\,bit/s/Hz); the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
