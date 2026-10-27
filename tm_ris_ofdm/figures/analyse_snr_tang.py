@@ -1,4 +1,4 @@
-"""Step 11 (week12_snr_tang): print NMSE, rate loss and BER (QPSK, 16-QAM) vs SNR 10-40 dB for every estimator.
+"""Steps 11-12 (week12_snr_tang): print NMSE, rate loss and BER (QPSK, 16-QAM) vs SNR 10-40 dB for every estimator.
 Run:  .venv/bin/python -I tm_ris_ofdm/figures/analyse_snr_tang.py   (numbers quoted with Fig. snr in main.tex)
 """
 import json
@@ -6,7 +6,12 @@ import pathlib
 
 import numpy as np
 
-R = json.loads((pathlib.Path(__file__).resolve().parent.parent / "results" / "week12_snr_tang.json").read_text())
+RES = pathlib.Path(__file__).resolve().parent.parent / "results"
+R = json.loads((RES / "week12_snr_tang.json").read_text())                    # Step 11: 10:5:40 dB
+for c in ("phys30", "TDLC100"):                                               # Step 12: 10:2:30 dB (plotted)
+    f = RES / f"week12_snr_tang_fine_{c}.json"
+    if f.exists():
+        R[c + " (fine grid)"] = json.loads(f.read_text())[c]
 for c, s in R.items():
     e = s["estimators"]
     nm, rt, rp = (np.array(s[k], float) for k in ("nmse", "rate", "rate_perfect"))

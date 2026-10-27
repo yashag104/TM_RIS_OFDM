@@ -93,7 +93,7 @@ Most scripts write their JSON to `results/` and **overwrite** the saved file. Si
 | Paper item | MATLAB script | Result file | Analysis or figure script | Approx. run time |
 |---|---|---|---|---|
 | Fig. 2 (element response, harmonic tail) | none (closed form) | n/a | `make_ieee_figures.py` | seconds |
-| Figs. 4–5 (NMSE / loss / BER vs SNR, 10–30 dB plotted, Tang format; one file per graph) | `week12_snr_tang.m` | `week12_snr_tang.json` | `make_ieee_figures.py tang`, `analyse_snr_tang.py` | about 4.5 h (4.7 min per channel) |
+| Figs. 4–5 (NMSE / loss / BER vs SNR, 10–30 dB in 2 dB steps, Tang format; one file per graph) | `week12_snr_tang.m` (Step 11: 10:5:40; Step 12: `snrs=10:2:30`, `icsel=1` / `2`) | `week12_snr_tang.json`, `week12_snr_tang_fine_{phys30,TDLC100}.json` | `make_ieee_figures.py tang`, `analyse_snr_tang.py` | about 4.5 h (4.7 min per channel) |
 | Fig. 4 (continuum), Fig. 5 (NMSE vs pilots) | `week12_standard_curves.m` | `week12_standard_curves.json` | `make_ieee_figures.py std`, `analyse_week12.py` | about 3 h (6.4 min per channel) |
 | Fig. 6 (coded BLER) | `week11_coded_stats.m` | `week11_coded_stats.json` | `make_ieee_figures.py` | hours |
 | Comparison text: pilot counts, paired gains over the best model-based baseline | `week10_fair_baselines.m` | `week10_fair_baselines.json` | summary fields inside the JSON | hours |

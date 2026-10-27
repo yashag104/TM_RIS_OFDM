@@ -435,7 +435,7 @@ LMMSE}, which is the ideal-element LMMSE given the true responses, $\bm H=(\bm T
 \panel{0.49\textwidth}{fig_snr_phys30_ber16.pdf}{(d) uncoded BER, 16-QAM}\\[0.5ex]
 \includegraphics[width=0.9\textwidth]{fig_snr_legend.pdf}
 \caption{Estimators versus SNR in the format of the CE-BEM paper~\cite{tang2007} (Figs.~10--11 there), shared-path
-channel, $N_p=2$ (CE-BEM with all harmonics: $N_p=32$), 30 new channels per point. Loss is to perfect CSI with the
+channel, $N_p=2$ (CE-BEM with all harmonics: $N_p=32$), 30 new channels, SNR in 2\,dB steps. Loss is to perfect CSI with the
 residual-based robust MMSE; BER after unbiased MMSE ($7.7\cdot10^5$ / $1.5\cdot10^6$ bits per point; points with no errors
 are omitted).}\label{fig:snr}
 \end{figure*}
@@ -453,10 +453,10 @@ linear LMMSE with the right structure needs no nonlinear fit. From 20\,dB the or
 ours loses 0.08/0.17\,bit/s/Hz, the exact-element LMMSE 0.10/0.36, the 20\,MHz-mismatched model 0.13/0.56, CE-BEM with 16
 times our pilots 0.44/0.57, the ideal-element LMMSE 0.50/2.32 and OMP 4.1/7.5. Ours beats the exact-element LMMSE by
 having fewer unknowns (rank $r=8$ against $L^2=256$), not by knowing more. On TDL-C ($N_p=4$) the 20/30\,dB losses are
-0.20/0.74 (ours), 0.26/1.02 (exact element), 0.63/2.55 (ideal element) and 1.21/1.64 (CE-BEM, $N_p=32$). Figs.~\ref{fig:snr} and~\ref{fig:snr-tdl} show 10--30\,dB on a separate set of channels.
+0.20/0.74 (ours), 0.26/1.02 (exact element), 0.63/2.55 (ideal element) and 1.21/1.64 (CE-BEM, $N_p=32$). Figs.~\ref{fig:snr} and~\ref{fig:snr-tdl} show 10--30\,dB in 2\,dB steps on a separate set of channels.
 On the shared path ours has the lowest NMSE at every SNR ($-23.7$ to $-41.3$\,dB) and loses at most 0.12\,bit/s/Hz;
 the ideal-element LMMSE floors at $-24$\,dB, and its BER with it. Our BER is within a factor of about two of perfect CSI for
-both modulations. On TDL-C ours crosses 0.3\,bit/s/Hz near 22\,dB as every estimator approaches a model-error floor.
+both modulations. On TDL-C ours crosses 0.3\,bit/s/Hz at 22\,dB as every estimator approaches a model-error floor.
 Beyond the plotted range (35--40\,dB, same run) ours keeps the lowest NMSE and rate loss on both channels, but on TDL-C
 CE-BEM with eight times our pilots reaches the lower BER ($2.8\cdot10^{-4}$ against $7.1\cdot10^{-4}$ for 16-QAM at 40\,dB).
 
