@@ -191,6 +191,40 @@ def fig_std_snr():
     save(fig, "fig_std_snr")
 
 
+def fig_snr_tang():
+    """Estimators vs SNR in the format of Tang et al. Figs. 10-11: 10-40 dB, linear NMSE and BER on log axes (week12_snr_tang)."""
+    R = load("week12_snr_tang"); chans = [("phys30", "shared path"), ("TDLC100", "TDL-C 100 ns")]
+    fig, axes = plt.subplots(2, 4, figsize=(7.16, 3.3), sharex=True)
+    for r, (c, name) in enumerate(chans):
+        s = R[c]; e = s["estimators"]; snr = np.array(s["snr_db"])
+        nm = np.array(s["nmse"], float); rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
+        be = np.array(s["ber"], float); bp = np.array(s["ber_perfect"], float)
+        for key, lab, col, mk, ls, mfc in STD:
+            if key not in e:
+                continue
+            i = e.index(key)
+            _std_plot(axes[r, 0], snr, np.nanmean(nm[:, i, :], 0), key, lab, col, mk, ls, mfc)
+            _std_plot(axes[r, 1], snr, np.maximum(np.nanmean(rp - rt[:, i, :], 0), 3e-3), key, lab, col, mk, ls, mfc)
+            for q in range(2):
+                y = np.nanmean(be[:, i, :, q], 0); ok = y > 0
+                _std_plot(axes[r, 2 + q], snr[ok], y[ok], key, lab, col, mk, ls, mfc)
+        for q in range(2):
+            y = np.nanmean(bp[:, :, q], 0); ok = y > 0
+            axes[r, 2 + q].plot(snr[ok], y[ok], color=INK, ls="--", lw=1.0, label="Perfect CSI")
+        axes[r, 0].set_ylabel(f"{name}, $N_p={s['Np']}$\nNMSE")
+        axes[r, 1].axhline(0.3, color=MUTED, lw=0.7, ls="--")
+        for ax in axes[r]:
+            ax.set_yscale("log")
+        axes[r, 0].set_ylim(1e-5, 3); axes[r, 1].set_ylim(5e-3, 20); axes[r, 2].set_ylim(1e-6, 0.7); axes[r, 3].set_ylim(1e-6, 0.7)
+    for j, t in enumerate(["(a) channel NMSE", "(b) rate loss (bit/s/Hz)", "(c) BER, QPSK", "(d) BER, 16-QAM"]):
+        axes[0, j].set_title(t, loc="left")
+        axes[1, j].set_xlabel("SNR (dB)"); axes[1, j].set_xticks(R["phys30"]["snr_db"])
+    h, l = axes[0, 2].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.01), fontsize=6.5)
+    fig.tight_layout(rect=(0, 0.08, 1, 1), w_pad=0.4, h_pad=0.4)
+    save(fig, "fig_snr_tang")
+
+
 def fig_std_alpha():
     s = load("week12_standard_curves")["S2"]; e = s["estimators"]; a = np.array(s["alpha"])
     rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
@@ -313,8 +347,10 @@ if __name__ == "__main__":
     import sys
     if "struct" in sys.argv:
         fig_element(); fig_coupling(); sys.exit()
+    if "tang" in sys.argv:
+        fig_snr_tang(); sys.exit()
     if "std" in sys.argv:
-        fig_std_snr(); fig_std_alpha(); fig_std_pilots(); sys.exit()
+        fig_std_snr(); fig_snr_tang(); fig_std_alpha(); fig_std_pilots(); sys.exit()
     fig_mechanism()
     fig_fair()
     fig_bler()

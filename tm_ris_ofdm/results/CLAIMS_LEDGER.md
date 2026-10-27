@@ -41,3 +41,4 @@ corrected; WITHDRAWN = no longer claimed; OPEN = test pending (workstream in bra
 | C6-self | Prior self-trained on ours' 8-pilot estimates beats ours | +0.042 (shared), +0.107 (TDL-C) at 20 dB, CIs > 0 | week12_c6b | ADOPTED as optional second stage | no ground truth, no element model |
 | LOWSNR-r | SNR-adaptive rank | helps 0-15 dB but worse by 0.034 at 20 dB TDL-C | week12_c6_lowsnr P1 | FAIL (frozen rank stays) | |
 | C-claim | "beats every baseline we could build" | | | WITHDRAWN -> "every estimator needing no training data" | |
+| STD-4 | 10–40 dB comparison in Tang format: ours best NMSE at all SNR and < 0.3 loss to 40 dB on shared path; on TDL-C floors (2.3 at 40 dB) and CE-BEM with 8× pilots has lower BER from 35 dB | week12_snr_tang.m → week12_snr_tang.json; analyse_snr_tang.py | OK (negative part reported) |

@@ -93,7 +93,8 @@ Most scripts write their JSON to `results/` and **overwrite** the saved file. Si
 | Paper item | MATLAB script | Result file | Analysis or figure script | Approx. run time |
 |---|---|---|---|---|
 | Fig. 2 (element response, harmonic tail) | none (closed form) | n/a | `make_ieee_figures.py` | seconds |
-| Fig. 3 (NMSE / loss / BER vs SNR), Fig. 4 (continuum), Fig. 5 (NMSE vs pilots) | `week12_standard_curves.m` | `week12_standard_curves.json` | `make_ieee_figures.py std`, `analyse_week12.py` | about 3 h (6.4 min per channel) |
+| Fig. 3 (NMSE / loss / BER vs SNR, 10–40 dB, Tang format) | `week12_snr_tang.m` | `week12_snr_tang.json` | `make_ieee_figures.py tang`, `analyse_snr_tang.py` | about 4.5 h (4.7 min per channel) |
+| Fig. 4 (continuum), Fig. 5 (NMSE vs pilots) | `week12_standard_curves.m` | `week12_standard_curves.json` | `make_ieee_figures.py std`, `analyse_week12.py` | about 3 h (6.4 min per channel) |
 | Fig. 6 (coded BLER) | `week11_coded_stats.m` | `week11_coded_stats.json` | `make_ieee_figures.py` | hours |
 | Comparison text: pilot counts, paired gains over the best model-based baseline | `week10_fair_baselines.m` | `week10_fair_baselines.json` | summary fields inside the JSON | hours |
 | Learned-baseline table (C6, shift, self-trained) | `week12_c6_lowsnr.m` (part 2), `week12_c6b.m` | `week12_c6_lowsnr.json`, `week12_c6b.json` | `analyse_week12.py` | about 3–4 h and 1.5–2 h |
