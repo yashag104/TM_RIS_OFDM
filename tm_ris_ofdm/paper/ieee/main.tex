@@ -9,6 +9,8 @@
 \usepackage{cite}
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
+% one separately drawn graph with its sub-label: \panel{width}{file}{label}
+\newcommand{\panel}[3]{\begin{minipage}[t]{#1}\centering\includegraphics[width=\linewidth]{#2}\\[-0.3ex]{\footnotesize #3}\end{minipage}}
 
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
@@ -233,18 +235,22 @@ Both identities hold numerically to $7\cdot10^{-15}$. A practical RIS therefore 
 equal to its BS distance, tens to hundreds of nanoseconds; the latter costs 1.6/4.2\,bit/s/Hz at 20/30\,dB if
 ignored (Table~\ref{tab:timing}).
 
-\begin{figure}[t]\centering
-\includegraphics[width=\columnwidth]{fig_element.pdf}
-\caption{The OpenRIS cell in the format of~\cite[Figs.~3--4]{iudice2026}: single-pole model~\eqref{eq:gamma} with the
+\begin{figure*}[t]\centering
+\panel{0.325\textwidth}{fig_element_mag.pdf}{(a) reflection magnitude}\hfill
+\panel{0.325\textwidth}{fig_element_phase.pdf}{(b) reflection phase}\hfill
+\panel{0.325\textwidth}{fig_element_dphase.pdf}{(c) phase difference of the states}
+\caption{The OpenRIS cell in the format of~\cite[Figs.~2--4]{iudice2026}: single-pole model~\eqref{eq:gamma} with the
 parameters and common phase $-10.7^\circ$ of~\cite[Tab.~I]{iudice2026}. Light band: the 100\,MHz channel; dark strip:
 the 7.7\,MHz band of the $M=256$ comparisons.}\label{fig:element}
-\end{figure}
+\end{figure*}
 
 \begin{figure*}[t]\centering
-\includegraphics[width=\textwidth]{fig_coupling.pdf}
+\panel{0.325\textwidth}{fig_coupling_K2.pdf}{(a) $K=2$ (setting of~\cite[Fig.~5]{iudice2026})}\hfill
+\panel{0.325\textwidth}{fig_coupling_K8.pdf}{(b) $K=8$, $D=0.75$ (this paper)}\hfill
+\panel{0.325\textwidth}{fig_coupling_tail.pdf}{(c) harmonic tail, $K=8$, $D=0.75$}
 \caption{Coupling-matrix magnitude for one element with ideal single-tap channels, $M=64$, OpenRIS cell: (a) our
-implementation of~\eqref{eq:io} for the setting of~\cite[Fig.~5]{iudice2026} ($K=2$), reproducing it; (b) the setting of
-this paper ($K=8$, $D=0.75$). (c) Fraction of the coupling energy outside $|h|\le H$ (Corollary~\ref{cor:tail}).}\label{fig:coupling}
+implementation of~\eqref{eq:io} for the setting of~\cite[Fig.~5]{iudice2026}, reproducing it; (b) the setting of
+this paper. (c) Fraction of the coupling energy outside $|h|\le H$ (Corollary~\ref{cor:tail}).}\label{fig:coupling}
 \end{figure*}
 
 \section{The Receiver}\label{sec:receiver}
@@ -423,29 +429,44 @@ LMMSE}, which is the ideal-element LMMSE given the true responses, $\bm H=(\bm T
 
 \subsection{Comparison with the strongest baselines}\label{sec:res-fair}
 \begin{figure*}[t]\centering
-\includegraphics[width=\textwidth]{fig_snr_tang.pdf}
-\caption{Estimators versus SNR in the format of the CE-BEM paper~\cite{tang2007} (Figs.~10--11 there): 10--40\,dB,
-30 new channels per point; top: shared path, $N_p=2$; bottom: TDL-C, $N_p=4$ (CE-BEM with all harmonics: $N_p=32$).
-(a) NMSE, (b) loss to perfect CSI with the residual-based robust MMSE (dashed: 0.3\,bit/s/Hz), (c), (d) uncoded BER after
-unbiased MMSE ($7.7\cdot10^5$ / $1.5\cdot10^6$ bits per point; points with no errors are omitted).}\label{fig:snr}
+\panel{0.49\textwidth}{fig_snr_phys30_nmse.pdf}{(a) channel NMSE}\hfill
+\panel{0.49\textwidth}{fig_snr_phys30_loss.pdf}{(b) rate loss (dashed: 0.3\,bit/s/Hz)}\\[1ex]
+\panel{0.49\textwidth}{fig_snr_phys30_ber4.pdf}{(c) uncoded BER, QPSK}\hfill
+\panel{0.49\textwidth}{fig_snr_phys30_ber16.pdf}{(d) uncoded BER, 16-QAM}\\[0.5ex]
+\includegraphics[width=0.9\textwidth]{fig_snr_legend.pdf}
+\caption{Estimators versus SNR in the format of the CE-BEM paper~\cite{tang2007} (Figs.~10--11 there), shared-path
+channel, $N_p=2$ (CE-BEM with all harmonics: $N_p=32$), 30 new channels per point. Loss is to perfect CSI with the
+residual-based robust MMSE; BER after unbiased MMSE ($7.7\cdot10^5$ / $1.5\cdot10^6$ bits per point; points with no errors
+are omitted).}\label{fig:snr}
+\end{figure*}
+
+\begin{figure*}[t]\centering
+\panel{0.49\textwidth}{fig_snr_TDLC100_nmse.pdf}{(a) channel NMSE}\hfill
+\panel{0.49\textwidth}{fig_snr_TDLC100_loss.pdf}{(b) rate loss (dashed: 0.3\,bit/s/Hz)}\\[1ex]
+\panel{0.49\textwidth}{fig_snr_TDLC100_ber4.pdf}{(c) uncoded BER, QPSK}\hfill
+\panel{0.49\textwidth}{fig_snr_TDLC100_ber16.pdf}{(d) uncoded BER, 16-QAM}\\[0.5ex]
+\includegraphics[width=0.9\textwidth]{fig_snr_legend.pdf}
+\caption{As Fig.~\ref{fig:snr} on the TDL-C channel (100\,ns), $N_p=4$.}\label{fig:snr-tdl}
 \end{figure*}
 Below 15\,dB the receivers that know the element model are slightly better than ours (by $\le0.02$\,bit/s/Hz here, $\le0.06$ on TDL-C), since a
 linear LMMSE with the right structure needs no nonlinear fit. From 20\,dB the order reverses and the gaps grow: at 20/30\,dB
 ours loses 0.08/0.17\,bit/s/Hz, the exact-element LMMSE 0.10/0.36, the 20\,MHz-mismatched model 0.13/0.56, CE-BEM with 16
 times our pilots 0.44/0.57, the ideal-element LMMSE 0.50/2.32 and OMP 4.1/7.5. Ours beats the exact-element LMMSE by
 having fewer unknowns (rank $r=8$ against $L^2=256$), not by knowing more. On TDL-C ($N_p=4$) the 20/30\,dB losses are
-0.20/0.74 (ours), 0.26/1.02 (exact element), 0.63/2.55 (ideal element) and 1.21/1.64 (CE-BEM, $N_p=32$). Over 10--40\,dB (Fig.~\ref{fig:snr}, a separate set of channels), ours has the lowest NMSE
-at every SNR on the shared path ($-23.7$ to $-48.4$\,dB) and stays below 0.3\,bit/s/Hz up to 40\,dB, where the exact-element
-LMMSE loses 0.46, CE-BEM ($N_p=32$) 0.67 and the ideal-element LMMSE 5.4, whose NMSE floors at $-24$\,dB. Its BER is within
-a factor of about two of perfect CSI up to 30\,dB for both modulations. On TDL-C every estimator floors at high SNR: ours
-crosses 0.3\,bit/s/Hz near 22\,dB and loses 2.3 at 40\,dB, and from 35\,dB CE-BEM with eight times our pilots has the
-lower BER ($2.8\cdot10^{-4}$ against $7.1\cdot10^{-4}$ for 16-QAM at 40\,dB) at a similar rate loss (2.5 against 2.3).
+0.20/0.74 (ours), 0.26/1.02 (exact element), 0.63/2.55 (ideal element) and 1.21/1.64 (CE-BEM, $N_p=32$). Figs.~\ref{fig:snr} and~\ref{fig:snr-tdl} show 10--30\,dB on a separate set of channels.
+On the shared path ours has the lowest NMSE at every SNR ($-23.7$ to $-41.3$\,dB) and loses at most 0.12\,bit/s/Hz;
+the ideal-element LMMSE floors at $-24$\,dB, and its BER with it. Our BER is within a factor of about two of perfect CSI for
+both modulations. On TDL-C ours crosses 0.3\,bit/s/Hz near 22\,dB as every estimator approaches a model-error floor.
+Beyond the plotted range (35--40\,dB, same run) ours keeps the lowest NMSE and rate loss on both channels, but on TDL-C
+CE-BEM with eight times our pilots reaches the lower BER ($2.8\cdot10^{-4}$ against $7.1\cdot10^{-4}$ for 16-QAM at 40\,dB).
 
-\begin{figure}[t]\centering
-\includegraphics[width=\columnwidth]{fig_std_alpha.pdf}
+\begin{figure*}[t]\centering
+\panel{0.49\textwidth}{fig_alpha_20dB.pdf}{(a) 20\,dB}\hfill
+\panel{0.49\textwidth}{fig_alpha_30dB.pdf}{(b) 30\,dB}\\[0.5ex]
+\includegraphics[width=0.75\textwidth]{fig_alpha_legend.pdf}
 \caption{Loss versus element non-ideality, $\bm H_\alpha=(1-\alpha)\bm H_{\rm ideal}+\alpha\bm H_{\rm OpenRIS}$ (shared path,
 $N_p=2$, 30 channels, 95\% intervals). CE-BEM ($|h|\le128$) and one-tap lose more than 6\,bit/s/Hz at every $\alpha$.}\label{fig:alpha}
-\end{figure}
+\end{figure*}
 Fig.~\ref{fig:alpha} shows that the literature's estimator is not a weak baseline. As $\bm H$ is linear in $\Gamma_s$,
 the ideal and the physical element can be blended. With ideal elements ($\alpha=0$) the
 ideal-element LMMSE is the exact model and matches ours (0.053 against 0.078 at 20\,dB, within the intervals). As the

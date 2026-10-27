@@ -191,62 +191,75 @@ def fig_std_snr():
     save(fig, "fig_std_snr")
 
 
-def fig_snr_tang():
-    """Estimators vs SNR in the format of Tang et al. Figs. 10-11: 10-40 dB, linear NMSE and BER on log axes (week12_snr_tang)."""
-    R = load("week12_snr_tang"); chans = [("phys30", "shared path"), ("TDLC100", "TDL-C 100 ns")]
-    fig, axes = plt.subplots(2, 4, figsize=(7.16, 3.3), sharex=True)
-    for r, (c, name) in enumerate(chans):
-        s = R[c]; e = s["estimators"]; snr = np.array(s["snr_db"])
-        nm = np.array(s["nmse"], float); rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
-        be = np.array(s["ber"], float); bp = np.array(s["ber_perfect"], float)
-        for key, lab, col, mk, ls, mfc in STD:
-            if key not in e:
-                continue
-            i = e.index(key)
-            _std_plot(axes[r, 0], snr, np.nanmean(nm[:, i, :], 0), key, lab, col, mk, ls, mfc)
-            _std_plot(axes[r, 1], snr, np.maximum(np.nanmean(rp - rt[:, i, :], 0), 3e-3), key, lab, col, mk, ls, mfc)
-            for q in range(2):
-                y = np.nanmean(be[:, i, :, q], 0); ok = y > 0
-                _std_plot(axes[r, 2 + q], snr[ok], y[ok], key, lab, col, mk, ls, mfc)
-        for q in range(2):
-            y = np.nanmean(bp[:, :, q], 0); ok = y > 0
-            axes[r, 2 + q].plot(snr[ok], y[ok], color=INK, ls="--", lw=1.0, label="Perfect CSI")
-        axes[r, 0].set_ylabel(f"{name}, $N_p={s['Np']}$\nNMSE")
-        axes[r, 1].axhline(0.3, color=MUTED, lw=0.7, ls="--")
-        for ax in axes[r]:
-            ax.set_yscale("log")
-        axes[r, 0].set_ylim(1e-5, 3); axes[r, 1].set_ylim(5e-3, 20); axes[r, 2].set_ylim(1e-6, 0.7); axes[r, 3].set_ylim(1e-6, 0.7)
-    for j, t in enumerate(["(a) channel NMSE", "(b) rate loss (bit/s/Hz)", "(c) BER, QPSK", "(d) BER, 16-QAM"]):
-        axes[0, j].set_title(t, loc="left")
-        axes[1, j].set_xlabel("SNR (dB)"); axes[1, j].set_xticks(R["phys30"]["snr_db"])
-    h, l = axes[0, 2].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.01), fontsize=6.5)
-    fig.tight_layout(rect=(0, 0.08, 1, 1), w_pad=0.4, h_pad=0.4)
-    save(fig, "fig_snr_tang")
+W2, H2 = 3.45, 2.35            # one graph at full column width (two per row in a figure*)
+W3, H3 = 2.33, 1.95            # one graph at a third of the text width
+
+
+def save_legend(handles, labels, name, ncol, width=7.0):
+    """Legend strip as its own file, shared by the separately saved graphs of one figure."""
+    fig = plt.figure(figsize=(width, 0.1 + 0.17 * np.ceil(len(labels) / ncol)))
+    fig.legend(handles, labels, loc="center", ncol=ncol, frameon=False, fontsize=7.5)
+    save(fig, name)
+
+
+def fig_snr_tang(smax=30):
+    """Estimators vs SNR in the format of Tang et al. Figs. 10-11 (week12_snr_tang): one file per channel and metric."""
+    R = load("week12_snr_tang")
+    metrics = [("nmse", "channel NMSE", (1e-5, 3)), ("loss", "loss to perfect CSI (bit/s/Hz)", (8e-3, 20)),
+               ("ber4", "uncoded BER, QPSK", (1e-5, 0.7)), ("ber16", "uncoded BER, 16-QAM", (1e-5, 0.7))]
+    for c in ("phys30", "TDLC100"):
+        s = R[c]; e = s["estimators"]; snr = np.array(s["snr_db"]); keep = snr <= smax; snr = snr[keep]
+        nm = np.array(s["nmse"], float)[:, :, keep]; rt = np.array(s["rate"], float)[:, :, keep]
+        rp = np.array(s["rate_perfect"], float)[:, keep]
+        be = np.array(s["ber"], float)[:, :, keep]; bp = np.array(s["ber_perfect"], float)[:, keep]
+        for mname, ylab, ylim in metrics:
+            fig, ax = plt.subplots(figsize=(W2, H2))
+            for key, lab, col, mk, ls, mfc in STD:
+                if key not in e:
+                    continue
+                i = e.index(key)
+                if mname == "nmse":
+                    y = np.nanmean(nm[:, i], 0)
+                elif mname == "loss":
+                    y = np.maximum(np.nanmean(rp - rt[:, i], 0), 3e-3)
+                else:
+                    y = np.nanmean(be[:, i, :, 0 if mname == "ber4" else 1], 0)
+                ok = y > 0
+                _std_plot(ax, snr[ok], y[ok], key, lab, col, mk, ls, mfc)
+            if mname.startswith("ber"):
+                y = np.nanmean(bp[:, :, 0 if mname == "ber4" else 1], 0); ok = y > 0
+                ax.plot(snr[ok], y[ok], color=INK, ls="--", lw=1.1, label="Perfect CSI")
+            if mname == "loss":
+                ax.axhline(0.3, color=MUTED, lw=0.8, ls="--")
+            ax.set_yscale("log"); ax.set_ylim(*ylim); ax.grid(True, which="major", lw=0.4)
+            ax.set_xlabel("SNR (dB)"); ax.set_ylabel(ylab); ax.set_xticks(snr)
+            fig.tight_layout()
+            if mname == "ber4" and c == "phys30":
+                save_legend(*ax.get_legend_handles_labels(), "fig_snr_legend", ncol=4)
+            save(fig, f"fig_snr_{c}_{mname}")
 
 
 def fig_std_alpha():
     s = load("week12_standard_curves")["S2"]; e = s["estimators"]; a = np.array(s["alpha"])
     rt = np.array(s["rate"], float); rp = np.array(s["rate_perfect"], float)
-    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.85), sharey=True)
-    for k, ax in enumerate(axes):
+    for k in range(2):
+        fig, ax = plt.subplots(figsize=(W2, H2))
         for key, lab, col, mk, ls, mfc in STD:
             if key not in e or key in ("bem128", "onetap"):
                 continue
             g = rp[:, :, k] - rt[:, e.index(key), :, k]
             m = g.mean(0); h = 1.96 * g.std(0, ddof=1) / np.sqrt(g.shape[0])
-            kw = dict(color=col, marker=mk, ls=ls, label=lab, mec="white", mew=0.5, capsize=1.5, elinewidth=0.7)
+            kw = dict(color=col, marker=mk, ls=ls, label=lab, mec="white", mew=0.5, capsize=2, elinewidth=0.8)
             if mfc == "white":
                 kw.update(mfc="white", mec=col)
             ax.errorbar(a, np.maximum(m, 1e-3), yerr=h, **kw)
-        ax.axhline(0.3, color=MUTED, lw=0.7, ls="--")
-        ax.set_yscale("log"); ax.set_ylim(0.02, 4); ax.set_xticks([0, 0.25, 0.5, 0.75, 1], ["0", ".25", ".5", ".75", "1"])
-        ax.set_xlabel(r"element non-ideality $\alpha$"); ax.set_title(f"({'ab'[k]}) {s['snr_db'][k]} dB", loc="left")
-    axes[0].set_ylabel("loss to perfect CSI\n(bit/s/Hz)")
-    h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.03), fontsize=6.0)
-    fig.tight_layout(rect=(0, 0.12, 1, 1), w_pad=0.4)
-    save(fig, "fig_std_alpha")
+        ax.axhline(0.3, color=MUTED, lw=0.8, ls="--")
+        ax.set_yscale("log"); ax.set_ylim(0.02, 4); ax.set_xticks([0, 0.25, 0.5, 0.75, 1], ["0", "0.25", "0.5", "0.75", "1"])
+        ax.set_xlabel(r"element non-ideality $\alpha$"); ax.set_ylabel("loss to perfect CSI (bit/s/Hz)")
+        fig.tight_layout()
+        if k == 0:
+            save_legend(*ax.get_legend_handles_labels(), "fig_alpha_legend", ncol=4)
+        save(fig, f"fig_alpha_{s['snr_db'][k]}dB")
 
 
 def fig_std_pilots():
@@ -282,65 +295,66 @@ def gam(f, k):
 
 
 def fig_element():
+    """Three separate graphs as in Iudice et al. Figs. 2-4: magnitude, phase, phase difference."""
     f = np.linspace(3.3e9, 3.8e9, 1001); fg = f / 1e9
     g = [np.exp(1j * PHI0) * gam(f, k) for k in (0, 1)]
-    fig, ax = plt.subplots(3, 1, figsize=(3.5, 3.9), sharex=True)
     lab = [r"$c_0$ (4 V), state 1", r"$c_1$ (19.25 V), state 2"]
+
+    def axis():
+        fig, ax = plt.subplots(figsize=(W3, H3))
+        ax.axvspan(3.544, 3.644, color=GRID, alpha=0.9, lw=0, zorder=0)
+        ax.axvspan(3.594 - 0.00384, 3.594 + 0.00384, color=NEUTRAL, alpha=0.45, lw=0, zorder=0)
+        ax.set_xlabel("frequency (GHz)"); ax.set_xlim(3.3, 3.8); ax.set_xticks([3.3, 3.4, 3.5, 3.6, 3.7, 3.8])
+        return fig, ax
+    fig, ax = axis()
     for k, (col, ls) in enumerate(((C1, "-"), (C2, "--"))):
-        ax[0].plot(fg, 20 * np.log10(np.abs(g[k])), color=col, ls=ls, label=lab[k])
-        ax[1].plot(fg, np.degrees(np.angle(g[k])), color=col, ls=ls)
-    dphi = np.degrees(np.angle(g[0] / g[1])) % 360
-    ax[2].plot(fg, dphi, color=INK, lw=1.2)
-    ax[2].axhline(180, color=C3, ls=":", lw=1.2, label=r"ideal $180^\circ$")
-    for a in ax:
-        a.axvspan(3.544, 3.644, color=GRID, alpha=0.9, lw=0, zorder=0)
-        a.axvspan(3.594 - 0.00384, 3.594 + 0.00384, color=NEUTRAL, alpha=0.45, lw=0, zorder=0)
-    ax[0].set_ylabel(r"$|\Gamma|$ (dB)"); ax[0].set_ylim(-2.5, 0.05)
-    ax[1].set_ylabel(r"$\angle\Gamma$ (deg)"); ax[1].set_yticks([-150, -100, -50, 0, 50, 100, 150])
-    ax[2].set_ylabel("phase diff. (deg)"); ax[2].set_xlabel("frequency (GHz)"); ax[2].set_xlim(3.3, 3.8)
-    ax[0].legend(frameon=False, loc="lower left", fontsize=6.5)
-    ax[2].legend(frameon=False, loc="upper right", fontsize=6.5)
-    for a, t in zip(ax, ["(a) reflection magnitude", "(b) reflection phase", "(c) phase difference of the states"]):
-        a.set_title(t, loc="left", fontsize=7.5)
-    fig.tight_layout(h_pad=0.3)
-    save(fig, "fig_element")
+        ax.plot(fg, 20 * np.log10(np.abs(g[k])), color=col, ls=ls, label=lab[k])
+    ax.set_ylabel(r"$|\Gamma|$ (dB)"); ax.set_ylim(-2.5, 0.05); ax.legend(frameon=False, loc="lower left", fontsize=6.5)
+    fig.tight_layout(); save(fig, "fig_element_mag")
+    fig, ax = axis()
+    for k, (col, ls) in enumerate(((C1, "-"), (C2, "--"))):
+        ax.plot(fg, np.degrees(np.angle(g[k])), color=col, ls=ls, label=lab[k])
+    ax.set_ylabel(r"$\angle\Gamma$ (deg)"); ax.set_yticks([-150, -100, -50, 0, 50, 100, 150])
+    ax.legend(frameon=False, loc="lower left", fontsize=6.5)
+    fig.tight_layout(); save(fig, "fig_element_phase")
+    fig, ax = axis()
+    ax.plot(fg, np.degrees(np.angle(g[0] / g[1])) % 360, color=INK, lw=1.2, label="OpenRIS cell")
+    ax.axhline(180, color=C3, ls=":", lw=1.2, label=r"ideal $180^\circ$")
+    ax.set_ylabel("phase difference (deg)"); ax.legend(frameon=False, loc="lower left", fontsize=6.5)
+    fig.tight_layout(); save(fig, "fig_element_dphase")
 
 
 # ---------------------------------------------------------------------------
 # Coupling-matrix structure: reproduction of Iudice et al. Fig. 5 next to this paper's configuration
 # ---------------------------------------------------------------------------
 def fig_coupling():
-    d = load("fig_coupling_data"); M = d["M"]
-    mats = [np.array(d[k]["re"]) + 1j * np.array(d[k]["im"]) for k in ("iudice_K2", "ours_K8")]
-    fig = plt.figure(figsize=(7.16, 2.2))
-    gs = fig.add_gridspec(1, 5, width_ratios=[1, 1, 0.05, 0.62, 1.25], wspace=0.12)
-    ax = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[0, 4])]
-    cax = fig.add_subplot(gs[0, 2])
-    titles = [r"(a) $K=2$ (Iudice et al., Fig. 5)", r"(b) $K=8$, $D=0.75$ (this paper)"]
-    for a, Hm, t in zip(ax[:2], mats, titles):
-        im = a.imshow(20 * np.log10(np.abs(Hm) + 1e-12), cmap="viridis", vmin=-60, vmax=0, origin="upper",
-                      interpolation="nearest")
-        a.set_xlabel("input subcarrier $m$"); a.set_ylabel(r"output tone $\bar m$"); a.set_title(t, loc="left", fontsize=7.5)
-        a.set_xticks([0, 20, 40, 60]); a.set_yticks([0, 20, 40, 60]); a.grid(False)
-    ax[1].set_ylabel(""); ax[1].set_yticklabels([])
-    cb = fig.colorbar(im, cax=cax); cb.set_label(r"$|H_{\bar m m}|$ (dB)", fontsize=7)
+    d = load("fig_coupling_data")
+    for k, name in (("iudice_K2", "fig_coupling_K2"), ("ours_K8", "fig_coupling_K8")):
+        Hm = np.array(d[k]["re"]) + 1j * np.array(d[k]["im"])
+        fig, ax = plt.subplots(figsize=(W3, H3))
+        im = ax.imshow(20 * np.log10(np.abs(Hm) + 1e-12), cmap="viridis", vmin=-60, vmax=0, origin="upper",
+                       interpolation="nearest")
+        ax.set_xlabel("input subcarrier $m$"); ax.set_ylabel(r"output tone $\bar m$")
+        ax.set_xticks([0, 20, 40, 60]); ax.set_yticks([0, 20, 40, 60]); ax.grid(False)
+        cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03); cb.set_label(r"$|H_{\bar m m}|$ (dB)", fontsize=7)
+        fig.tight_layout(); save(fig, name)
     K, h = 8, np.arange(-20000, 20001)
     sq = np.array([1] * 6 + [2] * 2)
+
     def t(st):
         k = np.where(sq == st)[0]
         return np.exp(-1j * np.pi * h / K) / K * np.sinc(h / K) * np.exp(-2j * np.pi * np.outer(h, k) / K).sum(1)
     e = np.abs(t(1) - t(2)) ** 2
     H = np.unique(np.round(np.logspace(0, np.log10(1000), 60)).astype(int))
     out = np.array([1 - e[np.abs(h) <= x].sum() for x in H])
-    ax[2].loglog(H, 100 * out, color=C1)
+    fig, ax = plt.subplots(figsize=(W3, H3))
+    ax.loglog(H, 100 * out, color=C1)
     for x in (12, 40, 128):
         y = 100 * (1 - e[np.abs(h) <= x].sum())
-        ax[2].plot([x], [y], "o", color=C1, mec="white", mew=0.6)
-        ax[2].annotate(f"{y:.1f}%", (x, y), textcoords="offset points", xytext=(3, 3), fontsize=6.5, color=INK)
-    ax[2].set_xlabel(r"harmonics kept, $|h|\leq H$"); ax[2].set_ylabel("energy outside (%)")
-    ax[2].set_title(r"(c) harmonic tail, $K=8$, $D=0.75$", loc="left", fontsize=7.5)
-    fig.subplots_adjust(left=0.065, right=0.99, bottom=0.2, top=0.88)
-    save(fig, "fig_coupling")
+        ax.plot([x], [y], "o", color=C1, mec="white", mew=0.6)
+        ax.annotate(f"{y:.1f}%", (x, y), textcoords="offset points", xytext=(3, 3), fontsize=6.5, color=INK)
+    ax.set_xlabel(r"harmonics kept, $|h|\leq H$"); ax.set_ylabel("energy outside (%)")
+    fig.tight_layout(); save(fig, "fig_coupling_tail")
 
 
 if __name__ == "__main__":
@@ -350,7 +364,7 @@ if __name__ == "__main__":
     if "tang" in sys.argv:
         fig_snr_tang(); sys.exit()
     if "std" in sys.argv:
-        fig_std_snr(); fig_snr_tang(); fig_std_alpha(); fig_std_pilots(); sys.exit()
+        fig_snr_tang(); fig_std_alpha(); fig_std_pilots(); sys.exit()
     fig_mechanism()
     fig_fair()
     fig_bler()
