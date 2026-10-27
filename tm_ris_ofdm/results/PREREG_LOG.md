@@ -233,3 +233,15 @@ Ours runs on every test.
 **Pre-registered readouts.** Paired t-intervals, reported whichever way they go.
 - **(a) Shift:** for each shifted pair, is ours ≤ the shifted learned prior at 20 dB?
 - **(b) Self-trained:** the self-trained prior beats ours at 20 dB with the paired CI above zero, on both phys30 and TDL-C. If so, it is ADOPTED as an optional receiver mode ("ours + self-trained prior"), with the cost stated: N_train channels measured with 8 pilot symbols.
+
+## 2026-10-27 | git b889849 | Step 11: comparison in the format of Tang et al. 2007, Figs. 10–11 (week12_snr_tang)
+**Purpose.** The paper's SNR figure spans 0–30 dB with 16-QAM. Tang et al. (CE-BEM, our main baseline) report channel MSE and BER from 10 to 40 dB with QPSK. This run reproduces that format so the two can be compared directly. No hypothesis is tested, and no claim depends on it; results are reported as they come.
+
+**Settings.** Hyperparameters are frozen as in week12_standard_curves.
+- **SNR:** 10:5:40 dB.
+- **Modulation:** uncoded BER for QPSK and for 16-QAM after unbiased MMSE, 100 data symbols per channel.
+- **Channels:** 30 new channels (rng 17100+).
+  - shared path: Np = 2;
+  - TDL-C 100 ns: Np = 4.
+- **Estimators:** one-tap, ideal-element LMMSE, exact-element LMMSE, CE-BEM with abs(h) ≤ 128 at ours' Np, CE-BEM with all harmonics at Np = 32, OMP, and ours.
+- **Reference:** perfect CSI.
