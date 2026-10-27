@@ -7,10 +7,13 @@
 %   References between ours and the literature: genie (model-aware LMMSE with the TRUE element response),
 %   mismatched element model (resonances shifted 5/10/20 MHz), CE-BEM with all harmonics at Np = 32.
 %   Set parts (default 1:3) and ntrial (default 30) before calling to run a subset. Saves after every channel.
+%   Optional: snrs (default 10:5:40) and icsel (channel indices, default 1:2) for the 10:2:30 grid of Step 12.
 
 if ~exist('parts', 'var'), parts = 1:3; end
 if ~exist('ntrial', 'var'), ntrial = 30; end
 if ~exist('outname', 'var'), outname = 'week12_snr_tang'; end
+if ~exist('snrs', 'var'), snrs = 10:5:40; end
+if ~exist('icsel', 'var'), icsel = 1:2; end
 here = fileparts(mfilename('fullpath')); out = fullfile(here, '..', 'results');
 P = params_openris(); fc = 3.594e9; df = 30e3; K = 8;
 M = 256; bins = -M/2:M/2-1; evalb = 65:192; Q = 16; fin = fc + bins*df;
@@ -28,10 +31,9 @@ if exist(fp, 'file'), R = jsondecode(fileread(fp)); else, R = struct(); end
 
 %% ---------------- S1: vs SNR ----------------
 if ismember(1, parts)
-    snrs = 10:5:40;
     ests = {'onetap', 'ideal', 'genie', 'bem128', 'bemall_Np32', 'omp', 'ours'};
     chans = {'phys30', 'TDLC100'}; npc = [2 4];
-    for ic = 1:numel(chans)
+    for ic = icsel
         cf = cfg.(chans{ic}); Np = npc(ic);
         [F, lamF] = dpss_basis(bins, df, cf.tw, cf.L);
         L2 = ceil(M*df*cf.tw2) + 12; [F2, lam2] = dpss_basis(bins, df, cf.tw2, L2);
@@ -57,7 +59,7 @@ if ismember(1, parts)
                     for iq = 1:2, [rt(t, ie, is), be(t, ie, is, iq)] = metrics(Hh, H, s2, se_r, evalb, Yd{iq}, dd{iq}, Mqs(iq)); end
                 end
             end
-            fprintf('%s ch %2d | 20 dB rate %s | perfect %.2f\n', chans{ic}, t, sprintf('%.2f ', rt(t, :, 3)), rp(t, 3));
+            fprintf('%s ch %2d | 20 dB rate %s | perfect %.2f\n', chans{ic}, t, sprintf('%.2f ', rt(t, :, snrs == 20)), rp(t, snrs == 20));
             R.(chans{ic}) = struct('snr_db', snrs, 'Np', Np, 'estimators', {ests}, 'nmse', nm(1:t,:,:), ...
                 'rate', rt(1:t,:,:), 'ber', be(1:t,:,:,:), 'rate_perfect', rp(1:t,:), 'ber_perfect', bp(1:t,:,:), ...
                 'qam', Mqs, 'bits_per_channel', numel(evalb)*Nd*log2(Mqs));

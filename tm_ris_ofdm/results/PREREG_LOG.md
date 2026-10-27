@@ -247,3 +247,7 @@ Ours runs on every test.
 - **Reference:** perfect CSI.
 
 **Step 11 outcome (2026-10-27, run complete, 60 channels).** Descriptive only, as registered. Shared path (Np = 2): ours has the lowest NMSE at every SNR (−23.7 to −48.4 dB) and a loss ≤ 0.26 bit/s/Hz up to 40 dB (exact element 0.46, CE-BEM Np = 32 0.67, ideal element 5.35; its NMSE floors at −24 dB). TDL-C (Np = 4): all estimators floor; ours crosses 0.3 bit/s/Hz near 22 dB and loses 2.31 at 40 dB; from 35 dB CE-BEM with Np = 32 has the lower BER (16-QAM 2.8e-4 vs 7.1e-4 at 40 dB) and NMSE within 3 dB. Reported in the paper (Fig. snr, comparison text). Script: figures/analyse_snr_tang.py.
+
+## 2026-10-27 | Step 12: the Step 11 comparison on a 2 dB grid over 10–30 dB (week12_snr_tang, snrs = 10:2:30)
+**Purpose.** Figures 4–5 plot 10–30 dB. Cutting the 5 dB grid of Step 11 left 5 points per curve. This run computes the same quantities on an 11-point grid for that range. It is descriptive like Step 11: no hypothesis and no claim depend on it, and results are reported as they come.
+**Settings.** Identical to Step 11 (script, estimators, frozen hyperparameters, seeds rng 17100+100·ic+t, QPSK and 16-QAM, 100 data symbols) except snrs = 10:2:30. The two channels run as separate processes: outname week12_snr_tang_fine_phys30 (icsel = 1) and week12_snr_tang_fine_TDLC100 (icsel = 2).
