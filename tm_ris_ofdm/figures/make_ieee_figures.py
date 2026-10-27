@@ -205,10 +205,13 @@ def save_legend(handles, labels, name, ncol, width=7.0):
 def fig_snr_tang(smax=30):
     """Estimators vs SNR in the format of Tang et al. Figs. 10-11 (week12_snr_tang): one file per channel and metric."""
     R = load("week12_snr_tang")
-    metrics = [("nmse", "channel NMSE", (1e-5, 3)), ("loss", "loss to perfect CSI (bit/s/Hz)", (8e-3, 20)),
-               ("ber4", "uncoded BER, QPSK", (1e-5, 0.7)), ("ber16", "uncoded BER, 16-QAM", (1e-5, 0.7))]
+    metrics = [("nmse", "channel NMSE", None), ("loss", "loss to perfect CSI (bit/s/Hz)", None),
+               ("ber4", "uncoded BER, QPSK", None), ("ber16", "uncoded BER, 16-QAM", None)]
     for c in ("phys30", "TDLC100"):
-        s = R[c]; e = s["estimators"]; snr = np.array(s["snr_db"]); keep = snr <= smax; snr = snr[keep]
+        fine = RES / f"week12_snr_tang_fine_{c}.json"          # Step 12: 2 dB grid over 10-30 dB, when complete
+        s = json.loads(fine.read_text())[c] if fine.exists() else None
+        s = s if s is not None and len(s["nmse"]) == 30 else R[c]           # partial file while running: use Step 11
+        e = s["estimators"]; snr = np.array(s["snr_db"]); keep = snr <= smax; snr = snr[keep]
         nm = np.array(s["nmse"], float)[:, :, keep]; rt = np.array(s["rate"], float)[:, :, keep]
         rp = np.array(s["rate_perfect"], float)[:, keep]
         be = np.array(s["ber"], float)[:, :, keep]; bp = np.array(s["ber_perfect"], float)[:, keep]
@@ -231,8 +234,9 @@ def fig_snr_tang(smax=30):
                 ax.plot(snr[ok], y[ok], color=INK, ls="--", lw=1.1, label="Perfect CSI")
             if mname == "loss":
                 ax.axhline(0.3, color=MUTED, lw=0.8, ls="--")
-            ax.set_yscale("log"); ax.set_ylim(*ylim); ax.grid(True, which="major", lw=0.4)
-            ax.set_xlabel("SNR (dB)"); ax.set_ylabel(ylab); ax.set_xticks(snr)
+            ax.set_yscale("log"); ax.margins(x=0.02, y=0.06); ax.grid(True, which="major", lw=0.4)
+            ax.set_xlabel("SNR (dB)"); ax.set_ylabel(ylab); ax.set_xlim(snr[0] - 0.5, snr[-1] + 0.5)
+            ax.set_xticks(np.arange(10, smax + 1, 5))
             fig.tight_layout()
             if mname == "ber4" and c == "phys30":
                 save_legend(*ax.get_legend_handles_labels(), "fig_snr_legend", ncol=4)
