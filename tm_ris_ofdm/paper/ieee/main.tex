@@ -105,36 +105,13 @@ $(\cdot)^{*}$ denote transpose, conjugate transpose and conjugate; $\sinc x=\sin
 circular complex Gaussian distribution.
 
 \section{System Model}\label{sec:model}
-\begin{figure}[t]\centering
-\resizebox{\columnwidth}{!}{%
-\begin{tikzpicture}[font=\footnotesize,
-  box/.style={draw, rounded corners=2pt, align=center, minimum height=8.5mm, minimum width=19mm, inner sep=2pt, fill=gray!6},
-  ours/.style={box, draw=blue!70!black, fill=blue!7, thick},
-  ar/.style={-{Stealth[length=1.6mm]}, semithick}, lab/.style={font=\scriptsize}]
-\node[box] (ctl) at (2.7,1.3) {RIS controller (network)};
-\node[box] (tx) at (0,0) {OFDM Tx\\pilots, data};
-\node[box] (ris) at (2.7,0) {TM-RIS\\$s_q[k]$, $\Gamma_s(f)$};
-\node[box] (rx) at (5.4,0) {remove CP,\\FFT};
-\node[box] (ker) at (0,-1.6) {kernels $\bm T_{g,s}$\\from pattern};
-\node[ours] (off) at (2.7,-1.6) {Alg.~\ref{alg:offset}\\offset, window};
-\node[ours] (est) at (5.4,-1.6) {Alg.~\ref{alg:est}\\estimator};
-\node[ours] (eq) at (5.4,-3.1) {Alg.~\ref{alg:cg}\\CG-MMSE};
-\node[box] (dec) at (2.7,-3.1) {LLRs, decoder};
-\draw[ar] (tx) -- node[lab, above]{$a^{\rm s}_q$} (ris);
-\draw[ar] (ris) -- node[lab, above]{$a^{\rm d}_q$} (rx);
-\draw[ar] (ctl) -- (ris);
-\draw[ar] (ctl.west) -- node[lab, above]{pattern} (-1.35,1.3) |- (ker.west);
-\draw[ar] (rx) -- node[lab, right]{pilots} (est);
-\draw[ar] ($(rx.south)!0.5!(est.north)$) -| (off.north);
-\draw[ar] (ker) -- (off);
-\draw[ar] (off) -- node[lab, below]{$\hat d,\hat t_0$} (est);
-\draw[ar] (est) -- node[lab, right]{$\hat{\bm U},\hat{\bm V}_s,\hat{\bm\Lambda}_g$} (eq);
-\draw[ar] (rx.east) -- (6.75,0) |- node[lab, right, pos=0.25]{data} (eq.east);
-\draw[ar] (eq) -- (dec);
-\end{tikzpicture}}
-\caption{System and receiver. Highlighted blocks are the proposed algorithms. The receiver uses the switching pattern,
-never the element model, and never forms the $M\times M$ coupling matrix.}\label{fig:sys}
-\end{figure}
+\begin{figure*}[t]\centering
+\includegraphics[width=0.86\textwidth]{fig_system.pdf}
+\caption{(a) The link: each RIS element switches between two states within every OFDM symbol (here $K=8$ slots, duty
+cycle $D=0.75$), so every transmitted subcarrier reaches the user spread over harmonic offsets. (b) The receiver: it
+uses the switching pattern from the network to build the timing kernels, never the element model, and it never forms
+the $M\times M$ coupling matrix. Blue: the proposed algorithms.}\label{fig:sys}
+\end{figure*}
 
 A base station (BS) transmits OFDM with $M$ subcarriers $f_m=f_c+m\Delta f$, $m\in\mathcal M=\{-M/2,\dots,M/2-1\}$,
 useful duration $T_u=1/\Delta f$ and cyclic prefix (CP) $T_{\rm cp}$, to a user through a RIS of $Q$ elements
@@ -145,9 +122,12 @@ the element reflects with the single-resonance response of~\cite{iudice2026},
 \Gamma_s(f)=-1+\frac{2\xi_{r,s}}{j2\pi(f-f_{0,s})+\xi_{r,s}+\xi_{i,s}},\label{eq:gamma}
 \end{equation}
 which for the published OpenRIS cell ($f_{0,1}=3.471$\,GHz, $f_{0,2}=3.710$\,GHz,
-$\xi_{r,s}/2\pi=97.5$, $128.4$\,MHz, $\xi_{i,s}/2\pi=8.9$, $9.0$\,MHz~\cite[Tab.~I]{iudice2026}) drifts by about
-$47^\circ$ in phase across a 100\,MHz carrier at $f_c=3.594$\,GHz (Fig.~\ref{fig:mech}a). It is far from the
-frequency-flat $\pm1$ switch of earlier work. Let $a^{\rm s}_q(f)$ and $a^{\rm d}_q(f)$ be the BS--element and
+$\xi_{r,s}/2\pi=97.5$, $128.4$\,MHz, $\xi_{i,s}/2\pi=8.9$, $9.0$\,MHz~\cite[Tab.~I]{iudice2026}) reproduces the
+in-channel behaviour reported there (Fig.~\ref{fig:element}): across the 100\,MHz channel at $f_c=3.594$\,GHz each state
+drifts by $46^\circ$ and $49^\circ$ in phase, the two states differ by $180^\circ\pm7.8^\circ$ with up to 0.57\,dB magnitude
+imbalance, and the reflection loss reaches 1.0\,dB. The pair is thus a good binary phase shifter but not the
+frequency-flat, lossless $\pm1$ switch of earlier work. Over the 7.7\,MHz band of our $M=256$ comparisons the departure is
+mainly a static one (a phase difference of $172.2^\circ$--$172.5^\circ$); over the full band the dispersion matters as well. Let $a^{\rm s}_q(f)$ and $a^{\rm d}_q(f)$ be the BS--element and
 element--user responses. When the CP covers the cascaded delay spread plus the element memory (13.8\,ns), the received
 frequency-domain symbol is~\cite{iudice2026}
 \begin{equation}
@@ -193,6 +173,9 @@ $\frac1{T_u}\int_{kT_u/K}^{(k+1)T_u/K}e^{-j2\pi ht/T_u}dt=\frac1Ke^{-j\pi h/K}\s
 slots in state $s$ gives~\eqref{eq:t}. Substituting into~\eqref{eq:io}, $t_{q,s}$ depends on $\bar m-m$ only, which
 gives~\eqref{eq:sep}.
 \end{proof}
+Fig.~\ref{fig:coupling} shows the resulting structure: the main diagonal is the zero-order reflection and the
+off-diagonals are the harmonics, whose envelope follows $|\sinc(h/K)|$; for $K=2$ the even harmonics vanish, which our
+implementation reproduces from~\cite[Fig.~5]{iudice2026}.
 
 Proposition~\ref{prop:sep} has five consequences, which together define the receiver.
 
@@ -211,7 +194,7 @@ Joint equalization collects all of it.
 
 \begin{corollary}[Harmonic tail]\label{cor:tail}
 From~\eqref{eq:t}, $|t_{q,s}[h]|\le|\sinc(h/K)|$, which decays as $1/|h|$, so the energy outside $|h|\le H$ decays as
-$1/H$. For $K=8$ and $D=0.75$ it is 3.4\%, 1.0\% and 0.32\% for $H=12$, 40 and 128 (Fig.~\ref{fig:mech}b). A model
+$1/H$. For $K=8$ and $D=0.75$ it is 3.4\%, 1.0\% and 0.32\% for $H=12$, 40 and 128 (Fig.~\ref{fig:coupling}c). A model
 truncated to $|h|\le12$ therefore has a normalized error floor of $10\log_{10}0.034=-14.7$\,dB, whatever its estimator.
 \end{corollary}
 
@@ -251,10 +234,18 @@ equal to its BS distance, tens to hundreds of nanoseconds; the latter costs 1.6/
 ignored (Table~\ref{tab:timing}).
 
 \begin{figure}[t]\centering
-\includegraphics[width=\columnwidth]{fig_mechanism.pdf}
-\caption{(a) Phase of the two states of the OpenRIS cell over the 100\,MHz carrier. (b) Fraction of the coupling energy
-outside $|h|\le H$ for an ideal switch, $K=8$, $D=0.75$ (Corollary~\ref{cor:tail}).}\label{fig:mech}
+\includegraphics[width=\columnwidth]{fig_element.pdf}
+\caption{The OpenRIS cell in the format of~\cite[Figs.~3--4]{iudice2026}: single-pole model~\eqref{eq:gamma} with the
+parameters and common phase $-10.7^\circ$ of~\cite[Tab.~I]{iudice2026}. Light band: the 100\,MHz channel; dark strip:
+the 7.7\,MHz band of the $M=256$ comparisons.}\label{fig:element}
 \end{figure}
+
+\begin{figure*}[t]\centering
+\includegraphics[width=\textwidth]{fig_coupling.pdf}
+\caption{Coupling-matrix magnitude for one element with ideal single-tap channels, $M=64$, OpenRIS cell: (a) our
+implementation of~\eqref{eq:io} for the setting of~\cite[Fig.~5]{iudice2026} ($K=2$), reproducing it; (b) the setting of
+this paper ($K=8$, $D=0.75$). (c) Fraction of the coupling energy outside $|h|\le H$ (Corollary~\ref{cor:tail}).}\label{fig:coupling}
+\end{figure*}
 
 \section{The Receiver}\label{sec:receiver}
 \subsection{Low-rank model with a delay prior}

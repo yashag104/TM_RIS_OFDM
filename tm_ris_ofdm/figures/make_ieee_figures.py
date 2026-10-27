@@ -216,26 +216,103 @@ def fig_std_alpha():
 
 
 def fig_std_pilots():
+    """NMSE vs pilot symbols in the style of Tang et al. Figs. 6-8: linear MSE on a logarithmic axis."""
     s = load("week12_standard_curves")["S3"]; e = s["estimators"]; nps = np.array(s["Np"])
     nm = np.array(s["nmse"], float)
-    fig, ax = plt.subplots(figsize=(3.5, 1.9))
+    fig, ax = plt.subplots(figsize=(3.5, 2.2))
     rows = [r for r in STD if r[0] in e] + [("bemall", r"CE-BEM, all $h$", C2, "s", "-", None)]
     rows = [r for r in rows if r[0] != "bemall_Np32"]
     for key, lab, col, mk, ls, mfc in rows:
         if key not in e:
             continue
-        y = 10 * np.log10(np.nanmean(nm[:, e.index(key), :], 0)); ok = np.isfinite(y)
+        y = np.nanmean(nm[:, e.index(key), :], 0); ok = np.isfinite(y)
         _std_plot(ax, nps[ok], y[ok], key, lab, col, mk, ls, mfc)
-    ax.set_xscale("log", base=2); ax.set_xticks(nps, [str(n) for n in nps])
-    ax.set_xlabel("pilot symbols $N_p$"); ax.set_ylabel("NMSE (dB)")
+    ax.set_xscale("log", base=2); ax.set_yscale("log"); ax.set_xticks(nps, [str(n) for n in nps])
+    ax.set_ylim(1e-5, 2); ax.grid(True, which="both", lw=0.4)
+    ax.set_xlabel("pilot symbols $N_p$"); ax.set_ylabel("channel NMSE")
     fig.legend(*ax.get_legend_handles_labels(), loc="lower center", ncol=3, frameon=False, fontsize=6.3,
-               bbox_to_anchor=(0.5, -0.04))
-    fig.tight_layout(rect=(0, 0.2, 1, 1))
+               bbox_to_anchor=(0.5, -0.03))
+    fig.tight_layout(rect=(0, 0.17, 1, 1))
     save(fig, "fig_std_pilots")
+
+
+# ---------------------------------------------------------------------------
+# Element response in the format of Iudice et al. Figs. 2-4 (single-pole model, Table I parameters)
+# ---------------------------------------------------------------------------
+F0 = np.array([3.471e9, 3.710e9]); XR = 2 * np.pi * np.array([97.5e6, 128.4e6]); XI = 2 * np.pi * np.array([8.9e6, 9.0e6])
+PHI0 = np.radians(-10.7)                      # common renormalization phase of Iudice Table I (Fig. 3)
+
+
+def gam(f, k):
+    return -1 + 2 * XR[k] / (1j * 2 * np.pi * (f - F0[k]) + XR[k] + XI[k])
+
+
+def fig_element():
+    f = np.linspace(3.3e9, 3.8e9, 1001); fg = f / 1e9
+    g = [np.exp(1j * PHI0) * gam(f, k) for k in (0, 1)]
+    fig, ax = plt.subplots(3, 1, figsize=(3.5, 3.9), sharex=True)
+    lab = [r"$c_0$ (4 V), state 1", r"$c_1$ (19.25 V), state 2"]
+    for k, (col, ls) in enumerate(((C1, "-"), (C2, "--"))):
+        ax[0].plot(fg, 20 * np.log10(np.abs(g[k])), color=col, ls=ls, label=lab[k])
+        ax[1].plot(fg, np.degrees(np.angle(g[k])), color=col, ls=ls)
+    dphi = np.degrees(np.angle(g[0] / g[1])) % 360
+    ax[2].plot(fg, dphi, color=INK, lw=1.2)
+    ax[2].axhline(180, color=C3, ls=":", lw=1.2, label=r"ideal $180^\circ$")
+    for a in ax:
+        a.axvspan(3.544, 3.644, color=GRID, alpha=0.9, lw=0, zorder=0)
+        a.axvspan(3.594 - 0.00384, 3.594 + 0.00384, color=NEUTRAL, alpha=0.45, lw=0, zorder=0)
+    ax[0].set_ylabel(r"$|\Gamma|$ (dB)"); ax[0].set_ylim(-2.5, 0.05)
+    ax[1].set_ylabel(r"$\angle\Gamma$ (deg)"); ax[1].set_yticks([-150, -100, -50, 0, 50, 100, 150])
+    ax[2].set_ylabel("phase diff. (deg)"); ax[2].set_xlabel("frequency (GHz)"); ax[2].set_xlim(3.3, 3.8)
+    ax[0].legend(frameon=False, loc="lower left", fontsize=6.5)
+    ax[2].legend(frameon=False, loc="upper right", fontsize=6.5)
+    for a, t in zip(ax, ["(a) reflection magnitude", "(b) reflection phase", "(c) phase difference of the states"]):
+        a.set_title(t, loc="left", fontsize=7.5)
+    fig.tight_layout(h_pad=0.3)
+    save(fig, "fig_element")
+
+
+# ---------------------------------------------------------------------------
+# Coupling-matrix structure: reproduction of Iudice et al. Fig. 5 next to this paper's configuration
+# ---------------------------------------------------------------------------
+def fig_coupling():
+    d = load("fig_coupling_data"); M = d["M"]
+    mats = [np.array(d[k]["re"]) + 1j * np.array(d[k]["im"]) for k in ("iudice_K2", "ours_K8")]
+    fig = plt.figure(figsize=(7.16, 2.2))
+    gs = fig.add_gridspec(1, 5, width_ratios=[1, 1, 0.05, 0.62, 1.25], wspace=0.12)
+    ax = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[0, 4])]
+    cax = fig.add_subplot(gs[0, 2])
+    titles = [r"(a) $K=2$ (Iudice et al., Fig. 5)", r"(b) $K=8$, $D=0.75$ (this paper)"]
+    for a, Hm, t in zip(ax[:2], mats, titles):
+        im = a.imshow(20 * np.log10(np.abs(Hm) + 1e-12), cmap="viridis", vmin=-60, vmax=0, origin="upper",
+                      interpolation="nearest")
+        a.set_xlabel("input subcarrier $m$"); a.set_ylabel(r"output tone $\bar m$"); a.set_title(t, loc="left", fontsize=7.5)
+        a.set_xticks([0, 20, 40, 60]); a.set_yticks([0, 20, 40, 60]); a.grid(False)
+    ax[1].set_ylabel(""); ax[1].set_yticklabels([])
+    cb = fig.colorbar(im, cax=cax); cb.set_label(r"$|H_{\bar m m}|$ (dB)", fontsize=7)
+    K, h = 8, np.arange(-20000, 20001)
+    sq = np.array([1] * 6 + [2] * 2)
+    def t(st):
+        k = np.where(sq == st)[0]
+        return np.exp(-1j * np.pi * h / K) / K * np.sinc(h / K) * np.exp(-2j * np.pi * np.outer(h, k) / K).sum(1)
+    e = np.abs(t(1) - t(2)) ** 2
+    H = np.unique(np.round(np.logspace(0, np.log10(1000), 60)).astype(int))
+    out = np.array([1 - e[np.abs(h) <= x].sum() for x in H])
+    ax[2].loglog(H, 100 * out, color=C1)
+    for x in (12, 40, 128):
+        y = 100 * (1 - e[np.abs(h) <= x].sum())
+        ax[2].plot([x], [y], "o", color=C1, mec="white", mew=0.6)
+        ax[2].annotate(f"{y:.1f}%", (x, y), textcoords="offset points", xytext=(3, 3), fontsize=6.5, color=INK)
+    ax[2].set_xlabel(r"harmonics kept, $|h|\leq H$"); ax[2].set_ylabel("energy outside (%)")
+    ax[2].set_title(r"(c) harmonic tail, $K=8$, $D=0.75$", loc="left", fontsize=7.5)
+    fig.subplots_adjust(left=0.065, right=0.99, bottom=0.2, top=0.88)
+    save(fig, "fig_coupling")
 
 
 if __name__ == "__main__":
     import sys
+    if "struct" in sys.argv:
+        fig_element(); fig_coupling(); sys.exit()
     if "std" in sys.argv:
         fig_std_snr(); fig_std_alpha(); fig_std_pilots(); sys.exit()
     fig_mechanism()
