@@ -10,9 +10,11 @@
 %     bem               CE-BEM, |h| <= 8, two-hop DPSS prior (as week11_fullband30)
 %   Np = 1, 2, 4 pilot symbols on the same channels; 16-QAM at 20 dB and 64-QAM at 28 dB; 30 new channels (rng 13500+).
 %   Shared-path channel (LoS + 5 paths, K = 10 dB, 30 ns rms). Saves after every channel.
+%   Set trials (and outname) to run a subset of channels in a separate process; draws are identical per channel.
 
 if ~exist('ntrial', 'var'), ntrial = 30; end
 if ~exist('outname', 'var'), outname = 'week13_fullband'; end
+if ~exist('trials', 'var'), trials = 1:ntrial; end              % channel subset (seeds are per channel)
 here = fileparts(mfilename('fullpath')); out = fullfile(here, '..', 'results');
 P = params_openris(); fc = 3.594e9; df = 30e3;
 M = 3276; bins = -M/2:M/2-1; evalb = round(M/4)+1:round(3*M/4); f = fc + bins(:)*df;
@@ -30,9 +32,9 @@ names = {'onetap', 'true', 'ours', 'flatcal', 'flatest', 'genie', 'ideal', 'bem'
 cols = evalb(round(linspace(1, numel(evalb), 48))); E = zeros(M, numel(cols)); E(sub2ind(size(E), cols, 1:numel(cols))) = 1;
 fp = fullfile(out, [outname '.json']);
 R = struct('M', M, 'L', L, 'L2', L2, 'rank', r, 'Np', Nps, 'names', {names}, 'cfg', {cfg});
-ser = nan(ntrial, numel(names), numel(Nps), size(cfg, 1)); nm = ser;
-for t = 1:ntrial
-    rng(13500 + t);
+ser = nan(numel(trials), numel(names), numel(Nps), size(cfg, 1)); nm = ser;
+for it = 1:numel(trials)
+    t = trials(it); rng(13500 + t);
     [As, Ad] = phys_channel(Q, bins, df, fc, popt);
     op = fast_coupling(bins, fc, df, seqs, As, Ad, P); HE = op.H(E);
     Pc = mean(sum(abs(HE).^2, 1));
@@ -56,13 +58,13 @@ for t = 1:ntrial
             c = est_bem(Yp, S, F2, lam2, s2, -Qb:Qb); ops{8} = bem_op(F2, c, -Qb:Qb);
             for e = 1:numel(names)
                 if e == 1, z = Yd ./ onetap_diag(op, M); else, z = cg_mmse(ops{e}, Yd, s2, nit_cg); end
-                ser(t, e, ip, ic) = mean(qamdemod_(z(evalb,:), Mq) ~= d(evalb,:), 'all');
-                if e >= 2, nm(t, e, ip, ic) = norm(ops{e}.H(E) - HE, 'fro')^2 / norm(HE, 'fro')^2; end
+                ser(it, e, ip, ic) = mean(qamdemod_(z(evalb,:), Mq) ~= d(evalb,:), 'all');
+                if e >= 2, nm(it, e, ip, ic) = norm(ops{e}.H(E) - HE, 'fro')^2 / norm(HE, 'fro')^2; end
             end
-            fprintf('ch %2d | %d dB %d-QAM Np %d | SER %s\n', t, cfg{ic,1}, Mq, Np, sprintf('%.3g ', ser(t, :, ip, ic)));
+            fprintf('ch %2d | %d dB %d-QAM Np %d | SER %s\n', t, cfg{ic,1}, Mq, Np, sprintf('%.3g ', ser(it, :, ip, ic)));
         end
     end
-    R.ser = ser(1:t,:,:,:); R.nmse = nm(1:t,:,:,:);
+    R.trials = trials(1:it); R.ser = ser(1:it,:,:,:); R.nmse = nm(1:it,:,:,:);
     fid = fopen(fp, 'w'); fprintf(fid, '%s', jsonencode(R)); fclose(fid);
 end
 fprintf('done\n');
