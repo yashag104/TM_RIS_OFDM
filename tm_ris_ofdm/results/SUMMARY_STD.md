@@ -57,7 +57,7 @@ At 30 dB, neither perfect CSI nor ours made an error in 3.1e5 bits.
 | CE-BEM, Np = 32 | 1.21 | 1.64 |
 
 **Honest finding: there is a crossover.**
-- Below about 15 dB, the estimators that know the element model are slightly better than ours. On the shared path the loss is 0.00–0.04 for them against 0.02–0.06 for ours. On TDL-C at 0 dB the NMSE is −13.7 dB for them against −7.2 dB for ours.
+- At low SNR, the estimators that know the element model are slightly better than ours (crossover 17–22 dB depending on the channel set; Step 12 adds the 22 dB shared-path case). On the shared path the loss is 0.00–0.04 for them against 0.02–0.06 for ours. On TDL-C at 0 dB the NMSE is −13.7 dB for them against −7.2 dB for ours.
 - From 20 dB upward ours is better, and the margin grows with SNR.
 - **Why:** ours fits a nonlinear (ALS) low-rank model. At very low SNR this costs a little against a linear LMMSE that has the right structure. At high SNR, the low rank (r = 8 against 256 unknowns) removes more noise than any element knowledge can.
 

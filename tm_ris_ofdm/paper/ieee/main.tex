@@ -448,9 +448,10 @@ are omitted).}\label{fig:snr}
 \includegraphics[width=0.9\textwidth]{fig_snr_legend.pdf}
 \caption{As Fig.~\ref{fig:snr} on the TDL-C channel (100\,ns), $N_p=4$.}\label{fig:snr-tdl}
 \end{figure*}
-Below 15\,dB the receivers that know the element model are slightly better than ours (by $\le0.02$\,bit/s/Hz here, $\le0.06$ on TDL-C), since a
-linear LMMSE with the right structure needs no nonlinear fit. From 20\,dB the order reverses and the gaps grow: at 20/30\,dB
-ours loses 0.08/0.17\,bit/s/Hz, the exact-element LMMSE 0.10/0.36, the 20\,MHz-mismatched model 0.13/0.56, CE-BEM with 16
+At low SNR the receivers that know the element model are slightly better than ours (by $\le0.03$\,bit/s/Hz on the shared
+path, $\le0.06$ on TDL-C), since a linear LMMSE with the right structure needs no nonlinear fit. The order reverses
+between 17 and 22\,dB, depending on the channel set (22\,dB for the shared-path channels of Fig.~\ref{fig:snr}, 17\,dB for
+TDL-C), and the gaps then grow. On the channels of the original 0--30\,dB comparison, at 20/30\,dB ours loses 0.08/0.17\,bit/s/Hz, the exact-element LMMSE 0.10/0.36, the 20\,MHz-mismatched model 0.13/0.56, CE-BEM with 16
 times our pilots 0.44/0.57, the ideal-element LMMSE 0.50/2.32 and OMP 4.1/7.5. Ours beats the exact-element LMMSE by
 having fewer unknowns (rank $r=8$ against $L^2=256$), not by knowing more. On TDL-C ($N_p=4$) the 20/30\,dB losses are
 0.20/0.74 (ours), 0.26/1.02 (exact element), 0.63/2.55 (ideal element) and 1.21/1.64 (CE-BEM, $N_p=32$). Figs.~\ref{fig:snr} and~\ref{fig:snr-tdl} show 10--30\,dB in 2\,dB steps on a separate set of channels.
@@ -653,7 +654,7 @@ deployment distribution is better, a prior learned elsewhere can be much worse, 
 estimates keeps most of the gain without ground truth. It decodes within 0.14\,dB of perfect CSI. Its
 limits are stated above: the receiver must know every panel's pattern (A1); delay spreads whose cascade exceeds the CP
 are out of scope (A2); at 120\,km/h on TDL channels pilot overhead and estimate ageing leave 46--66\% of the
-perfect-CSI rate; below about 15\,dB a receiver given the element model is marginally better (by $\le0.06$\,bit/s/Hz); the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
+perfect-CSI rate; below about 17--22\,dB a receiver given the element model is marginally better (by $\le0.06$\,bit/s/Hz); the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
 simulation with one published cell and no mutual coupling. Over-the-air validation with a real time-modulated surface is
 the next step.
 
