@@ -47,10 +47,13 @@ From this separation we build, to our knowledge, the first pilot-based receiver 
 estimator that needs no element model, a blind estimator of the RIS clock offset that rests on the fact that an
 offset is exactly an opposite delay of the two hops, and an exact matrix-free equalizer. In pre-registered tests
 with 30 channels per point, the receiver comes within 0.1\,bit/s/Hz of perfect channel knowledge with two pilot
-symbols on a shared-path channel and needs four to eight on 3GPP TDL-C. At 20 and 30\,dB it beats every estimator
-that, like it, needs no training data, on every channel and pilot count: an ideal-element estimator with the same prior
-and basis-expansion estimators with up to all harmonics and 32 pilot symbols. The ideal-element estimator matches ours
-when the elements are ideal and degrades as they become less ideal, while ours does not. An LMMSE whose prior is learned
+symbols on a shared-path channel and needs four to eight on 3GPP TDL-C. At 20 and 30\,dB it is within 0.02\,bit/s/Hz of, or better than,
+every estimator that needs no training data on both channel families: element-model estimators with an ideal, a
+flat-calibrated or the exact element, a sparse estimator that uses the switching kernels, per-state static pilots, and
+basis-expansion estimators with up to all harmonics and 32 pilot symbols. Over a 7.7\,MHz band two calibrated scalars per
+state make an element-model estimator as good as one given the exact element; ours matches it without calibration and is
+better at 30\,dB (by 0.05 and 0.24\,bit/s/Hz) because of its low rank. Over the full 98\,MHz band, where the element is
+dispersive, the calibrated estimators have 1.5 times our symbol error rate at 28\,dB, and one pilot symbol suffices. An LMMSE whose prior is learned
 from 300 channels of the test distribution is better than ours, but trained on a different delay spread it is worse by
 up to 0.95\,bit/s/Hz; a prior learned from our own 8-pilot estimates, with no true channels and no element model, keeps
 most of the learned gain. Our receiver decodes coded blocks within 0.14\,dB of perfect
@@ -93,8 +96,9 @@ opposite delay of the two hops (Proposition~\ref{prop:offset}), and we identify 
 (Proposition~\ref{prop:phys}). This explains why a wrong offset overfits the pilots, and it leads to an estimator of the
 offset and the delay reference by Bayesian evidence (Algorithm~\ref{alg:offset}).
 \item \emph{A pre-registered evaluation}: pass/fail criteria fixed before each run, 30 channels per point, paired
-confidence intervals, settings chosen on channels disjoint from the reported ones, the strongest model-based and
-learned baselines we could build, and failures reported, including where a learned prior beats ours.
+confidence intervals, settings chosen on channels disjoint from the reported ones, the strongest model-based,
+structure-aware and learned baselines we could build (including a calibrated element model), ablations and a
+hyperparameter sensitivity study, and failures reported, including where a learned prior beats ours.
 \end{enumerate}
 We adopt and do not claim: the DPSS delay basis~\cite{slepian1978,zemen2005}, low-rank RIS channel
 models~\cite{wang2020compressed}, matrix-free iterative equalization~\cite{hrycak2010} (exact here rather than a BEM
@@ -314,9 +318,16 @@ about $M\Delta f\tau_{\max}+1$ dimensions. We measured the effective degrees of 
 its LMMSE hat matrix: 19--27 at 20\,dB and 23--33 at 30\,dB for 1--8 pilot symbols, against 256--2048 observations. With
 two pilot symbols the achieved coupling-matrix error is 5--6\,dB above the Bayesian bound under the assumed prior
 ($-26.4$ vs $-32.4$\,dB at 20\,dB). The gap is not estimator suboptimality: real channels do not follow the
-uniform-delay prior. An earlier version kept the linear estimate whenever it fitted the pilots better. On fresh 3GPP
-channels this rule was an overfitting trap (chosen in 37--57\% of channels at 30\,dB, worse rate), so
-Algorithm~\ref{alg:est} always returns the low-rank estimate.
+uniform-delay prior. On TDL-C ($L=18$, $r=16$) the low-rank model has 1120 unknowns against 1024 observations from four
+pilot symbols, and the effective degrees of freedom of the linear stage are 58, 81 and 102 at 10, 20 and 30\,dB. The
+two-pilot figure is therefore a property of the shared-path family, which is nearly flat over a 7.7\,MHz band, not of
+the method; at the full band one pilot symbol suffices on it (Sec.~\ref{sec:res-full}). An earlier version kept the
+linear estimate whenever it fitted the pilots better. On fresh 3GPP channels this rule was an overfitting trap (chosen in
+37--57\% of channels at 30\,dB, worse rate), so Algorithm~\ref{alg:est} returns the low-rank estimate. The week-10 to
+week-12 runs behind Figs.~\ref{fig:snr}--\ref{fig:bler} and Tables~\ref{tab:learn} and~\ref{tab:overhead} still applied the
+rule; on 30 fresh channels per family it was never triggered on the shared path and changed the TDL-C loss by
+$+0.004\pm0.005$ / $+0.019\pm0.024$ at 20/30\,dB, so those results are those of Algorithm~\ref{alg:est} within their
+intervals.
 
 \subsection{Blind clock offset and delay reference (Algorithm~\ref{alg:offset})}\label{sec:timing}
 By Proposition~\ref{prop:offset} a candidate offset $d$ replaces each kernel by $\bm D_d\bm T_{g,s}\bm D_d^{*}$, and a
@@ -412,7 +423,14 @@ take, per channel, the best over all baselines and all three equalizers.
 \begin{itemize}
 \item \emph{One-tap}: today's OFDM receiver.
 \item \emph{Ideal-element LMMSE}: the strongest estimator that assumes the textbook element, $\bm H=(\bm T_1-\bm T_2)\circ
-(\bm F\bm C\bm F^{\T})$ with our prior.
+(\bm F\bm C\bm F^{\T})$ with our prior. It tests the $\pm1$ assumption.
+\item \emph{Flat-calibrated element LMMSE}: the same with per-state complex scalars, $\bm H=(g_1\bm T_1+g_2\bm T_2)\circ
+(\bm F\bm C\bm F^{\T})$, $g_s=\Gamma_s(f_c)$ (calibrated), or with $g_2/g_1$ estimated from the pilots through our
+element-free linear stage (\emph{flat-estimated}).
+\item \emph{Structure-aware baselines}: OMP over $\bm T_s\circ(\bm e(\tau_a)\bm e(\tau_b)^{\T})$ on a 32.6\,ns delay grid
+(it uses the known kernels); and \emph{per-state static pilots}, where the RIS holds each state during half of the pilot
+symbols, the diagonal channel $\bm h_s$ is estimated by LMMSE, and Proposition~\ref{prop:sep} is applied with the channel
+assumed flat over the harmonic span, $\bm H\approx\sum_s\bm T_s\diag\bm h_s$.
 \item \emph{CE-BEM}~\cite{tang2007}: $\bm H=\sum_{|h|\le H_b}\bm S_h\diag(\bm F_2\bm c_h)$ with up to all $2M-1$
 harmonics, solved matrix-free (equal to the dense solver to $7\cdot10^{-9}$); with all harmonics it is run from eight
 pilot symbols.
@@ -423,9 +441,10 @@ It is the Bayes-optimal linear estimator for the learned statistics, which a net
 error approaches for near-Gaussian channels, and it learns the element non-ideality from data (Sec.~\ref{sec:res-learn}).
 \end{itemize}
 \vspace{-1ex}
-Two references are not practical receivers but locate the methods between the extremes: the \emph{exact-element
+Three references are not practical receivers but locate the methods between the extremes: the \emph{exact-element
 LMMSE}, which is the ideal-element LMMSE given the true responses, $\bm H=(\bm T_1\diag\bm\Gamma_1+\bm T_2\diag\bm\Gamma_2)
-\circ(\bm F\bm C\bm F^{\T})$, and the same estimator with both resonances shifted by 5--20\,MHz (a mismatched model).
+\circ(\bm F\bm C\bm F^{\T})$; the same estimator with both resonances shifted by 5--20\,MHz (a mismatched model); and the
+\emph{exact element with low rank}, Algorithm~\ref{alg:est} given the true responses, the honest upper reference for ours.
 
 \subsection{Comparison with the strongest baselines}\label{sec:res-fair}
 \begin{figure*}[t]\centering
@@ -437,7 +456,8 @@ LMMSE}, which is the ideal-element LMMSE given the true responses, $\bm H=(\bm T
 \caption{Estimators versus SNR in the format of the CE-BEM paper~\cite{tang2007} (Figs.~10--11 there), shared-path
 channel, $N_p=2$ (CE-BEM with all harmonics: $N_p=32$), 30 new channels, SNR in 2\,dB steps. Loss is to perfect CSI with the
 residual-based robust MMSE; BER after unbiased MMSE ($7.7\cdot10^5$ / $1.5\cdot10^6$ bits per point; points with no errors
-are omitted).}\label{fig:snr}
+are omitted). At this bandwidth the flat-calibrated element LMMSE coincides with the exact-element curve to within
+0.02\,bit/s/Hz (Table~\ref{tab:struct}).}\label{fig:snr}
 \end{figure*}
 
 \begin{figure*}[t]\centering
@@ -474,6 +494,10 @@ ideal-element LMMSE is the exact model and matches ours (0.053 against 0.078 at 
 non-ideality grows, its loss rises past 0.3\,bit/s/Hz at $\alpha=0.5$ (20\,dB) and $\alpha=0.25$ (30\,dB), while ours stays at
 0.07--0.08 (0.15--0.18 at 30\,dB). An approximate element model is nearly as good as the exact one (the 5--20\,MHz
 mismatch costs $\le0.4$\,dB of NMSE at 20\,dB); assuming the ideal switch is what fails (Corollary~\ref{cor:nomodel}).
+Over this 7.7\,MHz band the element barely changes with frequency, so what $\alpha$ varies is the non-ideality
+($\Gamma_1\ne-\Gamma_2$, a static $\approx7.7^\circ$ phase error and 0.57\,dB imbalance), not dispersion: two calibrated
+scalars per state remove the failure entirely (Table~\ref{tab:struct}). Fig.~\ref{fig:alpha} therefore tests the $\pm1$
+assumption; dispersion is tested at the full band (Sec.~\ref{sec:res-full}).
 
 \begin{figure}[t]\centering
 \includegraphics[width=\columnwidth]{fig_std_pilots.pdf}
@@ -483,11 +507,48 @@ $N_p=8$.}\label{fig:pilots}
 Ours (Fig.~\ref{fig:pilots}) is the only estimator within 0.3\,bit/s/Hz with at most 32 pilot symbols: two on the shared-path channel
 ($0.07\pm0.02$ / $0.11\pm0.03$ at 20/30\,dB), four on TDL-C. Its NMSE falls about 3\,dB per doubling of $N_p$ ($-29.3$ to
 $-45.4$\,dB, $N_p=1$--32, 20\,dB); the ideal-element LMMSE saturates at $-24.6$\,dB and CE-BEM needs $N_p\ge8$.
-Paired per channel against the best model-based baseline on that channel (minimum over those baselines and all equalizers), ours gains
+Paired per channel against the best of the ideal-element, CE-BEM and OMP baselines on that channel (minimum over those baselines and all equalizers; these do not include a calibrated element, see Table~\ref{tab:struct}), ours gains
 $0.41\pm0.02$ / $2.16\pm0.04$\,bit/s/Hz at $N_p=2$ on the shared-path channel and $0.30\pm0.06$ / $1.14\pm0.25$ on TDL-C;
 at every $N_p$ from 2 to 32 the gain is 0.3--0.4 at 20\,dB and 0.5--2.2 at 30\,dB, with every interval above zero. A
 detector that estimates $G_{mm}$ adds at most 0.15 to any loss. One pre-registered sanity check failed: truncated CE-BEM
 loses rate from 20 to 30\,dB even with the oracle robust equalizer (its error sits on the missing harmonics).
+
+\begin{table}[t]\centering\footnotesize
+\caption{Calibrated and structure-aware baselines, ablations and sensitivity: loss to perfect CSI (bit/s/Hz) at
+20/30\,dB, 30 new channels per family ($N_p=2$ shared path, 4 TDL-C). ``Ours'' is Algorithm~\ref{alg:est}.}\label{tab:struct}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lcc@{}}\toprule
+Estimator & Shared path & TDL-C\\\midrule
+Ours & .070/.146 & .280/.977\\
+Exact element, low rank (reference) & .063/.126 & .258/.921\\
+Exact element, linear (reference) & .060/.203 & .325/1.23\\
+Flat-calibrated element & .059/.199 & .323/1.22\\
+Flat element, ratio estimated & .067/.255 & .359/1.48\\
+Ideal ($\pm1$) element & .478/2.28 & .680/2.69\\
+OMP with known kernels & .061/.187 & .317/1.38\\
+Per-state static pilots & .074/.521 & 1.44/4.07\\
+CE-BEM, all $h$, $N_p=32$ & .422/.552 & 1.20/1.68\\\midrule
+Ours, linear stage only & .094/.250 & .355/1.28\\
+Ours, delay-grid basis (no DPSS) & .077/.110 & .241/.768\\
+Ours, $\tau_{\max}\times0.5$ & .033/.065 & .306/1.46\\
+Ours, $\tau_{\max}\times2$ & .213/.356 & .663/2.08\\
+Ours, $r=4$ (shared) / 8 (TDL) & .065/.130 & .253/.985\\
+Ours, $r=16$ (shared) / 24 (TDL) & .094/.177 & .289/.999\\\bottomrule
+\end{tabular}
+\end{table}
+\emph{Calibrated and structure-aware baselines.} Table~\ref{tab:struct} (pre-registered) adds the baselines a skeptical
+reader would build. Two calibrated scalars per state close the whole gap between the ideal-element and the exact-element
+LMMSE over this band: the ideal-element estimator fails only through its $\pm1$ assumption. Ours matches the calibrated
+estimator at 20\,dB (0.070 against 0.059 on the shared path, 0.280 against 0.323 on TDL-C) and is better at 30\,dB, by
+$0.053\pm0.035$ (shared path) and 0.24 (TDL-C). The exact element with the same low rank is only 0.006--0.056 better than
+ours, so over a narrow band our advantage comes from the low rank, and not knowing the element costs little. OMP with the
+known kernels is competitive on the shared path; static pilots are good at low SNR there but floor, since the harmonic span
+is not flat, and fail on TDL-C. At 20 and 30\,dB on both families ours is within 0.02\,bit/s/Hz of the best of these
+practical estimators or better (pre-registered). The DPSS basis is not what makes it work: a plain delay grid with a flat
+prior does as well, and better on TDL-C. The rank is not critical ($\pm0.03$). The delay window is: our hyperparameters
+are prior knowledge per channel family, and a window twice too long costs 0.14--1.10\,bit/s/Hz, while half the window helps
+on the shared path and costs 0.48 on TDL-C at 30\,dB. Choosing $\tau_{\max}$ by evidence, as Algorithm~\ref{alg:offset}
+chooses the window start, is a natural extension that we have not tested.
 
 \subsection{Learning-based baseline and a self-trained prior}\label{sec:res-learn}
 \begin{table}[t]\centering\footnotesize
@@ -567,11 +628,23 @@ $N_p=1$: residual minus evidence & $1.49\pm0.56$ & $2.83\pm1.19$\\\bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Full band and coded link}
+\subsection{Full band and coded link}\label{sec:res-full}
 At the full band ($M=3276$, 30 channels) the SER with two pilot symbols is 1.10 [1.06, 1.15] times the perfect-CSI SER
 at 20\,dB with 16-QAM and 1.37 [1.18, 1.86] times at 28\,dB with 64-QAM (95\% clustered-bootstrap intervals). One
 decision-directed pass brings these to 1.05 and 1.12. CE-BEM ($|h|\le8$) is 18 and 32 times worse; the one-tap
-receiver's SER is 0.84 and 0.96. For the coded link (a rate-1/2 convolutional code, 16-QAM,
+receiver's SER is 0.84 and 0.96.
+
+\emph{Element-model baselines where the element is dispersive.} Across 98\,MHz each state's phase drifts by about
+47$^\circ$ and $\Gamma_2/\Gamma_1$ varies by up to $11.5^\circ$ and $\pm7$\%. On 30 new channels (pre-registered),
+matrix-free, the flat-calibrated, flat-estimated, exact-element (linear) and ideal-element LMMSEs have 1.49 [1.21, 2.27],
+1.59 [1.26, 2.46], 1.67 [1.31, 2.65] and 2.10 [1.59, 3.46] times our SER at 28\,dB with 64-QAM and two pilot symbols
+(paired bootstrap), and 1.09--1.19 times at 20\,dB with 16-QAM. One pilot symbol suffices: our SER is 1.10, 1.06 and 1.03
+times the perfect-CSI SER with one, two and four pilot symbols at 20\,dB. The mechanism is again mainly the low rank. The
+exact-element LMMSE is no better than the flat-calibrated one, because with our 0.2\,$\mu$s delay prior every linear
+estimator floors near $-34$\,dB NMSE even at 60\,dB SNR (the channel's energy sits in the DPSS components at the window
+edge, where the prior variance falls off). Dispersion alone limits a calibrated flat model to $-36$ to $-40$\,dB, below
+that floor, so it binds only at high SNR or with a better-matched prior; ours reaches $-37.5$\,dB at 28\,dB with four
+pilot symbols. For the coded link (a rate-1/2 convolutional code, 16-QAM,
 max-log LLRs from each receiver's own estimate, and 2000 blocks per point) the proposed receiver (Fig.~\ref{fig:bler}) crosses 10\% block
 error rate (BLER) at 8.51\,dB against 8.37\,dB with perfect CSI, a gap of $0.14$\,dB [0.09, 0.20]. One-tap never
 decodes, and truncated CE-BEM floors at 34\%.
@@ -647,14 +720,16 @@ the pattern must be kept secret.
 Grouping the harmonic expansion of a dispersive TM-RIS by element state separates the coupling exactly into a part the
 receiver knows, the switching timing, and a part it learns, the propagation together with the element dispersion. A
 receiver built on this separation needs no element model. It estimates the coupling from two to eight pilot symbols,
-finds the RIS clock offset by itself, and equalizes without forming the coupling matrix. In pre-registered tests at 20--30\,dB it beats
-every estimator that needs no training data, on every channel and pilot count; with ideal elements the literature's
-estimator matches it and falls behind only as the elements become less ideal. A prior learned from channels of the
+finds the RIS clock offset by itself, and equalizes without forming the coupling matrix. In pre-registered tests at 20--30\,dB it is within
+0.02\,bit/s/Hz of, or better than, every estimator that needs no training data, including element-model estimators with a
+calibrated element. Over a narrow band two calibrated scalars per state make an element model as good as the exact one,
+and our advantage there comes from the low rank; over the full band the calibrated estimators have 1.5 times our symbol
+error rate at 28\,dB, again mainly because of the low rank. A prior learned from channels of the
 deployment distribution is better, a prior learned elsewhere can be much worse, and a prior learned from our own
 estimates keeps most of the gain without ground truth. It decodes within 0.14\,dB of perfect CSI. Its
 limits are stated above: the receiver must know every panel's pattern (A1); delay spreads whose cascade exceeds the CP
 are out of scope (A2); at 120\,km/h on TDL channels pilot overhead and estimate ageing leave 46--66\% of the
-perfect-CSI rate; below about 17--22\,dB a receiver given the element model is marginally better (by $\le0.06$\,bit/s/Hz); the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
+perfect-CSI rate; below about 17--22\,dB a receiver given the element model is marginally better (by $\le0.06$\,bit/s/Hz); the delay window $\tau_{\max}$ must suit the channel family (twice too long costs up to 1.1\,bit/s/Hz); the stated requirements on jitter, CFO, phase noise and emission apply; and the validation is by
 simulation with one published cell and no mutual coupling. Over-the-air validation with a real time-modulated surface is
 the next step.
 

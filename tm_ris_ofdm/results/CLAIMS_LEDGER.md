@@ -42,3 +42,13 @@ corrected; WITHDRAWN = no longer claimed; OPEN = test pending (workstream in bra
 | LOWSNR-r | SNR-adaptive rank | helps 0-15 dB but worse by 0.034 at 20 dB TDL-C | week12_c6_lowsnr P1 | FAIL (frozen rank stays) | |
 | C-claim | "beats every baseline we could build" | | | WITHDRAWN -> "every estimator needing no training data" | |
 | STD-4 | 10–40 dB comparison in Tang format: ours best NMSE at all SNR and < 0.3 loss to 40 dB on shared path; on TDL-C floors (2.3 at 40 dB) and CE-BEM with 8× pilots has lower BER from 35 dB | week12_snr_tang.m → week12_snr_tang.json; analyse_snr_tang.py | OK (negative part reported) |
+| C13-1 | Ours beats a flat-calibrated element LMMSE at 30 dB, M = 256 | +0.053 ± 0.035 (shared), +0.24 (TDL-C); flatcal better at 20 dB shared (0.059 vs 0.070) | week13_review_baselines | OK (narrow) | flatcal closes 100% of the ideal-to-genie gap at 7.7 MHz |
+| C13-2 | Ours within 0.02 of the best practical estimator (flatcal, flatest, omp_T, static, linear, ideal, CE-BEM) | all 4 cases | week13_review_baselines | OK | |
+| C13-S | Hyperparameter sensitivity | rank robust (±0.03); tau_max ×2 costs 0.14–1.10; ×0.5 costs 0.48 on TDL-C 30 dB | week13_review_baselines | FAIL (stated as a limitation) | |
+| C13-3 | Full band: calibrated flat baselines worse than ours | SER ratio 1.49 [1.21, 2.27] (flatcal), 1.59 (flatest), 28 dB 64-QAM Np 2 | week13_fullband (+parts) | OK, mechanism NARROWED | gain mainly from low rank; -34 dB delay-prior floor masks the -36..-40 dB dispersion floor |
+| C13-4 | Full-band pilots | Np = 1 suffices (SER ratio 1.10 at 20 dB 16-QAM) | week13_fullband | OK | |
+| C-best | "Beats every estimator needing no training data" | replaced by "within 0.02 of, or better than" | week13 | NARROWED 2026-10-28 | calibrated element model added |
+| C-pair | Paired gain 0.41/2.16 over the best model-based baseline | holds against ideal-element, CE-BEM, OMP only | week10_fair_baselines | NARROWED 2026-10-28 | against flatcal: -0.011/+0.053 (shared) |
+| C-2pilot | "Two pilots suffice" | property of the shared-path family; TDL-C needs 4 (eff. dof 58/81/102); full band 1 | week13 | NARROWED 2026-10-28 | |
+| C-fallback | "Algorithm 1 always returns the low-rank estimate" | runs used est_general with the fallback; effect +0.004/+0.019 (n.s.) | week13_review_baselines | FIXED (text states it) | |
+| C-DPSS | DPSS basis essential | delay grid with flat prior equal or better | week13_review_baselines | WITHDRAWN as a claim | DPSS kept as adopted basis |
