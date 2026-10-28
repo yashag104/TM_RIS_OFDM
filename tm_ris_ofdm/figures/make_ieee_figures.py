@@ -324,7 +324,7 @@ def fig_element():
     fig, ax = axis()
     ax.plot(fg, np.degrees(np.angle(g[0] / g[1])) % 360, color=INK, lw=1.2, label="OpenRIS cell")
     ax.axhline(180, color=C3, ls=":", lw=1.2, label=r"ideal $180^\circ$")
-    ax.set_ylabel("phase difference (deg)"); ax.legend(frameon=False, loc="lower left", fontsize=6.5)
+    ax.set_ylabel("phase difference (deg)"); ax.legend(frameon=False, loc="upper center", fontsize=6.5)
     fig.tight_layout(); save(fig, "fig_element_dphase")
 
 
