@@ -371,40 +371,105 @@ shared path), but that has \emph{not} been tested on TDL-C at high SNR: say ``ex
 \includegraphics[width=0.48\textwidth]{fig_alpha_30dB.pdf}\\[2pt]
 \includegraphics[width=0.7\textwidth]{fig_alpha_legend.pdf}
 \end{center}
-\textbf{What $\alpha$ means:} $\bm H_\alpha=(1-\alpha)\bm H_{\rm ideal}+\alpha\bm H_{\rm OpenRIS}$, valid because $\bm H$ is
-linear in $\Gamma$. At $\alpha=0$ the elements are perfect $\pm1$ switches; at $\alpha=1$ they are the real cell. Shared path,
-2 pilots, 30 channels, 95\% intervals; (a) 20\,dB, (b) 30\,dB. The y-axis is the loss to perfect CSI (lower is better);
-dashed line 0.3\,bit/s/Hz.
+
+\paragraph{The question it answers.} Earlier TM-RIS papers assume each element is a perfect switch: state~1 reflects
+with $+1$, state~2 with $-1$. The real OpenRIS cell does not: its two states are not exact opposites (a static
+$\approx7.7^\circ$ phase error and a 0.57\,dB magnitude imbalance at the carrier). Fig.~6 asks: \emph{how much does each
+receiver suffer as the element moves from the textbook switch to the real cell?}
+
+\paragraph{What $\alpha$ is.} We cannot build an element ``halfway'' between ideal and real, but we do not need to. The
+channel matrix is linear in the reflection coefficients (Proposition~1: $\Gamma_s$ appears once, as a factor), so blending
+the coefficients blends the channels:
+\[
+\bm H_\alpha=(1-\alpha)\,\bm H_{\rm ideal}+\alpha\,\bm H_{\rm OpenRIS},\qquad
+\Gamma_{s,\alpha}(f)=(1-\alpha)(\pm1)+\alpha\,\Gamma_{s,\rm OpenRIS}(f).
+\]
+$\alpha=0$: perfect $\pm1$ switch (the assumption of the literature). $\alpha=1$: the real cell. In between: a
+progressively less ideal element. Everything else (propagation, pilots, noise) is identical along the axis; the same
+30 channels are reused at every $\alpha$, so the curves differ only because of the element.
+
+\paragraph{How to read the axes.} x-axis: $\alpha$. y-axis (log scale): \emph{rate loss to perfect CSI}, i.e.\ how
+many bit/s/Hz the receiver gives up because it estimated $\bm H$ instead of knowing it. Lower is better; 0 is perfect.
+The dashed line at 0.3\,bit/s/Hz is our ``good enough'' threshold. Error bars are 95\% intervals over 30 channels.
+Shared-path channel, 2 pilot symbols; (a) 20\,dB, (b) 30\,dB.
+
+\paragraph{The three curves (two more are off the chart).}
+\begin{itemize}
+\item \textbf{Ours} (blue): never assumes anything about the element. It learns $\bm v_s=\Gamma_s\odot\bm a^{\rm s}$, the
+element response \emph{multiplied} by the propagation, as one unknown (Corollary~1). So a different element is simply a
+different $\bm v_s$, which it estimates anyway.
+\item \textbf{Ideal-element LMMSE} (green solid): the literature's receiver. It builds $\bm H$ with $\Gamma_1=+1$,
+$\Gamma_2=-1$ hard-wired, and estimates only the propagation.
+\item \textbf{Exact-element LMMSE} (green dashed): the same receiver, but handed the \emph{true} $\Gamma_s(f)$ at every
+$\alpha$. Not practical (nobody knows the exact response); it shows what the linear approach can do with perfect element
+knowledge.
+\item One-tap and CE-BEM ($|h|\le128$) lose more than 6\,bit/s/Hz at every $\alpha$, far above the plot.
+\end{itemize}
+
+\paragraph{The numbers.}
 \begin{center}\small
-\begin{tabular}{lcccl}
+\begin{tabular}{lcccccc}
 \toprule
-Curve (20\,dB) & $\alpha=0$ & $\alpha=0.5$ & $\alpha=1$ & behaviour\\
+Loss (bit/s/Hz) & $\alpha=0$ & 0.1 & 0.25 & 0.5 & 0.75 & 1\\
 \midrule
-\textcolor{cA}{Ours} (blue, filled circles) & 0.078 & 0.076 & 0.073 & \textbf{flat}\\
-Ideal-element LMMSE (green solid) & 0.053 & 0.30 & 0.47 & good only at $\alpha=0$\\
-Exact-element LMMSE (green dashed) & 0.053 & 0.053 & 0.053 & flat (told the truth)\\
+\multicolumn{7}{l}{\emph{20 dB}}\\
+\textcolor{cA}{Ours} & 0.078 & 0.078 & 0.078 & 0.076 & 0.072 & 0.073\\
+Ideal-element LMMSE & 0.053 & 0.058 & 0.098 & \textbf{0.303} & 0.474 & 0.471\\
+Exact-element LMMSE & 0.053 & 0.053 & 0.053 & 0.053 & 0.052 & 0.053\\
+\midrule
+\multicolumn{7}{l}{\emph{30 dB}}\\
+\textcolor{cA}{Ours} & 0.180 & 0.176 & 0.177 & 0.161 & 0.154 & 0.150\\
+Ideal-element LMMSE & 0.208 & 0.257 & \textbf{0.603} & 1.70 & 2.28 & 2.27\\
+Exact-element LMMSE & 0.208 & 0.207 & 0.206 & 0.204 & 0.200 & 0.200\\
 \bottomrule
 \end{tabular}
 \end{center}
-At 30\,dB the pattern is stronger: ours stays at 0.15--0.18, the ideal-element estimator climbs to 2.3 (crossing 0.3 at
-$\alpha=0.25$).
+(Bold: where the ideal-element receiver first crosses the 0.3 line.)
+
+\paragraph{How to read it, point by point.}
 \begin{enumerate}
-\item \textbf{With ideal elements (left edge), everyone is fine.} The literature's estimator is correct there and even
-slightly better than ours (0.053 vs 0.078, within the error bars). So it is a strong baseline, not a weak one.
-\item \textbf{As the element becomes realistic, only the literature's estimator degrades}, because it assumes the two
-states are exact opposites and the real cell's are not.
-\item \textbf{Ours does not care what the element is}: it never uses an element model (Corollary~1).
-\item \textbf{The exact-element reference} matches ours, but only because it is handed the true element response.
+\item \textbf{Left edge ($\alpha=0$): everyone is fine.} With a perfect switch, the literature's model is exactly
+right, so its receiver is the correct one, and at 20\,dB it is even slightly better than ours (0.053 vs 0.078, inside the
+error bars). This matters: it shows the baseline is strong, not a straw man.
+\item \textbf{Moving right: only the literature's receiver degrades.} Its model says the states are exact opposites; the
+further the element is from that, the more wrong its $\bm H$ is. At 20\,dB it crosses 0.3 at $\alpha=0.5$ and ends at
+0.47 (6.5$\times$ ours). At 30\,dB the damage is bigger (noise no longer hides model error): it crosses 0.3 already at
+$\alpha=0.25$ and ends at 2.27 bit/s/Hz (15$\times$ ours).
+\item \textbf{Ours is flat.} 0.072--0.078 at 20\,dB, 0.15--0.18 at 30\,dB, whatever the element. (The slight downward drift towards $\alpha=1$ is
+inside the error bars; read it as flat.)
+\item \textbf{The exact-element reference is also flat}, but only because it is told the truth. At 20\,dB it is slightly
+better than ours; at 30\,dB ours is \emph{better} (0.15 vs 0.20). That second fact is the low-rank model at work: the
+linear estimator, even with the right element, has too many unknowns for 2 pilots at high SNR.
 \end{enumerate}
+
+\begin{warnbox}
+\textbf{Update after review round 2 (Step 13). This changes how Fig.~6 must be described.}\\[2pt]
+The reviewer asked: is the failure caused by \emph{dispersion} (the element changing with frequency), or only by the
+$\pm1$ assumption? We tested it with a \emph{flat-calibrated} receiver: the ideal-element LMMSE given just two measured
+complex numbers, $\Gamma_1(f_c)$ and $\Gamma_2(f_c)$, used at every subcarrier. At $\alpha=1$ it loses
+\textbf{0.059 / 0.199} bit/s/Hz at 20/30\,dB, i.e.\ it lands on the exact-element curve and closes 100\% of the gap.
+Ours on the same channels: 0.070 / 0.146.
+\begin{itemize}
+\item So over this 7.7\,MHz band the element barely changes with frequency. What $\alpha$ varies is the
+\emph{non-ideality} ($\Gamma_1\neq-\Gamma_2$), not dispersion. Fig.~6 tests the $\pm1$ assumption only.
+\item The honest message of Fig.~6 is: \emph{``assuming a perfect switch is what fails; ours needs no assumption at all,
+and a receiver that calibrates the element at one frequency also recovers.''} Against that calibrated receiver, ours is
+slightly worse at 20\,dB (0.070 vs 0.059) and better at 30\,dB (by $0.053\pm0.035$) because of its low rank.
+\item Dispersion is tested at the full 98\,MHz band instead (full-band section of the paper): there the calibrated receiver's SER
+is 1.49$\times$ ours at 28\,dB, 64-QAM, but mainly because of low rank, not because dispersion defeats calibration.
+\end{itemize}
+\end{warnbox}
+
 \begin{warnbox}
 \textbf{Common misreading:} ``so your model only works for ideal cases?'' No, the opposite. It is the \emph{literature's}
 estimator that only works for ideal elements; ours performs the same for any element.\\[2pt]
-\textbf{Subtle point:} at $M=256$ (7.7\,MHz) the element barely changes across the band. What $\alpha$ varies here is mainly
-the \emph{non-ideality} ($\Gamma_1\neq-\Gamma_2$, the static $\approx7.7^\circ$ error), not frequency dispersion. The paper
-says ``non-ideality'' for this reason.
+\textbf{If asked ``why not just calibrate the element?''} Say: ``You can, and it works at 7.7\,MHz (Table~II). Ours
+gets the same result with no calibration step, never goes stale if the element drifts with temperature or ageing, and is
+better at high SNR because of its low rank.'' Do \emph{not} claim calibration fails.\\[2pt]
+\textbf{One-sentence summary for the supervisor:} ``Fig.~6 blends the ideal switch into the real cell; the textbook
+receiver goes from best to 15$\times$ worse, ours stays flat because it never models the element, and a flat calibration
+would also fix the textbook receiver, so the figure is about the $\pm1$ assumption, not dispersion.''
 \end{warnbox}
-\say{Fig.~6 shows the baseline is correct for ideal elements and fails as they become realistic, while our receiver performs
-the same for any element, because it never assumes an element model.}
 
 \subsection*{Fig.~7: NMSE against number of pilots (Tang et al.\ Figs.~6--8 format)}
 \begin{center}\includegraphics[width=0.62\textwidth]{fig_std_pilots.pdf}\end{center}
